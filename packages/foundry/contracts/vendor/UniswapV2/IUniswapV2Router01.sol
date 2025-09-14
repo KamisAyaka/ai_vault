@@ -46,7 +46,7 @@ interface IUniswapV2Router01 {
     ) external returns (uint256[] memory amounts);
 
     function getAmountsOut(
-        uint amountIn,
+        uint256 amountIn,
         address[] calldata path
-    ) external view returns (uint[] memory amounts);
+    ) external view returns (uint256[] memory amounts);
 }

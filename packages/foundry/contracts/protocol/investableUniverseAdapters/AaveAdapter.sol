@@ -2,18 +2,20 @@
 pragma solidity ^0.8.25;
 
 import {IProtocolAdapter} from "../../interfaces/IProtocolAdapter.sol";
-import {IPool} from "../../vendor/IPool.sol";
+import {IPool} from "../../vendor/AaveV3/IPool.sol";
+import {DataTypes} from "../../vendor/AaveV3/DataTypes.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {WadRayMath} from "../../vendor/AaveV3/WadRayMath.sol";
 
-contract AaveAdapter is IProtocolAdapter {
+contract AaveAdapter is IProtocolAdapter, Ownable {
     using SafeERC20 for IERC20;
-
-    error AaveAdapter__TransferFailed();
+    using WadRayMath for uint256;
 
     IPool public immutable i_aavePool;
 
-    constructor(address aavePool) {
+    constructor(address aavePool) Ownable(msg.sender) {
         i_aavePool = IPool(aavePool);
     }
 
@@ -22,17 +24,18 @@ contract AaveAdapter is IProtocolAdapter {
      * @param asset 金库的底层资产代币
      * @param amount 要投资的底层资产代币数量
      */
-    function _aaveInvest(IERC20 asset, uint256 amount) internal {
-        bool succ = asset.approve(address(i_aavePool), amount);
-        if (!succ) {
-            revert AaveAdapter__TransferFailed();
-        }
+    function invest(
+        IERC20 asset,
+        uint256 amount
+    ) external onlyOwner returns (uint256) {
+        asset.forceApprove(address(i_aavePool), amount);
         i_aavePool.supply({
             asset: address(asset),
             amount: amount,
-            onBehalfOf: address(this), // 决定谁获得Aave的aToken。在此情况下，铸造给金库
+            onBehalfOf: msg.sender, // 决定谁获得Aave的aToken。在此情况下，铸造给金库
             referralCode: 0
         });
+        return amount;
     }
 
     /**
@@ -40,30 +43,38 @@ contract AaveAdapter is IProtocolAdapter {
      * @param token 要提取的金库底层资产代币
      * @param amount 要提取的底层资产代币数量
      */
-    function _aaveDivest(
+    function divest(
         IERC20 token,
         uint256 amount
-    ) internal returns (uint256 amountOfAssetReturned) {
+    ) external onlyOwner returns (uint256 amountOfAssetReturned) {
         amountOfAssetReturned = i_aavePool.withdraw({
             asset: address(token),
             amount: amount,
-            to: address(this)
+            to: msg.sender // 直接发送给调用者（金库）
         });
     }
 
-    // IProtocolAdapter 接口实现
-    function invest(IERC20 asset, uint256 amount) external override returns (uint256) {
-        _aaveInvest(asset, amount);
-        return amount;
-    }
+    /**
+     * @notice 获取金库在Aave中的精确资产价值
+     * @param asset 底层资产代币
+     * @return 精确的资产价值（以底层资产计价）
+     */
+    function getTotalValue(IERC20 asset) external view returns (uint256) {
+        // 获取aToken地址
+        address aTokenAddress = i_aavePool
+            .getReserveData(address(asset))
+            .aTokenAddress;
 
-    function divest(IERC20 asset, uint256 amount) external override returns (uint256) {
-        return _aaveDivest(asset, amount);
-    }
+        // 获取金库的aToken余额
+        uint256 aTokenBalance = IERC20(aTokenAddress).balanceOf(msg.sender);
 
-    function getTotalValue(IERC20 asset) external view override returns (uint256) {
-        address aTokenAddress = i_aavePool.getReserveData(address(asset)).aTokenAddress;
-        return IERC20(aTokenAddress).balanceOf(address(this));
+        // 获取储备的标准化收入（流动性指数）
+        uint256 normalizedIncome = i_aavePool.getReserveNormalizedIncome(
+            address(asset)
+        );
+
+        // 计算精确的资产价值 = aToken余额 * liquidityIndex / RAY (1e27)
+        return aTokenBalance.rayMul(normalizedIncome) / WadRayMath.RAY;
     }
 
     function getName() external pure override returns (string memory) {

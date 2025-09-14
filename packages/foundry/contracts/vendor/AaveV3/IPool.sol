@@ -44,4 +44,13 @@ interface IPool {
     function getReserveData(
         address asset
     ) external view returns (DataTypes.ReserveData memory);
+    
+    /**
+     * @notice 返回储备资产的标准化收入（流动性指数）
+     * @param asset 储备资产的地址
+     * @return 标准化收入值
+     */
+    function getReserveNormalizedIncome(
+        address asset
+    ) external view returns (uint256);
 }
