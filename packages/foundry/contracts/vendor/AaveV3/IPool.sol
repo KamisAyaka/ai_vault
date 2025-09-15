@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {DataTypes} from "./DataTypes.sol";
+import { DataTypes } from "./DataTypes.sol";
 
 // AaveV3 Pool接口的一个子集
 // https://github.com/aave/aave-v3-core/blob/master/contracts/interfaces/IPool.sol
@@ -14,12 +14,7 @@ interface IPool {
      *   若希望其他地址接收，则可以指定不同地址
      * @param referralCode 用于记录操作来源的推荐码，0表示无中间人直接操作
      */
-    function supply(
-        address asset,
-        uint256 amount,
-        address onBehalfOf,
-        uint16 referralCode
-    ) external;
+    function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode) external;
 
     /**
      * @notice 从储备池提取指定数量的底层资产，同时销毁相应的aToken
@@ -30,27 +25,19 @@ interface IPool {
      * @param to 接收底层资产的地址，与msg.sender相同表示接收至用户自己的钱包
      * @return 实际提取的资产数量
      */
-    function withdraw(
-        address asset,
-        uint256 amount,
-        address to
-    ) external returns (uint256);
+    function withdraw(address asset, uint256 amount, address to) external returns (uint256);
 
     /**
      * @notice 返回储备池的状态和配置信息
      * @param asset 储备资产的地址
      * @return 储备池的状态和配置数据
      */
-    function getReserveData(
-        address asset
-    ) external view returns (DataTypes.ReserveData memory);
-    
+    function getReserveData(address asset) external view returns (DataTypes.ReserveData memory);
+
     /**
      * @notice 返回储备资产的标准化收入（流动性指数）
      * @param asset 储备资产的地址
      * @return 标准化收入值
      */
-    function getReserveNormalizedIncome(
-        address asset
-    ) external view returns (uint256);
+    function getReserveNormalizedIncome(address asset) external view returns (uint256);
 }

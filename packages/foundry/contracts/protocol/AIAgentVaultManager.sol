@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {IVaultShares} from "../interfaces/IVaultShares.sol";
-import {VaultShares} from "./VaultShares.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {IProtocolAdapter} from "../interfaces/IProtocolAdapter.sol";
+import { IVaultShares } from "../interfaces/IVaultShares.sol";
+import { VaultShares } from "./VaultShares.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IProtocolAdapter } from "../interfaces/IProtocolAdapter.sol";
 
 /**
  * @title AIAgentVaultManager
@@ -30,12 +30,7 @@ contract AIAgentVaultManager is Ownable {
     event VaultEmergencyStopped(address indexed vault);
     event AdapterApproved(IProtocolAdapter indexed adapter);
     event AdapterAddedToList(IProtocolAdapter indexed adapter);
-    event AdapterExecuted(
-        address indexed adapter,
-        uint256 value,
-        bytes data,
-        bytes returnData
-    );
+    event AdapterExecuted(address indexed adapter, uint256 value, bytes data, bytes returnData);
 
     error AIAgentVaultManager__VaultNotRegistered(address vault);
     error AIAgentVaultManager__InvalidAllocation();
@@ -48,16 +43,14 @@ contract AIAgentVaultManager is Ownable {
     /**
      * @notice 构造函数
      */
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable(msg.sender) { }
 
     /**
      * @notice 创建一个新的金库并自动注册
      *
      * @return vaultAddress 新创建的金库地址
      */
-    function createVault(
-        IERC20 token
-    ) external onlyOwner returns (address vaultAddress) {
+    function createVault(IERC20 token) external onlyOwner returns (address vaultAddress) {
         // 部署新的金库合约
         VaultShares tokenVault;
 
@@ -66,14 +59,8 @@ contract AIAgentVaultManager is Ownable {
             IVaultShares.ConstructorData({
                 asset: token,
                 Fee: s_Fee,
-                vaultName: string.concat(
-                    "Vault Guardian ",
-                    IERC20Metadata(address(token)).name()
-                ),
-                vaultSymbol: string.concat(
-                    "vg",
-                    IERC20Metadata(address(token)).symbol()
-                )
+                vaultName: string.concat("Vault Guardian ", IERC20Metadata(address(token)).name()),
+                vaultSymbol: string.concat("vg", IERC20Metadata(address(token)).symbol())
             })
         );
 
@@ -89,11 +76,10 @@ contract AIAgentVaultManager is Ownable {
      * @param adapterIndices 适配器索引数组，指定要使用的适配器
      * @param allocationData 新的资产分配数据
      */
-    function updateHoldingAllocation(
-        IERC20 token,
-        uint256[] memory adapterIndices,
-        uint256[] memory allocationData
-    ) external onlyOwner {
+    function updateHoldingAllocation(IERC20 token, uint256[] memory adapterIndices, uint256[] memory allocationData)
+        external
+        onlyOwner
+    {
         uint256 indexLength = adapterIndices.length;
         if (allocationData.length != indexLength) {
             revert AIAgentVaultManager__InvalidAllocation();
@@ -104,24 +90,17 @@ contract AIAgentVaultManager is Ownable {
         }
 
         // 根据索引构建适配器数组
-        IProtocolAdapter[] memory selectedAdapters = new IProtocolAdapter[](
-            indexLength
-        );
+        IProtocolAdapter[] memory selectedAdapters = new IProtocolAdapter[](indexLength);
         uint256 allAdaptersLength = s_allAdapters.length;
         for (uint256 i = 0; i < indexLength; i++) {
             if (adapterIndices[i] >= allAdaptersLength) {
-                revert AIAgentVaultManager__InvalidAdapterIndex(
-                    adapterIndices[i]
-                );
+                revert AIAgentVaultManager__InvalidAdapterIndex(adapterIndices[i]);
             }
             selectedAdapters[i] = s_allAdapters[adapterIndices[i]];
         }
 
         // 调用金库的更新函数
-        s_vault[token].updateHoldingAllocation(
-            selectedAdapters,
-            allocationData
-        );
+        s_vault[token].updateHoldingAllocation(selectedAdapters, allocationData);
 
         emit AllocationUpdated(vaultAddress, allocationData);
     }
@@ -157,10 +136,7 @@ contract AIAgentVaultManager is Ownable {
 
         // 调用金库的部分更新函数
         s_vault[token].partialUpdateHoldingAllocation(
-            divestAdapterIndices,
-            divestAmounts,
-            investAdapterIndices,
-            investAllocations
+            divestAdapterIndices, divestAmounts, investAdapterIndices, investAllocations
         );
 
         emit AllocationUpdated(vaultAddress, investAllocations);
@@ -224,11 +200,11 @@ contract AIAgentVaultManager is Ownable {
      * @param data 调用数据
      * @return returnData 调用返回数据
      */
-    function execute(
-        uint256 adapterIndex,
-        uint256 value,
-        bytes calldata data
-    ) external onlyOwner returns (bytes memory) {
+    function execute(uint256 adapterIndex, uint256 value, bytes calldata data)
+        external
+        onlyOwner
+        returns (bytes memory)
+    {
         // 检查适配器索引是否有效
         if (adapterIndex >= s_allAdapters.length) {
             revert AIAgentVaultManager__InvalidAdapterIndex(adapterIndex);
@@ -238,9 +214,7 @@ contract AIAgentVaultManager is Ownable {
         IProtocolAdapter adapter = s_allAdapters[adapterIndex];
 
         // 使用低级call执行调用
-        (bool success, bytes memory result) = address(adapter).call{
-            value: value
-        }(data);
+        (bool success, bytes memory result) = address(adapter).call{ value: value }(data);
 
         if (!success) {
             revert AIAgentVaultManager__AdapterCallFailed();
@@ -257,16 +231,13 @@ contract AIAgentVaultManager is Ownable {
      * @param data 调用数据数组
      * @return returnData 调用返回数据数组
      */
-    function executeBatch(
-        uint256[] calldata adapterIndices,
-        uint256[] calldata values,
-        bytes[] calldata data
-    ) external onlyOwner returns (bytes[] memory returnData) {
+    function executeBatch(uint256[] calldata adapterIndices, uint256[] calldata values, bytes[] calldata data)
+        external
+        onlyOwner
+        returns (bytes[] memory returnData)
+    {
         // 检查数组长度是否一致
-        if (
-            adapterIndices.length != values.length ||
-            adapterIndices.length != data.length
-        ) {
+        if (adapterIndices.length != values.length || adapterIndices.length != data.length) {
             revert AIAgentVaultManager__BatchLengthMismatch();
         }
 
@@ -278,9 +249,7 @@ contract AIAgentVaultManager is Ownable {
         for (uint256 i = 0; i < adapterIndices.length; i++) {
             // 检查适配器索引是否有效
             if (adapterIndices[i] >= allAdapterLength) {
-                revert AIAgentVaultManager__InvalidAdapterIndex(
-                    adapterIndices[i]
-                );
+                revert AIAgentVaultManager__InvalidAdapterIndex(adapterIndices[i]);
             }
 
             // 获取适配器实例
@@ -289,9 +258,7 @@ contract AIAgentVaultManager is Ownable {
             address target = address(adapter);
 
             // 使用低级call执行调用
-            (bool success, bytes memory result) = target.call{value: values[i]}(
-                data[i]
-            );
+            (bool success, bytes memory result) = target.call{ value: values[i] }(data[i]);
 
             if (!success) {
                 revert AIAgentVaultManager__AdapterCallFailed();
@@ -306,9 +273,7 @@ contract AIAgentVaultManager is Ownable {
      * @param adapter 适配器地址
      * @return 是否被批准
      */
-    function isAdapterApproved(
-        IProtocolAdapter adapter
-    ) external view returns (bool) {
+    function isAdapterApproved(IProtocolAdapter adapter) external view returns (bool) {
         return s_approvedAdapters[adapter];
     }
 
@@ -316,11 +281,7 @@ contract AIAgentVaultManager is Ownable {
      * @notice 获取全局适配器列表
      * @return adapters 适配器列表
      */
-    function getAllAdapters()
-        external
-        view
-        returns (IProtocolAdapter[] memory adapters)
-    {
+    function getAllAdapters() external view returns (IProtocolAdapter[] memory adapters) {
         return s_allAdapters;
     }
 }
