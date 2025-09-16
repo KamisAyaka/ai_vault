@@ -45,7 +45,7 @@ contract AaveAdapter is IProtocolAdapter, Ownable {
         }
 
         // 将资金从金库转移到适配器
-        asset.transferFrom(msg.sender, address(this), amount);
+        asset.safeTransferFrom(msg.sender, address(this), amount);
 
         asset.forceApprove(address(i_aavePool), amount);
         i_aavePool.supply({
@@ -75,7 +75,7 @@ contract AaveAdapter is IProtocolAdapter, Ownable {
          });
 
         // 将回收的资金转回金库
-        token.transfer(msg.sender, amountOfAssetReturned);
+        token.safeTransfer(msg.sender, amountOfAssetReturned);
     }
 
     /**
@@ -94,7 +94,7 @@ contract AaveAdapter is IProtocolAdapter, Ownable {
         uint256 normalizedIncome = i_aavePool.getReserveNormalizedIncome(address(asset));
 
         // 计算精确的资产价值 = aToken余额 * liquidityIndex / RAY (1e27)
-        return aTokenBalance.rayMul(normalizedIncome) / WadRayMath.RAY;
+        return aTokenBalance.rayMul(normalizedIncome);
     }
 
     function getName() external pure override returns (string memory) {

@@ -51,11 +51,8 @@ contract AIAgentVaultManager is Ownable {
      * @return vaultAddress 新创建的金库地址
      */
     function createVault(IERC20 token) external onlyOwner returns (address vaultAddress) {
-        // 部署新的金库合约
-        VaultShares tokenVault;
-
         // 先更新状态（效果）
-        tokenVault = new VaultShares(
+        VaultShares tokenVault = new VaultShares(
             IVaultShares.ConstructorData({
                 asset: token,
                 Fee: s_Fee,
@@ -90,17 +87,19 @@ contract AIAgentVaultManager is Ownable {
         }
 
         // 根据索引构建适配器数组
-        IProtocolAdapter[] memory selectedAdapters = new IProtocolAdapter[](indexLength);
+        IVaultShares.Allocation[] memory allocations = new IVaultShares.Allocation[](indexLength);
         uint256 allAdaptersLength = s_allAdapters.length;
         for (uint256 i = 0; i < indexLength; i++) {
-            if (adapterIndices[i] >= allAdaptersLength) {
-                revert AIAgentVaultManager__InvalidAdapterIndex(adapterIndices[i]);
+            uint256 adapterIndex = adapterIndices[i];
+            if (adapterIndex >= allAdaptersLength) {
+                revert AIAgentVaultManager__InvalidAdapterIndex(adapterIndex);
             }
-            selectedAdapters[i] = s_allAdapters[adapterIndices[i]];
+            allocations[i] =
+                IVaultShares.Allocation({ adapter: s_allAdapters[adapterIndex], allocation: allocationData[i] });
         }
 
         // 调用金库的更新函数
-        s_vault[token].updateHoldingAllocation(selectedAdapters, allocationData);
+        s_vault[token].updateHoldingAllocation(allocations);
 
         emit AllocationUpdated(vaultAddress, allocationData);
     }
@@ -111,6 +110,7 @@ contract AIAgentVaultManager is Ownable {
      * @param divestAdapterIndices 需要撤资的适配器索引数组
      * @param divestAmounts 对应的撤资金额数组
      * @param investAdapterIndices 需要投资的适配器索引数组
+     * @param investAmounts 需要投资的金额数组
      * @param investAllocations 对应的投资分配比例数组
      */
     function partialUpdateHoldingAllocation(
@@ -118,6 +118,7 @@ contract AIAgentVaultManager is Ownable {
         uint256[] memory divestAdapterIndices,
         uint256[] memory divestAmounts,
         uint256[] memory investAdapterIndices,
+        uint256[] memory investAmounts,
         uint256[] memory investAllocations
     ) external onlyOwner {
         // 验证输入参数
@@ -136,7 +137,7 @@ contract AIAgentVaultManager is Ownable {
 
         // 调用金库的部分更新函数
         s_vault[token].partialUpdateHoldingAllocation(
-            divestAdapterIndices, divestAmounts, investAdapterIndices, investAllocations
+            divestAdapterIndices, divestAmounts, investAdapterIndices, investAmounts, investAllocations
         );
 
         emit AllocationUpdated(vaultAddress, investAllocations);
@@ -186,7 +187,7 @@ contract AIAgentVaultManager is Ownable {
             revert AIAgentVaultManager__AdapterAlreadyApproved(adapter);
         }
 
-        // 添加适配器到全局列表
+        // 先更新状态
         s_approvedAdapters[adapter] = true;
         s_allAdapters.push(adapter);
 

@@ -130,7 +130,7 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
         // 获取适配器中可用的资产余额并重新投资
         uint256 availableAssets = token.balanceOf(address(this));
         if (availableAssets > 0) {
-            _invest(token, availableAssets, s_tokenConfigs[token]);
+            _invest(token, availableAssets);
         }
         emit TokenConfigUpdated(address(token));
     }
@@ -149,18 +149,18 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
         }
 
         // 将资金从金库转移到适配器
-        asset.transferFrom(msg.sender, address(this), amount);
+        asset.safeTransferFrom(msg.sender, address(this), amount);
 
-        return _invest(asset, amount, config);
+        return _invest(asset, amount);
     }
 
     /**
      * @notice 内部投资函数
      * @param asset 资产代币
      * @param amount 投资金额
-     * @param config 代币配置
      */
-    function _invest(IERC20 asset, uint256 amount, TokenConfig memory config) internal returns (uint256) {
+    function _invest(IERC20 asset, uint256 amount) internal returns (uint256) {
+        TokenConfig memory config = s_tokenConfigs[asset];
         uint256 amountOfTokenToSwap = amount / 2;
 
         // 动态生成路径数组
@@ -214,7 +214,7 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
         uint256 tokenAmount = _divest(asset, liquidityAmount, config);
 
         // 将回收的资金转回金库
-        asset.transfer(msg.sender, tokenAmount);
+        asset.safeTransfer(msg.sender, tokenAmount);
 
         return tokenAmount;
     }
@@ -287,8 +287,6 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
             amountOutMin: minOut,
             path: path,
             to: address(this), // 修改为发送给适配器
-            // 使用block.timestamp + DEADLINE_INTERVAL作为deadline是安全的
-            // 因为这是一个相对较短的时间间隔（300秒），矿工操纵的影响有限
             deadline: block.timestamp + DEADLINE_INTERVAL
         });
 

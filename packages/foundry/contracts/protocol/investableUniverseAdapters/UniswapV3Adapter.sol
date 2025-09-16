@@ -5,6 +5,7 @@ import { IProtocolAdapter } from "../../interfaces/IProtocolAdapter.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // Uniswap V3 相关接口导入
 import { ISwapRouter } from "../../vendor/UniswapV3/periphery/interfaces/ISwapRouter.sol";
@@ -14,7 +15,6 @@ import { IUniswapV3Pool } from "../../vendor/UniswapV3/core/IUniswapV3Pool.sol";
 import { IUniswapV3Factory } from "../../vendor/UniswapV3/core/IUniswapV3Factory.sol";
 import { IQuoter } from "../../vendor/UniswapV3/periphery/interfaces/IQuoter.sol";
 import { TickMath } from "../../vendor/UniswapV3/core/libraries/TickMath.sol";
-import { SqrtPriceMath } from "../../vendor/UniswapV3/core/libraries/SqrtPriceMath.sol";
 import { FixedPoint96 } from "../../vendor/UniswapV3/core/libraries/FixedPoint96.sol";
 import { FullMath } from "../../vendor/UniswapV3/core/libraries/FullMath.sol";
 import { LiquidityAmounts } from "../../vendor/UniswapV3/periphery/LiquidityAmounts.sol";
@@ -23,7 +23,6 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
     error UniswapV3Adapter__InvalidSlippageTolerance();
     error UniswapV3Adapter__InvalidCounterPartyToken();
     error UniswapV3Adapter__InvalidToken();
-    error UniswapV3Adapter__InvalidFeeTier();
     error UniswapV3Adapter__NoLiquidityPosition();
     error OnlyVaultCanCallThisFunction();
 
@@ -207,7 +206,7 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         uint256 availableAssets = token.balanceOf(address(this));
         if (availableAssets > 0 && config.VaultAddress != address(0)) {
             // 更新配置后再投资，使用内部invest函数逻辑
-            _invest(token, availableAssets, s_tokenConfigs[token]);
+            _invest(token, availableAssets);
         }
 
         emit TokenConfigUpdated(address(token));
@@ -282,25 +281,25 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         }
         asset.safeTransferFrom(msg.sender, address(this), amount);
 
-        return _invest(asset, amount, config);
+        return _invest(asset, amount);
     }
 
     /**
      * @notice 从 Uniswap V3 协议中撤资
      * @param asset 金库的底层资产代币
-     * @param liquidityAmount 要销毁的流动性数量
+     * @param amount 要销毁的流动性数量
      * @return 实际撤资的数量
      */
-    function divest(IERC20 asset, uint256 liquidityAmount) external override returns (uint256) {
+    function divest(IERC20 asset, uint256 amount) external override returns (uint256) {
         TokenConfig memory config = getTokenConfig(asset);
         if (msg.sender != config.VaultAddress) {
             revert OnlyVaultCanCallThisFunction();
         }
 
-        uint256 tokenAmount = _divest(asset, liquidityAmount, config);
+        uint256 tokenAmount = _divest(asset, amount, config);
 
         // 将回收的资金转回金库
-        asset.transfer(msg.sender, tokenAmount);
+        asset.safeTransfer(msg.sender, tokenAmount);
 
         return tokenAmount;
     }
@@ -382,15 +381,13 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
                 // asset是token0，需要将token1转换为token0的价值
                 (uint160 sqrtPriceX96,,,,,,) = config.pool.slot0();
 
-                // 使用Uniswap V3的价格公式将token1转换为token0的价值
-                // token1的价值 = token1数量 * (token0/token1价格)
+                // 正确计算token1转换为token0的价值
                 // sqrtPriceX96 = sqrt(token1/token0) * 2^96
-                // 所以 token0/token1 = 1 / (sqrtPriceX96 / 2^96)^2 = 2^192 / sqrtPriceX96^2
-                // token1的价值(以token0计) = token1数量 * (1 / (sqrtPriceX96 / 2^96))^2
-                // 其中 sqrtPriceX96 表示 sqrt(token1/token0) * 2^96
-                // 所以 token1/token0 = (sqrtPriceX96 / 2^96)^2
-                // token0/token1 = 1 / (token1/token0) = (2^96)^2 / (sqrtPriceX96)^2
-                // 所以 token1ValueInToken0 = totalAmount1 * token0/token1 = totalAmount1 * (2^96)^2 / (sqrtPriceX96)^2
+                // 因此 token1/token0 = (sqrtPriceX96 / 2^96)^2 = sqrtPriceX96^2 / 2^192
+                // 所以 token0/token1 = 2^192 / sqrtPriceX96^2
+                // token1的价值(以token0计) = token1数量 * (2^192 / sqrtPriceX96^2)
+                //                         = token1数量 * 2^192 / sqrtPriceX96^2
+                //                         = token1数量 * 2^96 * 2^96 / sqrtPriceX96^2
                 uint256 token1ValueInToken0 = FullMath.mulDiv(totalAmount1, FixedPoint96.Q96, sqrtPriceX96);
                 token1ValueInToken0 = FullMath.mulDiv(token1ValueInToken0, FixedPoint96.Q96, sqrtPriceX96);
 
@@ -399,13 +396,14 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
                 // asset是token1，需要将token0转换为token1的价值
                 (uint160 sqrtPriceX96,,,,,,) = config.pool.slot0();
 
-                // token0的价值 = token0数量 * (token1/token0价格)
+                // 正确计算token0转换为token1的价值
                 // sqrtPriceX96 = sqrt(token1/token0) * 2^96
-                // 所以 token1/token0 = (sqrtPriceX96 / 2^96)^2 = sqrtPriceX96^2 / 2^192
-                // token0的价值(以token1计) = token0数量 * sqrtPriceX96^2 / 2^192
-                uint256 token0ValueInToken1 =
-                    FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96 * FixedPoint96.Q96);
-                token0ValueInToken1 = FullMath.mulDiv(token0ValueInToken1, totalAmount0, 1);
+                // 因此 token1/token0 = (sqrtPriceX96 / 2^96)^2 = sqrtPriceX96^2 / 2^192
+                // token0的价值(以token1计) = token0数量 * (token1/token0)
+                //                          = token0数量 * sqrtPriceX96^2 / 2^192
+                //                          = token0数量 * sqrtPriceX96^2 / (2^96 * 2^96)
+                uint256 token0ValueInToken1 = FullMath.mulDiv(totalAmount0, sqrtPriceX96, FixedPoint96.Q96);
+                token0ValueInToken1 = FullMath.mulDiv(token0ValueInToken1, sqrtPriceX96, FixedPoint96.Q96);
 
                 return totalAmount1 + token0ValueInToken1;
             } else {
@@ -556,16 +554,17 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
      * @notice 内部投资函数
      * @param asset 金库的底层资产代币
      * @param amount 用于投资的资产数量
-     * @param config 代币配置
      * @return 实际投资的数量
      */
-    function _invest(IERC20 asset, uint256 amount, TokenConfig memory config) internal returns (uint256) {
+    function _invest(IERC20 asset, uint256 amount) internal returns (uint256) {
+        TokenConfig memory config = s_tokenConfigs[asset];
         // 使用_investWithBalances函数完成投资操作
         (uint128 liquidityMinted, uint256 amount0, uint256 amount1) = _investWithBalances(asset, config);
 
         emit UniswapV3Invested(address(asset), amount0, amount1, liquidityMinted);
 
-        return amount;
+        // 返回实际投资的资产数量
+        return amount0;
     }
 
     /**
@@ -583,7 +582,7 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         }
 
         // 减少流动性并收集代币
-        _removeLiquidityAndCollectTokens(config, tokenId, uint128(liquidityAmount));
+        _removeLiquidityAndCollectTokens(config, tokenId, SafeCast.toUint128(liquidityAmount));
 
         // 将配对资产兑换回基础资产
         uint256 counterPartyTokenBalance = config.counterPartyToken.balanceOf(address(this));
@@ -635,8 +634,8 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         INonfungiblePositionManager.CollectParams memory collectParams = INonfungiblePositionManager.CollectParams({
             tokenId: tokenId,
             recipient: address(this), // 发送到适配器合约
-            amount0Max: uint128(amount0),
-            amount1Max: uint128(amount1)
+            amount0Max: SafeCast.toUint128(amount0),
+            amount1Max: SafeCast.toUint128(amount1)
         });
 
         i_positionManager.collect(collectParams);

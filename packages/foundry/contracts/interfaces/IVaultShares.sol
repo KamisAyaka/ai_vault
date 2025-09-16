@@ -13,13 +13,18 @@ interface IVaultShares is IERC4626 {
         string vaultSymbol;
     }
 
-    function updateHoldingAllocation(IProtocolAdapter[] memory vaultAdapters, uint256[] memory allocationData)
-        external;
+    struct Allocation {
+        IProtocolAdapter adapter;
+        uint256 allocation;
+    }
+
+    function updateHoldingAllocation(Allocation[] memory allocations) external;
 
     function partialUpdateHoldingAllocation(
         uint256[] memory divestAdapterIndices,
         uint256[] memory divestAmounts,
         uint256[] memory investAdapterIndices,
+        uint256[] memory investAmounts,
         uint256[] memory investAllocations
     ) external;
 

@@ -25,6 +25,7 @@ contract VaultShares is
                             常量定义
     //////////////////////////////////////////////////////////////*/
     uint256 internal constant BASIS_POINTS_DIVISOR = 1e4; // 10000 basis points = 100%
+    uint256 internal constant ALLOCATION_PRECISION = 1000;
 
     /*//////////////////////////////////////////////////////////////
                             错误定义
@@ -38,17 +39,15 @@ contract VaultShares is
     //////////////////////////////////////////////////////////////*/
 
     uint256 private immutable i_Fee;
-    uint256 private constant ALLOCATION_PRECISION = 1000;
     bool private s_isActive;
 
-    // 保存当前已分配的适配器列表
-    IProtocolAdapter[] private s_allocatedAdapters;
+    // 保存当前已分配的适配器和分配比例
+    Allocation[] private s_allocations;
 
     /*//////////////////////////////////////////////////////////////
                                  事件
     //////////////////////////////////////////////////////////////*/
     event NoLongerActive();
-    event HoldingAllocationUpdated(IProtocolAdapter[] adapters, uint256[] allocations);
 
     /*//////////////////////////////////////////////////////////////
                                修饰符
@@ -87,23 +86,18 @@ contract VaultShares is
     }
 
     /**
-     * @notice 更新投资分配比例
+     * @notice 更新完整的适配器和分配比例列表
      */
-    function updateHoldingAllocation(IProtocolAdapter[] memory vaultAdapters, uint256[] memory allocationData)
-        public
-        override
-        onlyOwner
-    {
+    function updateHoldingAllocation(Allocation[] memory allocations) public override(IVaultShares) onlyOwner {
         // 首先撤回当前所有已分配的投资
         withdrawAllInvestments();
 
-        // 根据新的分配策略进行投资
-        _investInAdapters(vaultAdapters, allocationData);
+        // 直接替换存储数组（这会在storage中创建一个拷贝）
+        s_allocations = allocations;
 
-        // 更新已分配适配器列表
-        s_allocatedAdapters = vaultAdapters;
+        uint256 availableAssets = IERC20(asset()).balanceOf(address(this));
 
-        emit HoldingAllocationUpdated(vaultAdapters, allocationData);
+        _investFunds(availableAssets);
     }
 
     /**
@@ -117,43 +111,25 @@ contract VaultShares is
         uint256[] memory divestAdapterIndices,
         uint256[] memory divestAmounts,
         uint256[] memory investAdapterIndices,
+        uint256[] memory investAmounts,
         uint256[] memory investAllocations
-    ) external onlyOwner {
+    ) external override(IVaultShares) onlyOwner {
         // 验证输入参数
         uint256 divestLength = divestAdapterIndices.length;
         uint256 investLength = investAdapterIndices.length;
 
-        // 获取当前已分配的适配器列表
-        IProtocolAdapter[] memory currentAdapters = s_allocatedAdapters;
-        uint256 currentAdaptersLength = currentAdapters.length;
-
         // 从指定适配器中撤资
         for (uint256 i = 0; i < divestLength; i++) {
-            // 检查索引是否有效
-            if (divestAdapterIndices[i] >= currentAdaptersLength) {
-                revert VaultShares__InvalidAllocation();
-            }
-
-            if (divestAmounts[i] > 0) {
-                currentAdapters[divestAdapterIndices[i]].divest(IERC20(asset()), divestAmounts[i]);
-            }
+            IProtocolAdapter adapter = s_allocations[divestAdapterIndices[i]].adapter;
+            adapter.divest(IERC20(asset()), divestAmounts[i]);
         }
 
-        // 构建要投资的适配器数组
-        IProtocolAdapter[] memory investAdapters = new IProtocolAdapter[](investLength);
+        // 更新指定适配器的分配比例
         for (uint256 i = 0; i < investLength; i++) {
-            // 检查索引是否有效
-            if (investAdapterIndices[i] >= currentAdaptersLength) {
-                revert VaultShares__InvalidAllocation();
-            }
-
-            investAdapters[i] = currentAdapters[investAdapterIndices[i]];
+            uint256 adapterIndex = investAdapterIndices[i];
+            s_allocations[adapterIndex].allocation = investAllocations[i];
+            s_allocations[adapterIndex].adapter.invest(IERC20(asset()), investAmounts[i]);
         }
-
-        // 根据新的分配策略进行投资
-        _investInAdapters(investAdapters, investAllocations);
-
-        emit HoldingAllocationUpdated(investAdapters, investAllocations);
     }
 
     /**
@@ -161,9 +137,9 @@ contract VaultShares is
      */
     function withdrawAllInvestments() public onlyOwner {
         // 遍历当前已分配的适配器并撤回所有投资
-        uint256 adaptersLength = s_allocatedAdapters.length;
-        for (uint256 i = 0; i < adaptersLength; i++) {
-            IProtocolAdapter adapter = s_allocatedAdapters[i];
+        uint256 allocationsLength = s_allocations.length;
+        for (uint256 i = 0; i < allocationsLength; i++) {
+            IProtocolAdapter adapter = s_allocations[i].adapter;
 
             // 获取在该适配器中的资产总价值
             uint256 valueInAdapter = adapter.getTotalValue(IERC20(asset()));
@@ -176,27 +152,51 @@ contract VaultShares is
     }
 
     /**
-     * @notice 在指定适配器中进行投资
+     * @notice 根据当前配置的投资策略投资指定资产
+     * @param assets 要投资的资产数量
      */
-    function _investInAdapters(IProtocolAdapter[] memory vaultAdapters, uint256[] memory allocationData)
-        internal
-        onlyOwner
-    {
-        // 获取金库中可用资产总额（合约中的资产）
-        uint256 availableAssets = IERC20(asset()).balanceOf(address(this));
-        uint256 adaptersLength = vaultAdapters.length;
-        // 根据分配比例进行投资
-        for (uint256 i = 0; i < adaptersLength; i++) {
+    function _investFunds(uint256 assets) internal {
+        // 如果没有配置投资策略或分配比例，则不进行投资
+        if (s_allocations.length == 0) {
+            return;
+        }
+
+        // 遍历所有配置的适配器并按分配比例投资
+        for (uint256 i = 0; i < s_allocations.length; i++) {
             // 计算应投资的资产数量
-            uint256 amountToInvest = (availableAssets * allocationData[i]) / ALLOCATION_PRECISION;
+            uint256 amountToInvest = (assets * s_allocations[i].allocation) / ALLOCATION_PRECISION;
 
             // 如果投资金额大于0，则调用适配器进行投资
             if (amountToInvest > 0) {
+                IProtocolAdapter adapter = s_allocations[i].adapter;
                 // 授权适配器使用资产
-                IERC20(asset()).forceApprove(address(vaultAdapters[i]), amountToInvest);
+                IERC20(asset()).forceApprove(address(adapter), amountToInvest);
 
                 // 调用适配器的投资函数
-                vaultAdapters[i].invest(IERC20(asset()), amountToInvest);
+                adapter.invest(IERC20(asset()), amountToInvest);
+            }
+        }
+    }
+
+    /**
+     * @notice 根据当前配置的投资策略撤回资金
+     * @param assets 需要撤回的资产数量
+     */
+    function _divestFunds(uint256 assets) internal {
+        // 如果没有配置投资策略，则不进行撤资
+        if (s_allocations.length == 0) {
+            return;
+        }
+
+        // 根据分配比例从各个适配器中撤资
+        for (uint256 i = 0; i < s_allocations.length; i++) {
+            // 计算应从该适配器撤资的资产数量
+            uint256 amountToDivest = (assets * s_allocations[i].allocation) / ALLOCATION_PRECISION;
+
+            // 如果撤资金额大于0，则调用适配器进行撤资
+            if (amountToDivest > 0) {
+                IProtocolAdapter adapter = s_allocations[i].adapter;
+                adapter.divest(IERC20(asset()), amountToDivest);
             }
         }
     }
@@ -232,6 +232,9 @@ contract VaultShares is
         // 铸造管理费份额
         _mint(owner(), feeShares);
 
+        // 根据投资策略分配新资金
+        _investFunds(assets);
+
         return shares;
     }
 
@@ -262,6 +265,9 @@ contract VaultShares is
         // 铸造管理费份额
         _mint(owner(), feeShares);
 
+        // 根据投资策略分配新资金
+        _investFunds(assets);
+
         return assets;
     }
 
@@ -281,6 +287,10 @@ contract VaultShares is
         }
 
         assets = previewRedeem(shares);
+
+        // 根据投资策略撤回所需资金
+        _divestFunds(assets);
+
         _withdraw(_msgSender(), receiver, ownerAddr, assets, shares);
     }
 
@@ -300,12 +310,15 @@ contract VaultShares is
             revert ERC4626ExceededMaxWithdraw(ownerAddr, assets, maxAssets);
         }
 
+        // 根据投资策略撤回所需资金
+        _divestFunds(assets);
+
         _withdraw(_msgSender(), receiver, ownerAddr, assets, shares);
     }
 
     /*//////////////////////////////////////////////////////////////
                                视图函数
-    //////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////*/
     /**
      * @return 返回金库是否处于活跃状态
      */
@@ -319,9 +332,8 @@ contract VaultShares is
 
         // 计算已分配到各个适配器中的资产总价值
         uint256 assetsInAdapters = 0;
-        uint256 adaptersLength = s_allocatedAdapters.length;
-        for (uint256 i = 0; i < adaptersLength; i++) {
-            assetsInAdapters += s_allocatedAdapters[i].getTotalValue(IERC20(asset()));
+        for (uint256 i = 0; i < s_allocations.length; i++) {
+            assetsInAdapters += s_allocations[i].adapter.getTotalValue(IERC20(asset()));
         }
 
         // 总资产 = 合约中的资产 + 适配器中的资产
