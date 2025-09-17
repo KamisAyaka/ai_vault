@@ -46,13 +46,18 @@ contract UniswapV3AdapterTest is Test {
         tokenB.mint(vault, 1000 * 10 ** 18);
 
         // Deploy mock Uniswap V3 contracts
-        mockRouter = new MockSwapRouter();
         mockPositionManager = new MockNonfungiblePositionManager();
         mockFactory = new MockUniswapV3Factory();
-        mockQuoter = new MockQuoter();
 
         // Create pool with correct token order
-        mockFactory.createPool(address(tokenA), address(tokenB), 3000); // 0.3% fee tier
+        address poolAddress = mockFactory.createPool(
+            address(tokenA),
+            address(tokenB),
+            3000
+        ); // 0.3% fee tier
+
+        mockRouter = new MockSwapRouter(poolAddress);
+        mockQuoter = new MockQuoter(poolAddress);
 
         // Deploy adapter
         adapter = new UniswapV3Adapter(
@@ -130,28 +135,24 @@ contract UniswapV3AdapterTest is Test {
         adapter.UpdateTokenSlippageTolerance(IERC20(address(tokenA)), 300);
     }
 
-    // function testInvest() public {
-    //     // Approve adapter to spend vault's tokens
-    //     vm.prank(vault);
-    //     tokenA.approve(address(adapter), 100 * 10 ** 18);
-    //     tokenB.approve(address(adapter), 100 * 10 ** 18);
+    function testInvest() public {
+        uint256 amount0Desired = 100e18;
+        vm.startPrank(vault);
+        tokenA.approve(address(adapter), amount0Desired);
+        vm.stopPrank();
 
-    //     // Also transfer some tokenB to adapter to simulate having both tokens
-    //     vm.prank(vault);
-    //     tokenB.transfer(address(adapter), 50 * 10 ** 18);
+        // Test that vault can invest
+        vm.prank(vault);
+        uint256 investedAmount = adapter.invest(
+            IERC20(address(tokenA)),
+            100 * 10 ** 18
+        );
 
-    //     // Test that vault can invest
-    //     vm.prank(vault);
-    //     uint256 investedAmount = adapter.invest(
-    //         IERC20(address(tokenA)),
-    //         100 * 10 ** 18
-    //     );
+        assertEq(investedAmount, 100 * 10 ** 18);
 
-    //     assertEq(investedAmount, 100 * 10 ** 18);
-
-    //     // Check that tokens were transferred from vault
-    //     assertEq(tokenA.balanceOf(vault), 900 * 10 ** 18);
-    // }
+        // Check that tokens were transferred from vault
+        assertEq(tokenA.balanceOf(vault), 900 * 10 ** 18);
+    }
 
     function testInvestFromNonVault() public {
         // Test that non-vault cannot invest
@@ -164,26 +165,46 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
-    // function testDivest() public {
-    //     // First invest
-    //     vm.prank(vault);
-    //     tokenA.approve(address(adapter), 100 * 10 ** 18);
-    //     tokenB.approve(address(adapter), 100 * 10 ** 18);
+    function testDivest() public {
+        // First invest
+        uint256 amount0Desired = 100e18;
+        vm.startPrank(vault);
+        tokenA.approve(address(adapter), amount0Desired);
+        vm.stopPrank();
 
-    //     // Also transfer some tokenB to adapter to simulate having both tokens
-    //     vm.prank(vault);
-    //     tokenB.transfer(address(adapter), 50 * 10 ** 18);
+        // Test that vault can invest
+        vm.prank(vault);
+        adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
-    //     vm.prank(vault);
-    //     adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
+        // Seed pool with token balances so mock swap has liquidity to pay out
+        address token0 = address(tokenA) < address(tokenB)
+            ? address(tokenA)
+            : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB)
+            ? address(tokenB)
+            : address(tokenA);
+        address poolAddr = mockFactory.getPool(token0, token1, 3000);
+        vm.prank(vault);
+        tokenA.transfer(poolAddr, 100 * 10 ** 18);
+        vm.prank(vault);
+        tokenB.transfer(poolAddr, 100 * 10 ** 18);
 
-    //     // Test that vault can divest
-    //     vm.prank(vault);
-    //     uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
+        // Seed position manager with balances so mock decreaseLiquidity can pay out
+        vm.prank(vault);
+        tokenA.transfer(address(mockPositionManager), 100 * 10 ** 18);
+        vm.prank(vault);
+        tokenB.transfer(address(mockPositionManager), 100 * 10 ** 18);
 
-    //     // Check that tokens were transferred back to vault
-    //     assertGt(divestedAmount, 0);
-    // }
+        // Test that vault can divest
+        vm.prank(vault);
+        uint256 divestedAmount = adapter.divest(
+            IERC20(address(tokenA)),
+            50 * 10 ** 18
+        );
+
+        // Check that tokens were transferred back to vault
+        assertGt(divestedAmount, 0);
+    }
 
     function testDivestFromNonVault() public {
         // Test that non-vault cannot divest
@@ -196,26 +217,26 @@ contract UniswapV3AdapterTest is Test {
         adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
-    // function testGetTotalValue() public {
-    //     // Initially should be 0
-    //     assertEq(adapter.getTotalValue(IERC20(address(tokenA))), 0);
+    function testGetTotalValue() public {
+        // Initially should be 0
+        assertEq(adapter.getTotalValue(IERC20(address(tokenA))), 0);
 
-    //     // After investing
-    //     vm.prank(vault);
-    //     tokenA.approve(address(adapter), 100 * 10 ** 18);
-    //     tokenB.approve(address(adapter), 100 * 10 ** 18);
+        // After investing
+        vm.prank(vault);
+        tokenA.approve(address(adapter), 100 * 10 ** 18);
+        tokenB.approve(address(adapter), 100 * 10 ** 18);
 
-    //     // Also transfer some tokenB to adapter to simulate having both tokens
-    //     vm.prank(vault);
-    //     tokenB.transfer(address(adapter), 50 * 10 ** 18);
+        // Also transfer some tokenB to adapter to simulate having both tokens
+        vm.prank(vault);
+        tokenB.transfer(address(adapter), 50 * 10 ** 18);
 
-    //     vm.prank(vault);
-    //     adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
+        vm.prank(vault);
+        adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
-    //     // Should have some value
-    //     uint256 totalValue = adapter.getTotalValue(IERC20(address(tokenA)));
-    //     assertGt(totalValue, 0);
-    // }
+        // Should have some value
+        uint256 totalValue = adapter.getTotalValue(IERC20(address(tokenA)));
+        assertGt(totalValue, 0);
+    }
 
     function testGetName() public view {
         assertEq(adapter.getName(), "UniswapV3");

@@ -130,10 +130,6 @@ contract UniswapV2AdapterTest is Test {
         vm.prank(address(adapter));
         tokenB.approve(address(mockRouter), 100 * 10 ** 18);
 
-        // Also approve router to spend tokenB from adapter (for swapping)
-        vm.prank(address(adapter));
-        tokenB.approve(address(mockRouter), type(uint256).max);
-
         // Test that vault can invest
         vm.prank(vault);
         uint256 investedAmount = adapter.invest(
