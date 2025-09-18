@@ -11,7 +11,7 @@ import "../../contracts/protocol/investableUniverseAdapters/UniswapV3Adapter.sol
 import "../mock/MockToken.sol";
 import "../mock/MockAavePool.sol";
 import "../mock/MockUniswapV2.sol";
-import "../mock/MockUniswapV3.sol";
+import "../mock/RealisticUniswapV3.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
@@ -36,10 +36,10 @@ contract RealProtocolIntegrationTest is Test {
     MockAavePool public mockAavePool;
     MockUniswapV2Factory public mockUniswapV2Factory;
     MockUniswapV2Router public mockUniswapV2Router;
-    MockUniswapV3Factory public mockUniswapV3Factory;
-    MockSwapRouter public mockUniswapV3Router;
-    MockNonfungiblePositionManager public mockPositionManager;
-    MockQuoter public mockQuoter;
+    RealisticUniswapV3Factory public realisticUniswapV3Factory;
+    RealisticSwapRouter public realisticUniswapV3Router;
+    RealisticNonfungiblePositionManager public realisticPositionManager;
+    RealisticQuoter public realisticQuoter;
 
     // 金库地址
     address public vaultAddress;
@@ -89,23 +89,32 @@ contract RealProtocolIntegrationTest is Test {
 
         // UniswapV2 Mock
         mockUniswapV2Factory = new MockUniswapV2Factory();
-        mockUniswapV2Router = new MockUniswapV2Router(address(mockUniswapV2Factory));
+        mockUniswapV2Router = new MockUniswapV2Router(
+            address(mockUniswapV2Factory)
+        );
 
-        // UniswapV3 Mock
-        mockUniswapV3Factory = new MockUniswapV3Factory();
-        address poolAddress = mockUniswapV3Factory.createPool(address(usdc), address(weth), 3000);
+        // UniswapV3 Realistic Mock
+        realisticUniswapV3Factory = new RealisticUniswapV3Factory();
+        address poolAddress = realisticUniswapV3Factory.createPool(
+            address(usdc),
+            address(weth),
+            3000
+        );
 
-        // 给 MockUniswapV3Pool 一些代币用于交换
+        // 给 RealisticUniswapV3Pool 一些代币用于交换
         usdc.mint(poolAddress, 10000 * 10 ** 18);
         weth.mint(poolAddress, 10000 * 10 ** 18);
 
-        mockUniswapV3Router = new MockSwapRouter(poolAddress);
-        mockPositionManager = new MockNonfungiblePositionManager();
-        mockQuoter = new MockQuoter(poolAddress);
+        realisticUniswapV3Router = new RealisticSwapRouter(poolAddress);
+        realisticPositionManager = new RealisticNonfungiblePositionManager();
+        realisticQuoter = new RealisticQuoter(poolAddress);
 
-        // 给 MockNonfungiblePositionManager 一些代币用于撤资
-        usdc.mint(address(mockPositionManager), 10000 * 10 ** 18);
-        weth.mint(address(mockPositionManager), 10000 * 10 ** 18);
+        // 设置 position manager 的 factory 引用
+        realisticPositionManager.setFactory(address(realisticUniswapV3Factory));
+
+        // 给 RealisticNonfungiblePositionManager 一些代币用于撤资
+        usdc.mint(address(realisticPositionManager), 10000 * 10 ** 18);
+        weth.mint(address(realisticPositionManager), 10000 * 10 ** 18);
     }
 
     function _deployRealAdapters() internal {
@@ -117,10 +126,10 @@ contract RealProtocolIntegrationTest is Test {
 
         // 部署 UniswapV3 适配器
         uniswapV3Adapter = new UniswapV3Adapter(
-            address(mockUniswapV3Router),
-            address(mockPositionManager),
-            address(mockUniswapV3Factory),
-            address(mockQuoter)
+            address(realisticUniswapV3Router),
+            address(realisticPositionManager),
+            address(realisticUniswapV3Factory),
+            address(realisticQuoter)
         );
     }
 
@@ -135,10 +144,19 @@ contract RealProtocolIntegrationTest is Test {
         // 配置 UniswapV2 适配器
         // 为 UniswapV2 创建交易对（如果不存在）
         address pairAddress;
-        if (mockUniswapV2Factory.getPair(address(usdc), address(weth)) == address(0)) {
-            pairAddress = mockUniswapV2Factory.createPair(address(usdc), address(weth));
+        if (
+            mockUniswapV2Factory.getPair(address(usdc), address(weth)) ==
+            address(0)
+        ) {
+            pairAddress = mockUniswapV2Factory.createPair(
+                address(usdc),
+                address(weth)
+            );
         } else {
-            pairAddress = mockUniswapV2Factory.getPair(address(usdc), address(weth));
+            pairAddress = mockUniswapV2Factory.getPair(
+                address(usdc),
+                address(weth)
+            );
         }
 
         // 为交易对添加初始流动性
@@ -176,7 +194,9 @@ contract RealProtocolIntegrationTest is Test {
      * @notice 测试完整的多协议集成流程
      */
     function testCompleteMultiProtocolIntegration() public {
-        console.log("=== Starting Complete Multi-Protocol Integration Test ===");
+        console.log(
+            "=== Starting Complete Multi-Protocol Integration Test ==="
+        );
 
         // 1. 创建金库
         _createVault();
@@ -222,13 +242,20 @@ contract RealProtocolIntegrationTest is Test {
         vm.stopPrank();
 
         // 验证适配器已添加
-        assertTrue(manager.isAdapterApproved(IProtocolAdapter(address(aaveAdapter))), "Aave adapter should be approved");
         assertTrue(
-            manager.isAdapterApproved(IProtocolAdapter(address(uniswapV2Adapter))),
+            manager.isAdapterApproved(IProtocolAdapter(address(aaveAdapter))),
+            "Aave adapter should be approved"
+        );
+        assertTrue(
+            manager.isAdapterApproved(
+                IProtocolAdapter(address(uniswapV2Adapter))
+            ),
             "UniswapV2 adapter should be approved"
         );
         assertTrue(
-            manager.isAdapterApproved(IProtocolAdapter(address(uniswapV3Adapter))),
+            manager.isAdapterApproved(
+                IProtocolAdapter(address(uniswapV3Adapter))
+            ),
             "UniswapV3 adapter should be approved"
         );
         assertEq(manager.getAllAdapters().length, 3, "Should have 3 adapters");
@@ -251,7 +278,9 @@ contract RealProtocolIntegrationTest is Test {
         manager.updateHoldingAllocation(usdc, adapterIndices, allocationData);
 
         emit AssetAllocationUpdated(allocationData);
-        console.log(" Initial asset allocation set: Aave 50%, UniswapV2 30%, UniswapV3 20%");
+        console.log(
+            " Initial asset allocation set: Aave 50%, UniswapV2 30%, UniswapV3 20%"
+        );
     }
 
     function _userDeposit() internal {
@@ -273,12 +302,16 @@ contract RealProtocolIntegrationTest is Test {
         console.log(" Aave investment value:", aaveValue);
 
         // 验证 UniswapV2 投资
-        uint256 uniswapV2Value = uniswapV2Adapter.getTotalValue(IERC20(address(usdc)));
+        uint256 uniswapV2Value = uniswapV2Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
         assertGt(uniswapV2Value, 0, "UniswapV2 should have invested value");
         console.log(" UniswapV2 investment value:", uniswapV2Value);
 
         // 验证 UniswapV3 投资
-        uint256 uniswapV3Value = uniswapV3Adapter.getTotalValue(IERC20(address(usdc)));
+        uint256 uniswapV3Value = uniswapV3Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
         assertGt(uniswapV3Value, 0, "UniswapV3 should have invested value");
         console.log(" UniswapV3 investment value:", uniswapV3Value);
 
@@ -292,8 +325,12 @@ contract RealProtocolIntegrationTest is Test {
 
         // 测试各适配器的资产查询
         uint256 aaveValue = aaveAdapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV2Value = uniswapV2Adapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV3Value = uniswapV3Adapter.getTotalValue(IERC20(address(usdc)));
+        uint256 uniswapV2Value = uniswapV2Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV3Value = uniswapV3Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
 
         // 验证查询结果的一致性
         assertTrue(aaveValue > 0, "Aave value should be positive");
@@ -301,9 +338,21 @@ contract RealProtocolIntegrationTest is Test {
         assertTrue(uniswapV3Value > 0, "UniswapV3 value should be positive");
 
         // 测试适配器名称查询
-        assertEq(aaveAdapter.getName(), "Aave", "Aave adapter name should match");
-        assertEq(uniswapV2Adapter.getName(), "UniswapV2", "UniswapV2 adapter name should match");
-        assertEq(uniswapV3Adapter.getName(), "UniswapV3", "UniswapV3 adapter name should match");
+        assertEq(
+            aaveAdapter.getName(),
+            "Aave",
+            "Aave adapter name should match"
+        );
+        assertEq(
+            uniswapV2Adapter.getName(),
+            "UniswapV2",
+            "UniswapV2 adapter name should match"
+        );
+        assertEq(
+            uniswapV3Adapter.getName(),
+            "UniswapV3",
+            "UniswapV3 adapter name should match"
+        );
 
         console.log(" Asset query accuracy verification passed");
     }
@@ -312,11 +361,17 @@ contract RealProtocolIntegrationTest is Test {
         console.log("=== Testing Manager Parameter Adjustments ===");
 
         // 1. 测试通过管理器执行适配器调用 - 获取名字
-        bytes memory data = abi.encodeWithSelector(aaveAdapter.getName.selector);
+        bytes memory data = abi.encodeWithSelector(
+            aaveAdapter.getName.selector
+        );
         vm.prank(owner);
         bytes memory result = manager.execute(0, 0, data);
         string memory name = abi.decode(result, (string));
-        assertEq(name, "Aave", "Manager should be able to call adapter functions");
+        assertEq(
+            name,
+            "Aave",
+            "Manager should be able to call adapter functions"
+        );
 
         // 2. 先设置适配器的owner为manager，然后测试通过管理器更新UniswapV2的滑点容忍度
         console.log("Testing UniswapV2 slippage tolerance update...");
@@ -326,15 +381,23 @@ contract RealProtocolIntegrationTest is Test {
         uniswapV2Adapter.transferOwnership(address(manager));
 
         uint256 newSlippageV2 = 200; // 2%
-        bytes memory updateSlippageV2Data =
-            abi.encodeWithSelector(uniswapV2Adapter.UpdateTokenSlippageTolerance.selector, usdc, newSlippageV2);
+        bytes memory updateSlippageV2Data = abi.encodeWithSelector(
+            uniswapV2Adapter.UpdateTokenSlippageTolerance.selector,
+            usdc,
+            newSlippageV2
+        );
 
         vm.prank(owner);
         manager.execute(1, 0, updateSlippageV2Data);
 
         // 验证滑点容忍度是否更新
-        UniswapV2Adapter.TokenConfig memory configV2 = uniswapV2Adapter.getTokenConfig(usdc);
-        assertEq(configV2.slippageTolerance, newSlippageV2, "UniswapV2 slippage tolerance should be updated");
+        UniswapV2Adapter.TokenConfig memory configV2 = uniswapV2Adapter
+            .getTokenConfig(usdc);
+        assertEq(
+            configV2.slippageTolerance,
+            newSlippageV2,
+            "UniswapV2 slippage tolerance should be updated"
+        );
 
         // 3. 设置UniswapV3适配器的owner为manager，然后测试通过管理器更新UniswapV3的滑点容忍度
         console.log("Testing UniswapV3 slippage tolerance update...");
@@ -344,15 +407,23 @@ contract RealProtocolIntegrationTest is Test {
         uniswapV3Adapter.transferOwnership(address(manager));
 
         uint256 newSlippageV3 = 150; // 1.5%
-        bytes memory updateSlippageV3Data =
-            abi.encodeWithSelector(uniswapV3Adapter.UpdateTokenSlippageTolerance.selector, usdc, newSlippageV3);
+        bytes memory updateSlippageV3Data = abi.encodeWithSelector(
+            uniswapV3Adapter.UpdateTokenSlippageTolerance.selector,
+            usdc,
+            newSlippageV3
+        );
 
         vm.prank(owner);
         manager.execute(2, 0, updateSlippageV3Data);
 
         // 验证滑点容忍度是否更新
-        UniswapV3Adapter.TokenConfig memory configV3 = uniswapV3Adapter.getTokenConfig(usdc);
-        assertEq(configV3.slippageTolerance, newSlippageV3, "UniswapV3 slippage tolerance should be updated");
+        UniswapV3Adapter.TokenConfig memory configV3 = uniswapV3Adapter
+            .getTokenConfig(usdc);
+        assertEq(
+            configV3.slippageTolerance,
+            newSlippageV3,
+            "UniswapV3 slippage tolerance should be updated"
+        );
 
         // 4. 测试批量调用 - 获取所有适配器的名字
         uint256[] memory adapterIndices = new uint256[](3);
@@ -371,7 +442,11 @@ contract RealProtocolIntegrationTest is Test {
         callData[2] = abi.encodeWithSelector(uniswapV3Adapter.getName.selector);
 
         vm.prank(owner);
-        bytes[] memory results = manager.executeBatch(adapterIndices, values, callData);
+        bytes[] memory results = manager.executeBatch(
+            adapterIndices,
+            values,
+            callData
+        );
 
         string memory name1 = abi.decode(results[0], (string));
         string memory name2 = abi.decode(results[1], (string));
@@ -385,8 +460,12 @@ contract RealProtocolIntegrationTest is Test {
         console.log("Testing UniswapV3 TokenConfig update...");
 
         // 记录更新前的配置
-        UniswapV3Adapter.TokenConfig memory configBefore = uniswapV3Adapter.getTokenConfig(usdc);
-        console.log("UniswapV3 config before update - tokenId:", configBefore.tokenId);
+        UniswapV3Adapter.TokenConfig memory configBefore = uniswapV3Adapter
+            .getTokenConfig(usdc);
+        console.log(
+            "UniswapV3 config before update - tokenId:",
+            configBefore.tokenId
+        );
 
         // 通过manager调用UpdateTokenConfig
         bytes memory updateConfigData = abi.encodeWithSelector(
@@ -402,32 +481,57 @@ contract RealProtocolIntegrationTest is Test {
         manager.execute(2, 0, updateConfigData);
 
         // 验证配置是否更新
-        UniswapV3Adapter.TokenConfig memory configAfter = uniswapV3Adapter.getTokenConfig(usdc);
-        assertEq(address(configAfter.counterPartyToken), address(weth), "Counter party token should be updated");
+        UniswapV3Adapter.TokenConfig memory configAfter = uniswapV3Adapter
+            .getTokenConfig(usdc);
+        assertEq(
+            address(configAfter.counterPartyToken),
+            address(weth),
+            "Counter party token should be updated"
+        );
         // 注意：滑点容忍度保持之前设置的值150，因为UpdateTokenConfig不会重置它
-        assertEq(configAfter.slippageTolerance, 150, "Slippage tolerance should remain unchanged");
-        console.log("UniswapV3 config after update - tokenId:", configAfter.tokenId);
+        assertEq(
+            configAfter.slippageTolerance,
+            150,
+            "Slippage tolerance should remain unchanged"
+        );
+        console.log(
+            "UniswapV3 config after update - tokenId:",
+            configAfter.tokenId
+        );
 
         // 6. 测试通过管理器更新UniswapV2的TokenConfig
         console.log("Testing UniswapV2 TokenConfig update...");
 
         // 记录更新前的配置
-        UniswapV2Adapter.TokenConfig memory configV2Before = uniswapV2Adapter.getTokenConfig(usdc);
-        console.log("UniswapV2 config before update - counterPartyToken:", address(configV2Before.counterPartyToken));
+        UniswapV2Adapter.TokenConfig memory configV2Before = uniswapV2Adapter
+            .getTokenConfig(usdc);
+        console.log(
+            "UniswapV2 config before update - counterPartyToken:",
+            address(configV2Before.counterPartyToken)
+        );
 
         // 通过manager调用updateTokenConfigAndReinvest
-        bytes memory updateConfigV2Data =
-            abi.encodeWithSelector(uniswapV2Adapter.updateTokenConfigAndReinvest.selector, usdc, weth);
+        bytes memory updateConfigV2Data = abi.encodeWithSelector(
+            uniswapV2Adapter.updateTokenConfigAndReinvest.selector,
+            usdc,
+            weth
+        );
 
         vm.prank(owner);
         manager.execute(1, 0, updateConfigV2Data);
 
         // 验证配置是否更新
-        UniswapV2Adapter.TokenConfig memory configV2After = uniswapV2Adapter.getTokenConfig(usdc);
+        UniswapV2Adapter.TokenConfig memory configV2After = uniswapV2Adapter
+            .getTokenConfig(usdc);
         assertEq(
-            address(configV2After.counterPartyToken), address(weth), "UniswapV2 counter party token should be updated"
+            address(configV2After.counterPartyToken),
+            address(weth),
+            "UniswapV2 counter party token should be updated"
         );
-        console.log("UniswapV2 config after update - counterPartyToken:", address(configV2After.counterPartyToken));
+        console.log(
+            "UniswapV2 config after update - counterPartyToken:",
+            address(configV2After.counterPartyToken)
+        );
 
         // 7. 测试批量更新滑点容忍度
         console.log("Testing batch slippage tolerance updates...");
@@ -455,11 +559,21 @@ contract RealProtocolIntegrationTest is Test {
         manager.executeBatch(batchAdapterIndices, batchValues, batchCallData);
 
         // 验证批量更新后的滑点容忍度
-        UniswapV2Adapter.TokenConfig memory finalConfigV2 = uniswapV2Adapter.getTokenConfig(usdc);
-        UniswapV3Adapter.TokenConfig memory finalConfigV3 = uniswapV3Adapter.getTokenConfig(usdc);
+        UniswapV2Adapter.TokenConfig memory finalConfigV2 = uniswapV2Adapter
+            .getTokenConfig(usdc);
+        UniswapV3Adapter.TokenConfig memory finalConfigV3 = uniswapV3Adapter
+            .getTokenConfig(usdc);
 
-        assertEq(finalConfigV2.slippageTolerance, 300, "UniswapV2 slippage tolerance should be updated via batch");
-        assertEq(finalConfigV3.slippageTolerance, 250, "UniswapV3 slippage tolerance should be updated via batch");
+        assertEq(
+            finalConfigV2.slippageTolerance,
+            300,
+            "UniswapV2 slippage tolerance should be updated via batch"
+        );
+        assertEq(
+            finalConfigV3.slippageTolerance,
+            250,
+            "UniswapV3 slippage tolerance should be updated via batch"
+        );
 
         console.log(" Manager parameter adjustment functionality verified");
     }
@@ -468,9 +582,15 @@ contract RealProtocolIntegrationTest is Test {
         console.log("=== Testing Partial Asset Reallocation ===");
 
         // 记录重新分配前的价值
-        uint256 aaveValueBefore = aaveAdapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV2ValueBefore = uniswapV2Adapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV3ValueBefore = uniswapV3Adapter.getTotalValue(IERC20(address(usdc)));
+        uint256 aaveValueBefore = aaveAdapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV2ValueBefore = uniswapV2Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV3ValueBefore = uniswapV3Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
 
         // 从 Aave 撤资 100 USDC，投资到 UniswapV3
         uint256[] memory divestAdapterIndices = new uint256[](1);
@@ -494,13 +614,27 @@ contract RealProtocolIntegrationTest is Test {
         console.log("UniswapV3 value before investment:", uniswapV3ValueBefore);
         console.log("Aave value before divestment:", aaveValueBefore);
         console.log("UniswapV2 value before divestment:", uniswapV2ValueBefore);
-        console.log("USDC balance of vault before:", usdc.balanceOf(vaultAddress));
-        console.log("USDC balance of Aave adapter before:", usdc.balanceOf(address(aaveAdapter)));
-        console.log("USDC balance of UniswapV3 adapter before:", usdc.balanceOf(address(uniswapV3Adapter)));
-        console.log("WETH balance of UniswapV3 adapter before:", weth.balanceOf(address(uniswapV3Adapter)));
+        console.log(
+            "USDC balance of vault before:",
+            usdc.balanceOf(vaultAddress)
+        );
+        console.log(
+            "USDC balance of Aave adapter before:",
+            usdc.balanceOf(address(aaveAdapter))
+        );
+        console.log(
+            "USDC balance of UniswapV3 adapter before:",
+            usdc.balanceOf(address(uniswapV3Adapter))
+        );
+        console.log(
+            "WETH balance of UniswapV3 adapter before:",
+            weth.balanceOf(address(uniswapV3Adapter))
+        );
 
         // 检查 Aave 适配器的 aToken 余额
-        try aaveAdapter.getTotalValue(IERC20(address(usdc))) returns (uint256 value) {
+        try aaveAdapter.getTotalValue(IERC20(address(usdc))) returns (
+            uint256 value
+        ) {
             console.log("Aave adapter total value:", value);
         } catch {
             console.log("Failed to get Aave adapter total value");
@@ -508,28 +642,59 @@ contract RealProtocolIntegrationTest is Test {
 
         vm.prank(owner);
         manager.partialUpdateHoldingAllocation(
-            usdc, divestAdapterIndices, divestAmounts, investAdapterIndices, investAmounts, investAllocations
+            usdc,
+            divestAdapterIndices,
+            divestAmounts,
+            investAdapterIndices,
+            investAmounts,
+            investAllocations
         );
 
-        console.log("USDC balance of vault after divestment:", usdc.balanceOf(vaultAddress));
-        console.log("USDC balance of Aave adapter after divestment:", usdc.balanceOf(address(aaveAdapter)));
+        console.log(
+            "USDC balance of vault after divestment:",
+            usdc.balanceOf(vaultAddress)
+        );
+        console.log(
+            "USDC balance of Aave adapter after divestment:",
+            usdc.balanceOf(address(aaveAdapter))
+        );
 
-        console.log("USDC balance of UniswapV3 adapter after:", usdc.balanceOf(address(uniswapV3Adapter)));
-        console.log("WETH balance of UniswapV3 adapter after:", weth.balanceOf(address(uniswapV3Adapter)));
+        console.log(
+            "USDC balance of UniswapV3 adapter after:",
+            usdc.balanceOf(address(uniswapV3Adapter))
+        );
+        console.log(
+            "WETH balance of UniswapV3 adapter after:",
+            weth.balanceOf(address(uniswapV3Adapter))
+        );
 
         // 检查 UniswapV3 适配器的 tokenId
-        try uniswapV3Adapter.getTokenConfig(usdc) returns (UniswapV3Adapter.TokenConfig memory config) {
+        try uniswapV3Adapter.getTokenConfig(usdc) returns (
+            UniswapV3Adapter.TokenConfig memory config
+        ) {
             console.log("UniswapV3 tokenId:", config.tokenId);
         } catch {
             console.log("Failed to get UniswapV3 token config");
         }
 
         // 验证重新分配后的价值变化
-        uint256 aaveValueAfter = aaveAdapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV3ValueAfter = uniswapV3Adapter.getTotalValue(IERC20(address(usdc)));
+        uint256 aaveValueAfter = aaveAdapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV3ValueAfter = uniswapV3Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
 
-        assertLt(aaveValueAfter, aaveValueBefore, "Aave value should decrease after divestment");
-        assertGt(uniswapV3ValueAfter, uniswapV3ValueBefore, "UniswapV3 value should increase after investment");
+        assertLt(
+            aaveValueAfter,
+            aaveValueBefore,
+            "Aave value should decrease after divestment"
+        );
+        assertGt(
+            uniswapV3ValueAfter,
+            uniswapV3ValueBefore,
+            "UniswapV3 value should increase after investment"
+        );
 
         console.log(" Partial asset reallocation verification passed");
     }
@@ -538,9 +703,15 @@ contract RealProtocolIntegrationTest is Test {
         console.log("=== Testing UniswapV2 Partial Asset Reallocation ===");
 
         // 记录重新分配前的价值
-        uint256 aaveValueBefore = aaveAdapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV2ValueBefore = uniswapV2Adapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV3ValueBefore = uniswapV3Adapter.getTotalValue(IERC20(address(usdc)));
+        uint256 aaveValueBefore = aaveAdapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV2ValueBefore = uniswapV2Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV3ValueBefore = uniswapV3Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
 
         // 从 Aave 撤资 50 USDC，投资到 UniswapV2
         uint256[] memory divestAdapterIndices = new uint256[](1);
@@ -564,26 +735,51 @@ contract RealProtocolIntegrationTest is Test {
 
         vm.prank(owner);
         manager.partialUpdateHoldingAllocation(
-            usdc, divestAdapterIndices, divestAmounts, investAdapterIndices, investAmounts, investAllocations
+            usdc,
+            divestAdapterIndices,
+            divestAmounts,
+            investAdapterIndices,
+            investAmounts,
+            investAllocations
         );
 
         // 验证重新分配后的价值变化
-        uint256 aaveValueAfter = aaveAdapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV2ValueAfter = uniswapV2Adapter.getTotalValue(IERC20(address(usdc)));
+        uint256 aaveValueAfter = aaveAdapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV2ValueAfter = uniswapV2Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
 
-        assertLt(aaveValueAfter, aaveValueBefore, "Aave value should decrease after divestment");
-        assertGt(uniswapV2ValueAfter, uniswapV2ValueBefore, "UniswapV2 value should increase after investment");
+        assertLt(
+            aaveValueAfter,
+            aaveValueBefore,
+            "Aave value should decrease after divestment"
+        );
+        assertGt(
+            uniswapV2ValueAfter,
+            uniswapV2ValueBefore,
+            "UniswapV2 value should increase after investment"
+        );
 
-        console.log(" UniswapV2 partial asset reallocation verification passed");
+        console.log(
+            " UniswapV2 partial asset reallocation verification passed"
+        );
     }
 
     function _testDivestmentProcess() internal {
         console.log("=== Testing Divestment Process ===");
 
         // 记录撤资前的价值
-        uint256 aaveValueBefore = aaveAdapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV2ValueBefore = uniswapV2Adapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV3ValueBefore = uniswapV3Adapter.getTotalValue(IERC20(address(usdc)));
+        uint256 aaveValueBefore = aaveAdapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV2ValueBefore = uniswapV2Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV3ValueBefore = uniswapV3Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
         console.log("UniswapV2 value before withdrawal:", uniswapV2ValueBefore);
         console.log("UniswapV3 value before withdrawal:", uniswapV3ValueBefore);
         console.log("Aave value before withdrawal:", aaveValueBefore);
@@ -593,13 +789,31 @@ contract RealProtocolIntegrationTest is Test {
         manager.withdrawAllInvestments(usdc);
 
         // 验证所有投资已撤回
-        uint256 aaveValueAfter = aaveAdapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV2ValueAfter = uniswapV2Adapter.getTotalValue(IERC20(address(usdc)));
-        uint256 uniswapV3ValueAfter = uniswapV3Adapter.getTotalValue(IERC20(address(usdc)));
+        uint256 aaveValueAfter = aaveAdapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV2ValueAfter = uniswapV2Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
+        uint256 uniswapV3ValueAfter = uniswapV3Adapter.getTotalValue(
+            IERC20(address(usdc))
+        );
 
-        assertEq(aaveValueAfter, 0, "Aave should have 0 value after withdrawal");
-        assertEq(uniswapV2ValueAfter, 0, "UniswapV2 should have 0 value after withdrawal");
-        assertEq(uniswapV3ValueAfter, 0, "UniswapV3 should have 0 value after withdrawal");
+        assertEq(
+            aaveValueAfter,
+            0,
+            "Aave should have 0 value after withdrawal"
+        );
+        assertEq(
+            uniswapV2ValueAfter,
+            0,
+            "UniswapV2 should have 0 value after withdrawal"
+        );
+        assertEq(
+            uniswapV3ValueAfter,
+            0,
+            "UniswapV3 should have 0 value after withdrawal"
+        );
 
         console.log(" Divestment process verification passed");
     }
@@ -611,12 +825,17 @@ contract RealProtocolIntegrationTest is Test {
         console.log("=== Testing Adapter Compatibility ===");
 
         // 测试所有适配器都实现了标准接口
-        assertTrue(_implementsInterface(address(aaveAdapter)), "Aave adapter should implement IProtocolAdapter");
         assertTrue(
-            _implementsInterface(address(uniswapV2Adapter)), "UniswapV2 adapter should implement IProtocolAdapter"
+            _implementsInterface(address(aaveAdapter)),
+            "Aave adapter should implement IProtocolAdapter"
         );
         assertTrue(
-            _implementsInterface(address(uniswapV3Adapter)), "UniswapV3 adapter should implement IProtocolAdapter"
+            _implementsInterface(address(uniswapV2Adapter)),
+            "UniswapV2 adapter should implement IProtocolAdapter"
+        );
+        assertTrue(
+            _implementsInterface(address(uniswapV3Adapter)),
+            "UniswapV3 adapter should implement IProtocolAdapter"
         );
 
         // 测试适配器方法调用
@@ -625,7 +844,9 @@ contract RealProtocolIntegrationTest is Test {
         console.log(" Adapter compatibility verification passed");
     }
 
-    function _implementsInterface(address adapter) internal view returns (bool) {
+    function _implementsInterface(
+        address adapter
+    ) internal view returns (bool) {
         try IProtocolAdapter(adapter).getName() returns (string memory) {
             return true;
         } catch {
@@ -681,14 +902,20 @@ contract RealProtocolIntegrationTest is Test {
         console.log("=== Test Vault state manager ===");
 
         // 验证金库初始状态
-        assertTrue(VaultShares(vaultAddress).getIsActive(), "Vault should be active initially");
+        assertTrue(
+            VaultShares(vaultAddress).getIsActive(),
+            "Vault should be active initially"
+        );
 
         // 设置金库为非活跃状态
         vm.prank(owner);
         manager.setVaultNotActive(usdc);
 
         // 验证金库状态已改变
-        assertFalse(VaultShares(vaultAddress).getIsActive(), "Vault should be inactive after setting");
+        assertFalse(
+            VaultShares(vaultAddress).getIsActive(),
+            "Vault should be inactive after setting"
+        );
 
         console.log(" Test Vault state manager pass");
     }

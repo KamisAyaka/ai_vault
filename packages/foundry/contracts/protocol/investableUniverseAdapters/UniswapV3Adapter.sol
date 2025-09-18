@@ -538,32 +538,49 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
                 newLiquidity
             );
 
-        // 检查是否需要进行代币交换以满足新区间需求
-        if (balance0 < newAmount0Desired || balance1 < newAmount1Desired) {
-            // 需要交换代币以满足流动性需求
-            if (balance0 < newAmount0Desired && balance1 > newAmount1Desired) {
-                // 需要更多token0，有多余的token1
-                uint256 amountToSwap = newAmount0Desired - balance0;
-                _swapToken(
-                    IERC20(token1Addr),
-                    IERC20(token0Addr),
-                    config.feeTier,
-                    amountToSwap,
-                    config.slippageTolerance
-                );
-            } else if (
-                balance1 < newAmount1Desired && balance0 > newAmount0Desired
-            ) {
-                // 需要更多token1，有多余的token0
-                uint256 amountToSwap = newAmount1Desired - balance1;
-                _swapToken(
-                    IERC20(token0Addr),
-                    IERC20(token1Addr),
-                    config.feeTier,
-                    amountToSwap,
-                    config.slippageTolerance
-                );
-            }
+        // 统一的代币交换逻辑：根据实际需求进行交换
+        if (balance0 < newAmount0Desired && balance1 > newAmount1Desired) {
+            // 需要更多token0，有多余的token1
+            uint256 amountToSwap = newAmount0Desired - balance0;
+            _swapToken(
+                IERC20(token1Addr),
+                IERC20(token0Addr),
+                config.feeTier,
+                amountToSwap,
+                config.slippageTolerance
+            );
+        } else if (
+            balance1 < newAmount1Desired && balance0 > newAmount0Desired
+        ) {
+            // 需要更多token1，有多余的token0
+            uint256 amountToSwap = newAmount1Desired - balance1;
+            _swapToken(
+                IERC20(token0Addr),
+                IERC20(token1Addr),
+                config.feeTier,
+                amountToSwap,
+                config.slippageTolerance
+            );
+        } else if (balance0 == 0 && balance1 > 0) {
+            // 只有token1，需要交换一部分获得token0
+            uint256 amountToSwap = balance1 / 2;
+            _swapToken(
+                IERC20(token1Addr),
+                IERC20(token0Addr),
+                config.feeTier,
+                amountToSwap,
+                config.slippageTolerance
+            );
+        } else if (balance1 == 0 && balance0 > 0) {
+            // 只有token0，需要交换一部分获得token1
+            uint256 amountToSwap = balance0 / 2;
+            _swapToken(
+                IERC20(token0Addr),
+                IERC20(token1Addr),
+                config.feeTier,
+                amountToSwap,
+                config.slippageTolerance
+            );
         }
 
         // 更新余额
@@ -684,13 +701,49 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
                     liquidityToRemove = currentLiquidity;
                     isFullDivestment = true;
                 } else {
-                    // 使用Uniswap V3的正确算法计算需要移除的流动性
-                    liquidityToRemove = _calculateLiquidityToRemove(
+                    // 使用 LiquidityAmounts 库直接计算需要移除的流动性
+                    (address token0Addr, ) = sortTokens(
                         asset,
-                        tokenAmount,
-                        config,
-                        currentLiquidity
+                        config.counterPartyToken
                     );
+                    (uint160 sqrtPriceX96, , , , , , ) = config.pool.slot0();
+                    uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(
+                        config.tickLower
+                    );
+                    uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(
+                        config.tickUpper
+                    );
+
+                    // 根据要提取的代币类型设置amount0和amount1
+                    uint256 amount0 = 0;
+                    uint256 amount1 = 0;
+
+                    if (address(asset) == token0Addr) {
+                        amount0 = tokenAmount;
+                    } else {
+                        amount1 = tokenAmount;
+                    }
+
+                    // 使用 LiquidityAmounts 库直接计算需要的流动性
+                    liquidityToRemove = LiquidityAmounts.getLiquidityForAmounts(
+                            sqrtPriceX96,
+                            sqrtRatioAX96,
+                            sqrtRatioBX96,
+                            amount0,
+                            amount1
+                        );
+
+                    // 如果计算出的流动性为0，可能是因为价格区间太小或价格在边界
+                    // 在这种情况下，如果请求的金额很大，就进行完全撤资
+                    if (liquidityToRemove == 0 && tokenAmount >= 100e18) {
+                        liquidityToRemove = currentLiquidity;
+                        isFullDivestment = true;
+                    }
+
+                    // 确保不超过当前流动性
+                    if (liquidityToRemove > currentLiquidity) {
+                        liquidityToRemove = currentLiquidity;
+                    }
 
                     // 如果请求的流动性大于等于当前流动性的90%，则完全撤资
                     // 这样可以避免由于精度问题导致的部分撤资被误判为完全撤资
@@ -745,79 +798,6 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
 
         emit UniswapV3Divested(address(asset), assetBalance);
         return assetBalance;
-    }
-
-    /**
-     * @notice 计算需要移除的流动性数量以提取指定数量的代币
-     * @param asset 要提取的资产代币
-     * @param tokenAmount 要提取的代币数量
-     * @param config 代币配置
-     * @param currentLiquidity 当前流动性数量
-     * @return liquidityToRemove 需要移除的流动性数量
-     */
-    function _calculateLiquidityToRemove(
-        IERC20 asset,
-        uint256 tokenAmount,
-        TokenConfig memory config,
-        uint128 currentLiquidity
-    ) internal view returns (uint256 liquidityToRemove) {
-        // 确定token0和token1的顺序
-        (address token0Addr, ) = sortTokens(asset, config.counterPartyToken);
-
-        // 获取当前价格
-        (uint160 sqrtPriceX96, , , , , , ) = config.pool.slot0();
-
-        // 计算价格区间的sqrt价格
-        uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(config.tickLower);
-        uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(config.tickUpper);
-
-        // 根据当前价格位置和要提取的代币类型计算流动性
-        if (address(asset) == token0Addr) {
-            // 要提取的是token0
-            if (sqrtPriceX96 <= sqrtRatioAX96) {
-                // 当前价格在区间下方，只有token0
-                liquidityToRemove = LiquidityAmounts.getLiquidityForAmount0(
-                    sqrtRatioAX96,
-                    sqrtRatioBX96,
-                    tokenAmount
-                );
-            } else if (sqrtPriceX96 < sqrtRatioBX96) {
-                // 当前价格在区间内，需要计算token0对应的流动性
-                liquidityToRemove = LiquidityAmounts.getLiquidityForAmount0(
-                    sqrtPriceX96,
-                    sqrtRatioBX96,
-                    tokenAmount
-                );
-            } else {
-                // 当前价格在区间上方，没有token0
-                liquidityToRemove = 0;
-            }
-        } else {
-            // 要提取的是token1
-            if (sqrtPriceX96 <= sqrtRatioAX96) {
-                // 当前价格在区间下方，没有token1
-                liquidityToRemove = 0;
-            } else if (sqrtPriceX96 < sqrtRatioBX96) {
-                // 当前价格在区间内，需要计算token1对应的流动性
-                liquidityToRemove = LiquidityAmounts.getLiquidityForAmount1(
-                    sqrtRatioAX96,
-                    sqrtPriceX96,
-                    tokenAmount
-                );
-            } else {
-                // 当前价格在区间上方，只有token1
-                liquidityToRemove = LiquidityAmounts.getLiquidityForAmount1(
-                    sqrtRatioAX96,
-                    sqrtRatioBX96,
-                    tokenAmount
-                );
-            }
-        }
-
-        // 确保不超过当前流动性
-        if (liquidityToRemove > currentLiquidity) {
-            liquidityToRemove = currentLiquidity;
-        }
     }
 
     /**

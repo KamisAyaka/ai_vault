@@ -368,12 +368,6 @@ contract RealisticNonfungiblePositionManager is ERC721 {
         Position storage pos = _positions[params.tokenId];
         require(pos.liquidity >= params.liquidity, "INSUFFICIENT_LIQ");
 
-        // 获取当前池子价格
-        RealisticUniswapV3Pool pool = RealisticUniswapV3Pool(
-            _getPoolAddress(pos.token0, pos.token1, pos.fee)
-        );
-        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
-
         // 简化计算：直接使用流动性数量作为代币数量
         amount0 = params.liquidity / 2;
         amount1 = params.liquidity / 2;
