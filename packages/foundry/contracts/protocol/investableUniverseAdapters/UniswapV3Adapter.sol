@@ -68,6 +68,12 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         address indexed vault,
         uint256 indexed tokenId
     );
+    event DebugDivestment(
+        uint256 tokenAmount,
+        uint256 liquidityToRemove,
+        uint256 currentLiquidity,
+        bool isFullDivestment
+    );
 
     constructor(
         address uniswapV3Router,
@@ -185,30 +191,9 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
 
         TokenConfig memory config = getTokenConfig(token);
 
-        // 如果已有持仓，则先撤资
+        // 如果已有持仓，则先撤资（因为配置必然改变）
         if (config.tokenId != 0) {
-            // 获取当前position的流动性
-            try i_positionManager.positions(config.tokenId) returns (
-                uint96,
-                address,
-                address,
-                address,
-                uint24,
-                int24,
-                int24,
-                uint128 liquidity,
-                uint256,
-                uint256,
-                uint128,
-                uint128
-            ) {
-                if (liquidity > 0) {
-                    // 执行撤资操作，使用内部divest函数逻辑
-                    _divest(token, liquidity, config);
-                }
-            } catch {
-                // 如果获取position信息失败，继续执行配置更新
-            }
+            _divest(token, type(uint256).max, config);
         }
 
         (address token0Addr, address token1Addr) = sortTokens(
@@ -232,90 +217,22 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
 
         // 获取适配器中可用的资产余额并重新投资
         uint256 availableAssets = token.balanceOf(address(this));
-        if (availableAssets > 0 && config.VaultAddress != address(0)) {
+        if (availableAssets > 0) {
             // 更新配置后再投资，使用内部invest函数逻辑
-            _invest(token, availableAssets);
+            (
+                uint128 liquidityMinted,
+                uint256 amount0,
+                uint256 amount1
+            ) = _investWithBalances(token);
+            emit UniswapV3Invested(
+                address(token),
+                amount0,
+                amount1,
+                liquidityMinted
+            );
         }
 
         emit TokenConfigUpdated(address(token));
-    }
-
-    /**
-     * @notice 重新分配流动性到新的费率和价格区间
-     * @param token 代币地址
-     * @param newFeeTier 新的费率层级
-     * @param newTickLower 新的价格区间下限
-     * @param newTickUpper 新的价格区间上限
-     */
-    function UpdateTokenFeeTierAndPriceRange(
-        IERC20 token,
-        uint24 newFeeTier,
-        int24 newTickLower,
-        int24 newTickUpper
-    ) external onlyOwner {
-        TokenConfig memory config = getTokenConfig(token);
-        // 如果已有持仓，则先撤资
-        if (config.tokenId != 0) {
-            // 获取当前position的流动性
-            try i_positionManager.positions(config.tokenId) returns (
-                uint96,
-                address,
-                address,
-                address,
-                uint24,
-                int24,
-                int24,
-                uint128 liquidity,
-                uint256,
-                uint256,
-                uint128,
-                uint128
-            ) {
-                if (liquidity > 0) {
-                    // 执行撤资操作，使用内部_removeLiquidityAndCollectTokens函数逻辑
-                    _removeLiquidityAndCollectTokens(
-                        config,
-                        config.tokenId,
-                        liquidity
-                    );
-                }
-            } catch {
-                // 如果获取position信息失败，继续执行配置更新
-            }
-        }
-
-        // 3. 获取新的池子地址
-        (address token0Addr, address token1Addr) = sortTokens(
-            token,
-            config.counterPartyToken
-        );
-        address newPoolAddress = i_factory.getPool(
-            token0Addr,
-            token1Addr,
-            newFeeTier
-        );
-        IUniswapV3Pool newPool = IUniswapV3Pool(newPoolAddress);
-        // 4. 燃烧旧的NFT并更新配置
-        i_positionManager.burn(config.tokenId);
-        // 更新配置中的tokenId和其他参数
-        s_tokenConfigs[token].feeTier = newFeeTier;
-        s_tokenConfigs[token].tickLower = newTickLower;
-        s_tokenConfigs[token].tickUpper = newTickUpper;
-        s_tokenConfigs[token].pool = newPool;
-
-        // 5. 使用统一的投资逻辑创建新的流动性位置
-        (
-            uint128 liquidityMinted,
-            uint256 newAmount0,
-            uint256 newAmount1
-        ) = _investWithBalances(token, config);
-
-        emit UniswapV3Invested(
-            address(token),
-            newAmount0,
-            newAmount1,
-            liquidityMinted
-        );
     }
 
     /**
@@ -334,7 +251,17 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         }
         // 每次投资都由金库注入指定金额
         asset.safeTransferFrom(msg.sender, address(this), amount);
-        _invest(asset, amount);
+        (
+            uint128 liquidityMinted,
+            uint256 amount0,
+            uint256 amount1
+        ) = _investWithBalances(asset);
+        emit UniswapV3Invested(
+            address(asset),
+            amount0,
+            amount1,
+            liquidityMinted
+        );
         // 返回请求投资的数量，符合测试对返回值的期望
         return amount;
     }
@@ -342,7 +269,7 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
     /**
      * @notice 从 Uniswap V3 协议中撤资
      * @param asset 金库的底层资产代币
-     * @param amount 要销毁的流动性数量
+     * @param amount 要撤资的底层资产代币数量
      * @return 实际撤资的数量
      */
     function divest(
@@ -564,18 +491,17 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
     /**
      * @notice 内部投资函数，使用合约中两种代币的实际余额进行投资
      * @param token 代币地址
-     * @param config 代币配置
      * @return liquidityMinted 添加的流动性数量
      * @return amount0 实际使用的token0数量
      * @return amount1 实际使用的token1数量
      */
     function _investWithBalances(
-        IERC20 token,
-        TokenConfig memory config
+        IERC20 token
     )
         internal
         returns (uint128 liquidityMinted, uint256 amount0, uint256 amount1)
     {
+        TokenConfig memory config = s_tokenConfigs[token];
         // 确定token0和token1的顺序
         (address token0Addr, address token1Addr) = sortTokens(
             token,
@@ -638,80 +564,91 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
                     config.slippageTolerance
                 );
             }
-
-            // 更新余额
-            balance0 = IERC20(token0Addr).balanceOf(address(this));
-            balance1 = IERC20(token1Addr).balanceOf(address(this));
         }
 
-        INonfungiblePositionManager.MintParams
-            memory mintParams = INonfungiblePositionManager.MintParams({
-                token0: token0Addr,
-                token1: token1Addr,
-                fee: config.feeTier,
-                tickLower: config.tickLower,
-                tickUpper: config.tickUpper,
-                amount0Desired: balance0,
-                amount1Desired: balance1,
-                amount0Min: (balance0 *
-                    (BASIS_POINTS_DIVISOR - config.slippageTolerance)) /
-                    BASIS_POINTS_DIVISOR,
-                amount1Min: (balance1 *
-                    (BASIS_POINTS_DIVISOR - config.slippageTolerance)) /
-                    BASIS_POINTS_DIVISOR,
-                recipient: address(this),
-                deadline: block.timestamp + DEADLINE_INTERVAL
-            });
+        // 更新余额
+        balance0 = IERC20(token0Addr).balanceOf(address(this));
+        balance1 = IERC20(token1Addr).balanceOf(address(this));
 
-        // 批准流动性添加
-        IERC20(token0Addr).forceApprove(address(i_positionManager), balance0);
-        IERC20(token1Addr).forceApprove(address(i_positionManager), balance1);
-        uint256 tokenId;
-        // 添加流动性到新区间
-        (tokenId, liquidityMinted, amount0, amount1) = i_positionManager.mint(
-            mintParams
-        );
-        s_tokenConfigs[token].tokenId = tokenId;
-    }
+        // 检查是否已有NFT位置
+        if (config.tokenId == 0) {
+            // 没有现有位置，创建新的NFT
+            INonfungiblePositionManager.MintParams
+                memory mintParams = INonfungiblePositionManager.MintParams({
+                    token0: token0Addr,
+                    token1: token1Addr,
+                    fee: config.feeTier,
+                    tickLower: config.tickLower,
+                    tickUpper: config.tickUpper,
+                    amount0Desired: balance0,
+                    amount1Desired: balance1,
+                    amount0Min: (balance0 *
+                        (BASIS_POINTS_DIVISOR - config.slippageTolerance)) /
+                        BASIS_POINTS_DIVISOR,
+                    amount1Min: (balance1 *
+                        (BASIS_POINTS_DIVISOR - config.slippageTolerance)) /
+                        BASIS_POINTS_DIVISOR,
+                    recipient: address(this),
+                    deadline: block.timestamp + DEADLINE_INTERVAL
+                });
 
-    /**
-     * @notice 内部投资函数
-     * @param asset 金库的底层资产代币
-     * @return 实际投资的数量
-     */
-    function _invest(
-        IERC20 asset,
-        uint256 /* amount */
-    ) internal returns (uint256) {
-        TokenConfig memory config = s_tokenConfigs[asset];
-        // 使用_investWithBalances函数完成投资操作
-        (
-            uint128 liquidityMinted,
-            uint256 amount0,
-            uint256 amount1
-        ) = _investWithBalances(asset, config);
+            // 批准流动性添加 - 需要授权两种代币
+            IERC20(token0Addr).forceApprove(
+                address(i_positionManager),
+                balance0
+            );
+            IERC20(token1Addr).forceApprove(
+                address(i_positionManager),
+                balance1
+            );
+            uint256 tokenId;
+            // 创建新的流动性位置
+            (tokenId, liquidityMinted, amount0, amount1) = i_positionManager
+                .mint(mintParams);
+            s_tokenConfigs[token].tokenId = tokenId;
+        } else {
+            // 已有位置，增加流动性到现有NFT
+            INonfungiblePositionManager.IncreaseLiquidityParams
+                memory increaseParams = INonfungiblePositionManager
+                    .IncreaseLiquidityParams({
+                        tokenId: config.tokenId,
+                        amount0Desired: balance0,
+                        amount1Desired: balance1,
+                        amount0Min: (balance0 *
+                            (BASIS_POINTS_DIVISOR - config.slippageTolerance)) /
+                            BASIS_POINTS_DIVISOR,
+                        amount1Min: (balance1 *
+                            (BASIS_POINTS_DIVISOR - config.slippageTolerance)) /
+                            BASIS_POINTS_DIVISOR,
+                        deadline: block.timestamp + DEADLINE_INTERVAL
+                    });
 
-        emit UniswapV3Invested(
-            address(asset),
-            amount0,
-            amount1,
-            liquidityMinted
-        );
+            // 批准流动性添加 - 需要授权两种代币
+            IERC20(token0Addr).forceApprove(
+                address(i_positionManager),
+                balance0
+            );
+            IERC20(token1Addr).forceApprove(
+                address(i_positionManager),
+                balance1
+            );
 
-        // 返回实际投资的资产数量
-        return amount0;
+            // 增加现有位置的流动性
+            (liquidityMinted, amount0, amount1) = i_positionManager
+                .increaseLiquidity(increaseParams);
+        }
     }
 
     /**
      * @notice 内部撤资函数
      * @param asset 金库的底层资产代币
-     * @param liquidityAmount 要销毁的流动性数量
+     * @param tokenAmount 要撤资的底层资产代币数量
      * @param config 代币配置
      * @return 实际撤资的数量
      */
     function _divest(
         IERC20 asset,
-        uint256 liquidityAmount,
+        uint256 tokenAmount,
         TokenConfig memory config
     ) internal returns (uint256) {
         // 获取金库的NFT ID
@@ -720,12 +657,74 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
             revert UniswapV3Adapter__NoLiquidityPosition();
         }
 
-        // 减少流动性并收集代币
-        _removeLiquidityAndCollectTokens(
-            config,
-            tokenId,
-            SafeCast.toUint128(liquidityAmount)
-        );
+        // 获取当前position的流动性
+        try i_positionManager.positions(tokenId) returns (
+            uint96,
+            address,
+            address,
+            address,
+            uint24,
+            int24,
+            int24,
+            uint128 currentLiquidity,
+            uint256,
+            uint256,
+            uint128,
+            uint128
+        ) {
+            uint256 liquidityToRemove;
+            bool isFullDivestment = false;
+
+            // 如果当前流动性为0，无法撤资
+            if (currentLiquidity == 0) {
+                liquidityToRemove = 0;
+            } else {
+                // 如果请求的金额是最大值，则完全撤资
+                if (tokenAmount == type(uint256).max) {
+                    liquidityToRemove = currentLiquidity;
+                    isFullDivestment = true;
+                } else {
+                    // 使用Uniswap V3的正确算法计算需要移除的流动性
+                    liquidityToRemove = _calculateLiquidityToRemove(
+                        asset,
+                        tokenAmount,
+                        config,
+                        currentLiquidity
+                    );
+
+                    // 如果请求的流动性大于等于当前流动性的90%，则完全撤资
+                    // 这样可以避免由于精度问题导致的部分撤资被误判为完全撤资
+                    if (liquidityToRemove >= (currentLiquidity * 90) / 100) {
+                        liquidityToRemove = currentLiquidity;
+                        isFullDivestment = true;
+                    }
+
+                    // 调试事件
+                    emit DebugDivestment(
+                        tokenAmount,
+                        liquidityToRemove,
+                        currentLiquidity,
+                        isFullDivestment
+                    );
+                }
+            }
+
+            _removeLiquidityAndCollectTokens(
+                config,
+                tokenId,
+                SafeCast.toUint128(liquidityToRemove)
+            );
+
+            // 只有在完全撤资时才燃烧NFT和重置tokenId
+            if (isFullDivestment) {
+                // 燃烧NFT（完全撤资后）
+                i_positionManager.burn(tokenId);
+                // 重置tokenId
+                s_tokenConfigs[asset].tokenId = 0;
+            }
+        } catch {
+            revert UniswapV3Adapter__NoLiquidityPosition();
+        }
 
         // 将配对资产兑换回基础资产
         uint256 counterPartyTokenBalance = config.counterPartyToken.balanceOf(
@@ -746,6 +745,79 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
 
         emit UniswapV3Divested(address(asset), assetBalance);
         return assetBalance;
+    }
+
+    /**
+     * @notice 计算需要移除的流动性数量以提取指定数量的代币
+     * @param asset 要提取的资产代币
+     * @param tokenAmount 要提取的代币数量
+     * @param config 代币配置
+     * @param currentLiquidity 当前流动性数量
+     * @return liquidityToRemove 需要移除的流动性数量
+     */
+    function _calculateLiquidityToRemove(
+        IERC20 asset,
+        uint256 tokenAmount,
+        TokenConfig memory config,
+        uint128 currentLiquidity
+    ) internal view returns (uint256 liquidityToRemove) {
+        // 确定token0和token1的顺序
+        (address token0Addr, ) = sortTokens(asset, config.counterPartyToken);
+
+        // 获取当前价格
+        (uint160 sqrtPriceX96, , , , , , ) = config.pool.slot0();
+
+        // 计算价格区间的sqrt价格
+        uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(config.tickLower);
+        uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(config.tickUpper);
+
+        // 根据当前价格位置和要提取的代币类型计算流动性
+        if (address(asset) == token0Addr) {
+            // 要提取的是token0
+            if (sqrtPriceX96 <= sqrtRatioAX96) {
+                // 当前价格在区间下方，只有token0
+                liquidityToRemove = LiquidityAmounts.getLiquidityForAmount0(
+                    sqrtRatioAX96,
+                    sqrtRatioBX96,
+                    tokenAmount
+                );
+            } else if (sqrtPriceX96 < sqrtRatioBX96) {
+                // 当前价格在区间内，需要计算token0对应的流动性
+                liquidityToRemove = LiquidityAmounts.getLiquidityForAmount0(
+                    sqrtPriceX96,
+                    sqrtRatioBX96,
+                    tokenAmount
+                );
+            } else {
+                // 当前价格在区间上方，没有token0
+                liquidityToRemove = 0;
+            }
+        } else {
+            // 要提取的是token1
+            if (sqrtPriceX96 <= sqrtRatioAX96) {
+                // 当前价格在区间下方，没有token1
+                liquidityToRemove = 0;
+            } else if (sqrtPriceX96 < sqrtRatioBX96) {
+                // 当前价格在区间内，需要计算token1对应的流动性
+                liquidityToRemove = LiquidityAmounts.getLiquidityForAmount1(
+                    sqrtRatioAX96,
+                    sqrtPriceX96,
+                    tokenAmount
+                );
+            } else {
+                // 当前价格在区间上方，只有token1
+                liquidityToRemove = LiquidityAmounts.getLiquidityForAmount1(
+                    sqrtRatioAX96,
+                    sqrtRatioBX96,
+                    tokenAmount
+                );
+            }
+        }
+
+        // 确保不超过当前流动性
+        if (liquidityToRemove > currentLiquidity) {
+            liquidityToRemove = currentLiquidity;
+        }
     }
 
     /**
@@ -790,11 +862,10 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
             decreaseParams
         );
 
-        // 收集代币到适配器合约中
-        INonfungiblePositionManager.CollectParams memory collectParams = INonfungiblePositionManager
-            .CollectParams({
+        INonfungiblePositionManager.CollectParams
+            memory collectParams = INonfungiblePositionManager.CollectParams({
                 tokenId: tokenId,
-                recipient: address(this), // 发送到适配器合约
+                recipient: address(this),
                 amount0Max: SafeCast.toUint128(amount0),
                 amount1Max: SafeCast.toUint128(amount1)
             });

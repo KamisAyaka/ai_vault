@@ -9,7 +9,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract UniswapAdapter is IProtocolAdapter, Ownable {
+contract UniswapV2Adapter is IProtocolAdapter, Ownable {
     error UniswapAdapter__InvalidSlippageTolerance();
     error UniswapAdapter__InvalidCounterPartyToken();
     error UniswapAdapter__InvalidToken();
@@ -120,8 +120,21 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
 
         // 如果有持仓，则先撤资
         if (lpBalance > 0) {
+            // 计算当前LP代币对应的底层资产价值
+            IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
+            (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+            uint256 totalSupply = pair.totalSupply();
+
+            // 确定token是token0还是token1，并计算当前资产价值
+            uint256 currentAssetValue;
+            if (address(token) == pair.token0()) {
+                currentAssetValue = (uint256(reserve0) * lpBalance) / totalSupply;
+            } else {
+                currentAssetValue = (uint256(reserve1) * lpBalance) / totalSupply;
+            }
+
             // 执行撤资操作
-            _divest(token, lpBalance, config);
+            _divest(token, currentAssetValue, config);
         }
 
         // 更新配置
@@ -180,7 +193,6 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
 
         // 批准流动性添加
         asset.forceApprove(address(i_uniswapRouter), amountOfTokenToSwap);
-
         config.counterPartyToken.forceApprove(address(i_uniswapRouter), actualTokenB);
 
         // 添加流动性（使用实际兑换数量）
@@ -200,18 +212,18 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
     }
 
     /**
-     * @notice 销毁添加的流动性对应的LP代币
+     * @notice 从 Uniswap V2 协议中撤资
      * @notice 将非金库底层资产的代币兑换回底层资产
      * @param asset 金库的底层资产代币
-     * @param liquidityAmount 要销毁的LP代币数量
+     * @param amount 要撤资的底层资产代币数量
      */
-    function divest(IERC20 asset, uint256 liquidityAmount) external override returns (uint256) {
+    function divest(IERC20 asset, uint256 amount) external override returns (uint256) {
         TokenConfig memory config = getTokenConfig(asset);
         if (msg.sender != config.VaultAddress) {
             revert OnlyVaultCanCallThisFunction();
         }
 
-        uint256 tokenAmount = _divest(asset, liquidityAmount, config);
+        uint256 tokenAmount = _divest(asset, amount, config);
 
         // 将回收的资金转回金库
         asset.safeTransfer(msg.sender, tokenAmount);
@@ -220,13 +232,13 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
     }
 
     /**
-     * @notice 内部函数：销毁添加的流动性对应的LP代币
+     * @notice 内部函数：根据代币数量撤资
      * @notice 将非金库底层资产的代币兑换回底层资产
      * @param asset 金库的底层资产代币
-     * @param liquidityAmount 要销毁的LP代币数量
+     * @param tokenAmount 要撤资的底层资产代币数量
      * @param config 代币配置
      */
-    function _divest(IERC20 asset, uint256 liquidityAmount, TokenConfig memory config) internal returns (uint256) {
+    function _divest(IERC20 asset, uint256 tokenAmount, TokenConfig memory config) internal returns (uint256) {
         if (address(config.counterPartyToken) == address(0)) {
             revert UniswapAdapter__InvalidCounterPartyToken();
         }
@@ -234,21 +246,60 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
         address pairAddress = i_uniswapFactory.getPair(address(asset), address(config.counterPartyToken));
         IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
 
+        // 获取适配器持有的LP代币余额
+        uint256 lpBalance = IERC20(pairAddress).balanceOf(address(this));
+        if (lpBalance == 0) {
+            return 0;
+        }
+
         (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
         uint256 totalSupply = pair.totalSupply();
 
-        // 计算滑点保护值
-        (uint256 minToken, uint256 minCounter) = _calculateMinAmounts(
-            asset, pair, reserve0, reserve1, totalSupply, liquidityAmount, config.slippageTolerance
-        );
+        // 确定asset是token0还是token1，并计算当前资产价值
+        uint256 currentAssetValue;
+        if (address(asset) == pair.token0()) {
+            currentAssetValue = (uint256(reserve0) * lpBalance) / totalSupply;
+        } else {
+            currentAssetValue = (uint256(reserve1) * lpBalance) / totalSupply;
+        }
+
+        // 如果请求撤资的数量大于等于当前资产价值，则完全撤资
+        uint256 liquidityToRemove;
+        if (tokenAmount >= currentAssetValue) {
+            liquidityToRemove = lpBalance;
+        } else {
+            // 部分撤资：根据代币数量比例计算需要移除的LP代币数量
+            liquidityToRemove = (lpBalance * tokenAmount) / currentAssetValue;
+        }
+
+        uint256 amount0 = (uint256(reserve0) * liquidityToRemove) / totalSupply;
+        uint256 amount1 = (uint256(reserve1) * liquidityToRemove) / totalSupply;
+
+        // 批准 router 转移 LP 代币
+        IERC20(pairAddress).forceApprove(address(i_uniswapRouter), liquidityToRemove);
+
+        // 计算正确的amountAMin和amountBMin
+        // 需要根据tokenA和tokenB的地址顺序来确定哪个是token0/token1
+        uint256 amountAMin;
+        uint256 amountBMin;
+
+        if (address(asset) < address(config.counterPartyToken)) {
+            // asset是token0, counterPartyToken是token1
+            amountAMin = (amount0 * (BASIS_POINTS_DIVISOR - config.slippageTolerance)) / BASIS_POINTS_DIVISOR;
+            amountBMin = (amount1 * (BASIS_POINTS_DIVISOR - config.slippageTolerance)) / BASIS_POINTS_DIVISOR;
+        } else {
+            // asset是token1, counterPartyToken是token0
+            amountAMin = (amount1 * (BASIS_POINTS_DIVISOR - config.slippageTolerance)) / BASIS_POINTS_DIVISOR;
+            amountBMin = (amount0 * (BASIS_POINTS_DIVISOR - config.slippageTolerance)) / BASIS_POINTS_DIVISOR;
+        }
 
         // 执行流动性移除
-        (uint256 tokenAmount, uint256 counterPartyAmount) = i_uniswapRouter.removeLiquidity({
+        (uint256 actualTokenAmount, uint256 counterPartyAmount) = i_uniswapRouter.removeLiquidity({
             tokenA: address(asset),
             tokenB: address(config.counterPartyToken),
-            liquidity: liquidityAmount,
-            amountAMin: minToken,
-            amountBMin: minCounter,
+            liquidity: liquidityToRemove,
+            amountAMin: amountAMin,
+            amountBMin: amountBMin,
             to: address(this), // 资金发送到适配器
             deadline: block.timestamp + DEADLINE_INTERVAL
         });
@@ -264,11 +315,11 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
             uint256 minOut = (expectedOut * (BASIS_POINTS_DIVISOR - config.slippageTolerance)) / BASIS_POINTS_DIVISOR;
 
             uint256 swapAmount = _swap(path, counterPartyAmount, minOut);
-            tokenAmount += swapAmount; // 累加swap获得的底层代币
+            actualTokenAmount += swapAmount; // 累加swap获得的底层代币
         }
 
-        emit UniswapDivested(address(asset), tokenAmount, counterPartyAmount);
-        return tokenAmount;
+        emit UniswapDivested(address(asset), actualTokenAmount, counterPartyAmount);
+        return actualTokenAmount;
     }
 
     /**
@@ -291,45 +342,6 @@ contract UniswapAdapter is IProtocolAdapter, Ownable {
         });
 
         return amounts[1];
-    }
-
-    /// @dev 计算移除流动性时的最小代币数量（考虑滑点容忍度）
-    /// @param token 用户持有的代币地址
-    /// @param pair Uniswap V2池合约
-    /// @param reserve0 池中代币0的储备量
-    /// @param reserve1 池中代币1的储备量
-    /// @param totalSupply LP代币总供应量
-    /// @param liquidityAmount 要移除的流动性数量
-    /// @param slippageTolerance 滑点容忍度
-    /// @return amount0 应获得的代币0最小数量
-    /// @return amount1 应获得的代币1最小数量
-    function _calculateMinAmounts(
-        IERC20 token,
-        IUniswapV2Pair pair,
-        uint112 reserve0,
-        uint112 reserve1,
-        uint256 totalSupply,
-        uint256 liquidityAmount,
-        uint256 slippageTolerance
-    ) private view returns (uint256, uint256) {
-        // 根据代币在交易对中的位置计算兑换比例
-        if (address(token) == pair.token0()) {
-            // token0对应reserve0，token1对应reserve1
-            // 计算扣除滑点后的最小兑换数量
-            return (
-                (((uint256(reserve0) * liquidityAmount) / totalSupply) * (BASIS_POINTS_DIVISOR - slippageTolerance))
-                    / BASIS_POINTS_DIVISOR,
-                (((uint256(reserve1) * liquidityAmount) / totalSupply) * (BASIS_POINTS_DIVISOR - slippageTolerance))
-                    / BASIS_POINTS_DIVISOR
-            );
-        }
-        // token位置相反时交换计算顺序
-        return (
-            (((uint256(reserve1) * liquidityAmount) / totalSupply) * (BASIS_POINTS_DIVISOR - slippageTolerance))
-                / BASIS_POINTS_DIVISOR,
-            (((uint256(reserve0) * liquidityAmount) / totalSupply) * (BASIS_POINTS_DIVISOR - slippageTolerance))
-                / BASIS_POINTS_DIVISOR
-        );
     }
 
     // 计算 Uniswap LP Token 对应的底层资产价值

@@ -38,7 +38,7 @@ contract VaultManagerIntegrationTest is Test {
         // 1. 创建金库
         vm.prank(owner);
         address vaultAddress = manager.createVault(token);
-        
+
         assertNotEq(vaultAddress, address(0), "Vault should be created");
         emit log_named_address("Vault created at", vaultAddress);
 
@@ -101,17 +101,20 @@ contract VaultManagerIntegrationTest is Test {
 
         vm.prank(owner);
         manager.partialUpdateHoldingAllocation(
-            token,
-            divestAdapterIndices,
-            divestAmounts,
-            investAdapterIndices,
-            investAmounts,
-            investAllocations
+            token, divestAdapterIndices, divestAmounts, investAdapterIndices, investAmounts, investAllocations
         );
 
         // 验证部分更新后的资金分配
-        assertEq(adapter1.getTotalValue(IERC20(address(token))), 40 * 10 ** 18, "Adapter 1 should have 40 tokens after partial update");
-        assertEq(adapter2.getTotalValue(IERC20(address(token))), 60 * 10 ** 18, "Adapter 2 should have 60 tokens after partial update");
+        assertEq(
+            adapter1.getTotalValue(IERC20(address(token))),
+            40 * 10 ** 18,
+            "Adapter 1 should have 40 tokens after partial update"
+        );
+        assertEq(
+            adapter2.getTotalValue(IERC20(address(token))),
+            60 * 10 ** 18,
+            "Adapter 2 should have 60 tokens after partial update"
+        );
 
         // 6. 撤回所有投资
         vm.prank(owner);

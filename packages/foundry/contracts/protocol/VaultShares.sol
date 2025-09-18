@@ -124,11 +124,16 @@ contract VaultShares is
             adapter.divest(IERC20(asset()), divestAmounts[i]);
         }
 
-        // 更新指定适配器的分配比例
+        // 更新指定适配器的分配比例并投资
         for (uint256 i = 0; i < investLength; i++) {
             uint256 adapterIndex = investAdapterIndices[i];
+            uint256 amount = investAmounts[i];
+            IProtocolAdapter adapter = s_allocations[adapterIndex].adapter;
             s_allocations[adapterIndex].allocation = investAllocations[i];
-            s_allocations[adapterIndex].adapter.invest(IERC20(asset()), investAmounts[i]);
+
+            // 在投资前先授权 USDC 给适配器
+            IERC20(asset()).approve(address(adapter), amount);
+            adapter.invest(IERC20(asset()), amount);
         }
     }
 
@@ -146,7 +151,8 @@ contract VaultShares is
 
             // 如果适配器中有资产，则撤回所有资产
             if (valueInAdapter > 0) {
-                adapter.divest(IERC20(asset()), valueInAdapter);
+                // 使用一个很大的数值确保完全撤资
+                adapter.divest(IERC20(asset()), type(uint256).max);
             }
         }
     }
@@ -156,13 +162,14 @@ contract VaultShares is
      * @param assets 要投资的资产数量
      */
     function _investFunds(uint256 assets) internal {
+        uint256 allocationsLength = s_allocations.length;
         // 如果没有配置投资策略或分配比例，则不进行投资
-        if (s_allocations.length == 0) {
+        if (allocationsLength == 0) {
             return;
         }
 
         // 遍历所有配置的适配器并按分配比例投资
-        for (uint256 i = 0; i < s_allocations.length; i++) {
+        for (uint256 i = 0; i < allocationsLength; i++) {
             // 计算应投资的资产数量
             uint256 amountToInvest = (assets * s_allocations[i].allocation) / ALLOCATION_PRECISION;
 
@@ -183,13 +190,14 @@ contract VaultShares is
      * @param assets 需要撤回的资产数量
      */
     function _divestFunds(uint256 assets) internal {
+        uint256 allocationsLength = s_allocations.length;
         // 如果没有配置投资策略，则不进行撤资
-        if (s_allocations.length == 0) {
+        if (allocationsLength == 0) {
             return;
         }
 
         // 根据分配比例从各个适配器中撤资
-        for (uint256 i = 0; i < s_allocations.length; i++) {
+        for (uint256 i = 0; i < allocationsLength; i++) {
             // 计算应从该适配器撤资的资产数量
             uint256 amountToDivest = (assets * s_allocations[i].allocation) / ALLOCATION_PRECISION;
 
@@ -332,7 +340,8 @@ contract VaultShares is
 
         // 计算已分配到各个适配器中的资产总价值
         uint256 assetsInAdapters = 0;
-        for (uint256 i = 0; i < s_allocations.length; i++) {
+        uint256 allocationsLength = s_allocations.length;
+        for (uint256 i = 0; i < allocationsLength; i++) {
             assetsInAdapters += s_allocations[i].adapter.getTotalValue(IERC20(asset()));
         }
 

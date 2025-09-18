@@ -62,10 +62,7 @@ contract AaveAdapterTest is Test {
 
         // Test that vault can invest
         vm.prank(vault);
-        uint256 investedAmount = adapter.invest(
-            IERC20(address(token)),
-            100 * 10 ** 18
-        );
+        uint256 investedAmount = adapter.invest(IERC20(address(token)), 100 * 10 ** 18);
 
         assertEq(investedAmount, 100 * 10 ** 18);
 
@@ -75,9 +72,7 @@ contract AaveAdapterTest is Test {
         assertEq(token.balanceOf(address(mockPool)), 100 * 10 ** 18); // Pool should hold the tokens
 
         // Check that aTokens were minted to adapter
-        MockAToken aToken = MockAToken(
-            mockPool.aTokenAddresses(address(token))
-        );
+        MockAToken aToken = MockAToken(mockPool.aTokenAddresses(address(token)));
         assertEq(aToken.balanceOf(address(adapter)), 100 * 10 ** 18);
     }
 
@@ -98,10 +93,7 @@ contract AaveAdapterTest is Test {
 
         // Test that vault can divest
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(token)),
-            50 * 10 ** 18
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(token)), 50 * 10 ** 18);
 
         assertEq(divestedAmount, 50 * 10 ** 18);
 
@@ -111,9 +103,7 @@ contract AaveAdapterTest is Test {
         assertEq(token.balanceOf(address(mockPool)), 50 * 10 ** 18); // Pool should hold remaining tokens
 
         // Check that aTokens were burned from adapter
-        MockAToken aToken = MockAToken(
-            mockPool.aTokenAddresses(address(token))
-        );
+        MockAToken aToken = MockAToken(mockPool.aTokenAddresses(address(token)));
         assertEq(aToken.balanceOf(address(adapter)), 50 * 10 ** 18); // Should have 50 aTokens left
     }
 
@@ -136,27 +126,18 @@ contract AaveAdapterTest is Test {
         adapter.invest(IERC20(address(token)), 100 * 10 ** 18);
 
         // Debug information
-        MockAToken aToken = MockAToken(
-            mockPool.aTokenAddresses(address(token))
-        );
+        MockAToken aToken = MockAToken(mockPool.aTokenAddresses(address(token)));
         uint256 aTokenBalance = aToken.balanceOf(address(adapter));
         console.log("aToken balance of adapter:", aTokenBalance);
         console.log("Adapter address:", address(adapter));
         console.log("aToken address:", address(aToken));
 
         // Check reserve data
-        DataTypes.ReserveData memory reserveData = mockPool.getReserveData(
-            address(token)
-        );
-        console.log(
-            "aToken address from reserve data:",
-            reserveData.aTokenAddress
-        );
+        DataTypes.ReserveData memory reserveData = mockPool.getReserveData(address(token));
+        console.log("aToken address from reserve data:", reserveData.aTokenAddress);
 
         // Check normalized income
-        uint256 normalizedIncome = mockPool.getReserveNormalizedIncome(
-            address(token)
-        );
+        uint256 normalizedIncome = mockPool.getReserveNormalizedIncome(address(token));
         console.log("Normalized income:", normalizedIncome);
 
         // Should have 100 tokens worth of value
@@ -174,9 +155,7 @@ contract AaveAdapterTest is Test {
         adapter.invest(IERC20(address(token)), 100 * 10 ** 18);
 
         // Check aToken balance
-        MockAToken aToken = MockAToken(
-            mockPool.aTokenAddresses(address(token))
-        );
+        MockAToken aToken = MockAToken(mockPool.aTokenAddresses(address(token)));
         uint256 aTokenBalance = aToken.balanceOf(address(adapter));
         console.log("aToken balance of adapter:", aTokenBalance);
 

@@ -9,7 +9,7 @@ import "./mock/MockUniswapV2.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract UniswapV2AdapterTest is Test {
-    UniswapAdapter public adapter;
+    UniswapV2Adapter public adapter;
     MockUniswapV2Factory public mockFactory;
     MockUniswapV2Router public mockRouter;
     MockToken public tokenA;
@@ -20,16 +20,9 @@ contract UniswapV2AdapterTest is Test {
 
     event TokenConfigUpdated(address indexed token);
     event UniswapInvested(
-        address indexed token,
-        uint256 tokenAmount,
-        uint256 counterPartyTokenAmount,
-        uint256 liquidity
+        address indexed token, uint256 tokenAmount, uint256 counterPartyTokenAmount, uint256 liquidity
     );
-    event UniswapDivested(
-        address indexed token,
-        uint256 tokenAmount,
-        uint256 counterPartyTokenAmount
-    );
+    event UniswapDivested(address indexed token, uint256 tokenAmount, uint256 counterPartyTokenAmount);
 
     function setUp() public {
         owner = address(this);
@@ -45,23 +38,25 @@ contract UniswapV2AdapterTest is Test {
 
         // Deploy mock Uniswap V2 contracts
         mockFactory = new MockUniswapV2Factory();
-        mockRouter = new MockUniswapV2Router(
-            address(mockFactory),
-            address(tokenB)
-        ); // Use tokenB as WETH mock
+        mockRouter = new MockUniswapV2Router(address(mockFactory)); // Use tokenB as WETH mock
 
         // Create pair
-        address pairAddress = mockFactory.createPair(
-            address(tokenA),
-            address(tokenB)
-        );
+        address pairAddress = mockFactory.createPair(address(tokenA), address(tokenB));
         pair = MockUniswapV2Pair(pairAddress);
 
         // Mint tokens to router for swapping
         tokenB.mint(address(mockRouter), 1000 * 10 ** 18);
 
+        // Mint tokens to pair for initial liquidity
+        tokenA.mint(address(pair), 1000 * 10 ** 18);
+        tokenB.mint(address(pair), 1000 * 10 ** 18);
+
+        // Initialize pair reserves by calling mint
+        vm.prank(address(pair));
+        pair.mint(address(0x1)); // Mint to a dummy address to initialize reserves
+
         // Deploy adapter
-        adapter = new UniswapAdapter(address(mockRouter));
+        adapter = new UniswapV2Adapter(address(mockRouter));
 
         // Set token config
         vm.prank(owner);
@@ -84,9 +79,7 @@ contract UniswapV2AdapterTest is Test {
         );
 
         // Check that config was set correctly
-        UniswapAdapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenB))
-        );
+        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenB)));
         assertEq(config.slippageTolerance, 200);
         assertEq(address(config.counterPartyToken), address(tokenA));
         assertEq(config.VaultAddress, vault);
@@ -94,12 +87,7 @@ contract UniswapV2AdapterTest is Test {
         // Test that non-owner cannot set token config
         vm.prank(address(0x456));
         vm.expectRevert();
-        adapter.setTokenConfig(
-            IERC20(address(tokenA)),
-            300,
-            IERC20(address(tokenB)),
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenA)), 300, IERC20(address(tokenB)), vault);
     }
 
     function testUpdateTokenSlippageTolerance() public {
@@ -108,9 +96,7 @@ contract UniswapV2AdapterTest is Test {
         adapter.UpdateTokenSlippageTolerance(IERC20(address(tokenA)), 200);
 
         // Check that slippage tolerance was updated
-        UniswapAdapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenA))
-        );
+        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenA)));
         assertEq(config.slippageTolerance, 200);
 
         // Test that non-owner cannot update slippage tolerance
@@ -124,18 +110,9 @@ contract UniswapV2AdapterTest is Test {
         vm.prank(vault);
         tokenA.approve(address(adapter), 100 * 10 ** 18);
 
-        // Approve router to spend adapter's tokens (this happens inside the adapter)
-        vm.prank(address(adapter));
-        tokenA.approve(address(mockRouter), 100 * 10 ** 18);
-        vm.prank(address(adapter));
-        tokenB.approve(address(mockRouter), 100 * 10 ** 18);
-
         // Test that vault can invest
         vm.prank(vault);
-        uint256 investedAmount = adapter.invest(
-            IERC20(address(tokenA)),
-            100 * 10 ** 18
-        );
+        uint256 investedAmount = adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         assertEq(investedAmount, 100 * 10 ** 18);
 
@@ -150,11 +127,7 @@ contract UniswapV2AdapterTest is Test {
     function testInvestFromNonVault() public {
         // Test that non-vault cannot invest
         vm.prank(address(0x456));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapAdapter.OnlyVaultCanCallThisFunction.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.OnlyVaultCanCallThisFunction.selector));
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
@@ -163,28 +136,12 @@ contract UniswapV2AdapterTest is Test {
         vm.prank(vault);
         tokenA.approve(address(adapter), 100 * 10 ** 18);
 
-        // Approve router to spend adapter's tokens
-        vm.prank(address(adapter));
-        tokenA.approve(address(mockRouter), 100 * 10 ** 18);
-        vm.prank(address(adapter));
-        tokenB.approve(address(mockRouter), 100 * 10 ** 18);
-
-        // Also approve router to spend tokenB from adapter (for swapping)
-        vm.prank(address(adapter));
-        tokenB.approve(address(mockRouter), type(uint256).max);
-
         vm.prank(vault);
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
-        // Get LP balance before divest
-        uint256 lpBalance = pair.balanceOf(address(adapter));
-
         // Test that vault can divest
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            lpBalance
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
 
         // Check that tokens were transferred back to vault
         assertGt(divestedAmount, 0);
@@ -194,11 +151,7 @@ contract UniswapV2AdapterTest is Test {
     function testDivestFromNonVault() public {
         // Test that non-vault cannot divest
         vm.prank(address(0x456));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapAdapter.OnlyVaultCanCallThisFunction.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.OnlyVaultCanCallThisFunction.selector));
         adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
@@ -209,16 +162,6 @@ contract UniswapV2AdapterTest is Test {
         // After investing
         vm.prank(vault);
         tokenA.approve(address(adapter), 100 * 10 ** 18);
-
-        // Approve router to spend adapter's tokens
-        vm.prank(address(adapter));
-        tokenA.approve(address(mockRouter), 100 * 10 ** 18);
-        vm.prank(address(adapter));
-        tokenB.approve(address(mockRouter), 100 * 10 ** 18);
-
-        // Also approve router to spend tokenB from adapter (for swapping)
-        vm.prank(address(adapter));
-        tokenB.approve(address(mockRouter), type(uint256).max);
 
         vm.prank(vault);
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);

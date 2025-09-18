@@ -85,11 +85,11 @@ contract VaultSharesTest is Test {
         allocations[0] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter1)),
             allocation: 600 // 60%
-        });
+         });
         allocations[1] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter2)),
             allocation: 400 // 40%
-        });
+         });
 
         vm.prank(owner);
         vault.updateHoldingAllocation(allocations);
@@ -113,7 +113,7 @@ contract VaultSharesTest is Test {
         allocations[0] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter)),
             allocation: 1000 // 100%
-        });
+         });
 
         vm.prank(owner);
         vault.updateHoldingAllocation(allocations);
@@ -144,7 +144,7 @@ contract VaultSharesTest is Test {
         allocations[0] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter)),
             allocation: 1000 // 100%
-        });
+         });
 
         vm.prank(owner);
         vault.updateHoldingAllocation(allocations);
@@ -171,63 +171,63 @@ contract VaultSharesTest is Test {
         // Deposit
         vm.prank(user);
         token.approve(address(vault), 100 * 10 ** 18);
-        
+
         vm.prank(user);
         vault.deposit(100 * 10 ** 18, user);
-        
+
         // User now has 99 shares (99 tokens worth due to 1% fee)
         assertEq(vault.balanceOf(user), 99 * 10 ** 18);
-        
+
         // Withdraw all shares
         vm.prank(user);
         uint256 assets = vault.redeem(99 * 10 ** 18, user, user);
-        
+
         // Should get back 99 tokens
         assertEq(assets, 99 * 10 ** 18);
         assertEq(token.balanceOf(user), 999 * 10 ** 18); // Started with 1000, deposited 100, withdrew 99
         assertEq(vault.balanceOf(user), 0);
     }
-    
+
     // 新增测试用例：测试金库非活跃状态
     function testDepositWhenNotActive() public {
         // Set vault as not active
         vm.prank(owner);
         vault.setNotActive();
-        
+
         // Try to deposit - should fail
         vm.prank(user);
         token.approve(address(vault), 100 * 10 ** 18);
-        
+
         vm.prank(user);
         vm.expectRevert(VaultShares.VaultShares__VaultNotActive.selector);
         vault.deposit(100 * 10 ** 18, user);
     }
-    
+
     // 新增测试用例：测试所有者提取费用份额
     function testOwnerWithdrawFeeShares() public {
         uint256 ownerInitialBalance = token.balanceOf(owner);
-        
+
         // Deposit
         vm.prank(user);
         token.approve(address(vault), 100 * 10 ** 18);
-        
+
         vm.prank(user);
         vault.deposit(100 * 10 ** 18, user);
-        
+
         // Owner now has 1 share as fee
         assertEq(vault.balanceOf(owner), 1 * 10 ** 18);
-        
+
         // Owner can withdraw their shares
         vm.prank(owner);
         uint256 assets = vault.redeem(1 * 10 ** 18, owner, owner);
-        
+
         // Should get back 1 token
         assertEq(assets, 1 * 10 ** 18);
         // Owner should have initial balance + 1 token from redeeming fee shares
         assertEq(token.balanceOf(owner), ownerInitialBalance + 1 * 10 ** 18);
         assertEq(vault.balanceOf(owner), 0);
     }
-    
+
     // 新增测试用例：测试部分更新投资分配
     function testPartialUpdateHoldingAllocation() public {
         MockAdapter adapter1 = new MockAdapter("Adapter 1");
@@ -238,7 +238,7 @@ contract VaultSharesTest is Test {
         initialAllocations[0] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter1)),
             allocation: 1000 // 100%
-        });
+         });
 
         vm.prank(owner);
         vault.updateHoldingAllocation(initialAllocations);
@@ -257,42 +257,38 @@ contract VaultSharesTest is Test {
         // Partial update - move 30% from adapter1 to adapter2
         uint256[] memory divestIndices = new uint256[](1);
         divestIndices[0] = 0; // adapter1 index
-        
+
         uint256[] memory divestAmounts = new uint256[](1);
         divestAmounts[0] = 30 * 10 ** 18; // divest 30 tokens from adapter1
-        
+
         uint256[] memory investIndices = new uint256[](1);
         investIndices[0] = 0; // adapter2 index (will be added to allocations)
-        
+
         uint256[] memory investAmounts = new uint256[](1);
         investAmounts[0] = 30 * 10 ** 18; // invest 30 tokens in adapter2
-        
+
         uint256[] memory investAllocations = new uint256[](1);
         investAllocations[0] = 300; // 30% allocation for adapter2
-        
+
         // Update allocations to include adapter2
         IVaultShares.Allocation[] memory updatedAllocations = new IVaultShares.Allocation[](2);
         updatedAllocations[0] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter1)),
             allocation: 700 // 70%
-        });
+         });
         updatedAllocations[1] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter2)),
             allocation: 300 // 30%
-        });
-        
+         });
+
         // Manually update allocations first (this would normally be done via a separate function)
         vm.prank(owner);
         vault.updateHoldingAllocation(updatedAllocations);
-        
+
         // Then do partial update
         vm.prank(owner);
         vault.partialUpdateHoldingAllocation(
-            divestIndices,
-            divestAmounts,
-            investIndices,
-            investAmounts,
-            investAllocations
+            divestIndices, divestAmounts, investIndices, investAmounts, investAllocations
         );
 
         // Check updated investments

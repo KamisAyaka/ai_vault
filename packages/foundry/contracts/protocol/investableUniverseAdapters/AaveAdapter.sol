@@ -68,11 +68,20 @@ contract AaveAdapter is IProtocolAdapter, Ownable {
             revert OnlyVaultCanCallThisFunction();
         }
 
-        amountOfAssetReturned = i_aavePool.withdraw({
-            asset: address(token),
-            amount: amount,
-            to: address(this) // 资金发送到适配器
-         });
+        // 如果请求的金额是最大值，则提取所有可用资产
+        if (amount == type(uint256).max) {
+            amountOfAssetReturned = i_aavePool.withdraw({
+                asset: address(token),
+                amount: type(uint256).max,
+                to: address(this) // 资金发送到适配器
+             });
+        } else {
+            amountOfAssetReturned = i_aavePool.withdraw({
+                asset: address(token),
+                amount: amount,
+                to: address(this) // 资金发送到适配器
+             });
+        }
 
         // 将回收的资金转回金库
         token.safeTransfer(msg.sender, amountOfAssetReturned);
