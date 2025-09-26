@@ -1,0 +1,144 @@
+specVersion: 0.0.4
+description: AI Vault Protocol Subgraph
+repository: https://github.com/scaffold-eth/se-2/packages/subgraph/
+schema:
+  file: ./src/schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: AIAgentVaultManager
+    network: localhost
+    source:
+      abi: AIAgentVaultManager
+      address: "0xe1aa25618fa0c7a1cfdab5d6b456af611873b629"
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - VaultManager
+        - Vault
+        - Allocation
+        - AaveAdapter
+        - UniswapV2Adapter
+        - UniswapV3Adapter
+      abis:
+        - name: AIAgentVaultManager
+          file: ./abis/localhost_AIAgentVaultManager.json
+      eventHandlers:
+        - event: VaultCreatedAndRegistered(indexed address,string)
+          handler: handleVaultCreatedAndRegistered
+        - event: AdapterAddedToList(indexed address,string)
+          handler: handleAdapterAddedToList
+      file: ./src/mappings/AIAgentVaultManager.ts
+  - kind: ethereum/contract
+    name: VaultShares
+    network: localhost
+    source:
+      abi: VaultShares
+      address: "0x49b8e3b089d4ebf9f37b1da9b839ec013c2cd8c9"
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Vault
+        - User
+        - Deposit
+        - Redeem
+        - Allocation
+      abis:
+        - name: VaultShares
+          file: ./abis/localhost_VaultShares.json
+        - name: IProtocolAdapter
+          file: ./abis/IProtocolAdapter.json
+      eventHandlers:
+        - event: Deposit(uint256,indexed address,uint256)
+          handler: handleDeposit
+        - event: Redeem(uint256,indexed address,uint256)
+          handler: handleRedeem
+        - event: NoLongerActive()
+          handler: handleNoLongerActive
+        - event: HoldingAllocationUpdated((address,uint256)[])
+          handler: handleHoldingAllocationUpdated
+      file: ./src/mappings/VaultShares.ts
+  - kind: ethereum/contract
+    name: AaveAdapter
+    network: localhost
+    source:
+      abi: AaveAdapter
+      address: "0x5b3120d0da5fdcba7aef87a9c3c64829c1c0d76b"
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - AaveAdapter
+        - AaveTokenPosition
+      abis:
+        - name: AaveAdapter
+          file: ./abis/localhost_AaveAdapter.json
+      eventHandlers:
+        - event: TokenVaultSet(indexed address,indexed address)
+          handler: handleTokenVaultSet
+        - event: Invested(indexed address,uint256,uint256)
+          handler: handleInvested
+        - event: Divested(indexed address,uint256,uint256)
+          handler: handleDivested
+      file: ./src/mappings/AaveAdapter.ts
+  - kind: ethereum/contract
+    name: UniswapV2Adapter
+    network: localhost
+    source:
+      abi: UniswapV2Adapter
+      address: "0x33b1b5aa9aa4da83a332f0bc5cac6a903fde5d92"
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - UniswapV2Adapter
+        - UniswapV2TokenPosition
+      abis:
+        - name: UniswapV2Adapter
+          file: ./abis/localhost_UniswapV2Adapter.json
+      eventHandlers:
+        - event: TokenConfigSet(indexed address,uint256,indexed address,indexed address)
+          handler: handleTokenConfigSet
+        - event: TokenConfigUpdated(indexed address,uint256)
+          handler: handleTokenConfigUpdated
+        - event: TokenConfigReinvested(indexed address,indexed address)
+          handler: handleTokenConfigReinvested
+        - event: UniswapInvested(indexed address,uint256,uint256,uint256)
+          handler: handleUniswapInvested
+        - event: UniswapDivested(indexed address,uint256,uint256,uint256)
+          handler: handleUniswapDivested
+      file: ./src/mappings/UniswapV2Adapter.ts
+  - kind: ethereum/contract
+    name: UniswapV3Adapter
+    network: localhost
+    source:
+      abi: UniswapV3Adapter
+      address: "0x19a1c09fe3399c4daaa2c98b936a8e460fc5eaa4"
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - UniswapV3Adapter
+        - UniswapV3TokenPosition
+      abis:
+        - name: UniswapV3Adapter
+          file: ./abis/localhost_UniswapV3Adapter.json
+      eventHandlers:
+        - event: TokenConfigSet(indexed address,uint256,indexed
+            address,uint24,int24,int24,indexed address)
+          handler: handleTokenConfigSet
+        - event: TokenConfigUpdated(indexed address,uint256)
+          handler: handleTokenConfigUpdated
+        - event: TokenConfigReinvested(indexed address,indexed address,uint24,int24,int24)
+          handler: handleTokenConfigReinvested
+        - event: UniswapV3Invested(indexed address,uint256,uint256,uint256)
+          handler: handleUniswapV3Invested
+        - event: UniswapV3Divested(indexed address,uint256,uint256,uint256)
+          handler: handleUniswapV3Divested
+      file: ./src/mappings/UniswapV3Adapter.ts

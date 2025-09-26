@@ -1,0 +1,153 @@
+# 核心实体定义
+type VaultManager @entity(immutable: true) {
+  id: ID! # 管理器地址
+  address: Bytes!
+  owner: Bytes!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+
+  # 关联关系
+  vaults: [Vault!]! @derivedFrom(field: "manager")
+}
+
+type Vault @entity(immutable: false) {
+  id: ID! # 金库地址
+  address: Bytes!
+  name: String!
+  isActive: Boolean!
+  totalAssets: BigInt!
+  totalSupply: BigInt!
+  manager: VaultManager! # 金库管理者（也是所有者）
+  createdAt: BigInt!
+  updatedAt: BigInt!
+
+  # 关联关系
+  deposits: [Deposit!]! @derivedFrom(field: "vault")
+  redeems: [Redeem!]! @derivedFrom(field: "vault")
+  allocations: [Allocation!]! @derivedFrom(field: "vault")
+}
+
+type Allocation @entity(immutable: false) {
+  id: ID! # 金库地址 + 索引
+  vault: Vault!
+  adapterAddress: Bytes! # 适配器地址
+  adapterType: String! # 协议类型：Aave, UniswapV2, UniswapV3
+  allocation: BigInt! # 分配比例（基点，10000 = 100%）
+}
+
+# Aave 适配器
+type AaveAdapter @entity(immutable: true) {
+  id: ID! # 适配器地址
+  address: Bytes!
+
+  # 代币配置和投资状态
+  tokenPositions: [AaveTokenPosition!]! @derivedFrom(field: "adapter")
+}
+
+# Aave 代币头寸
+type AaveTokenPosition @entity(immutable: false) {
+  id: ID! # 适配器地址 + 代币地址
+  adapter: AaveAdapter!
+  token: Bytes!
+  vault: Bytes!
+  investedAmount: BigInt! # 当前投资金额
+  aTokenBalance: BigInt! # aToken 余额
+}
+
+# UniswapV2 适配器
+type UniswapV2Adapter @entity(immutable: true) {
+  id: ID! # 适配器地址
+  address: Bytes!
+
+  # 代币配置和投资状态
+  tokenPositions: [UniswapV2TokenPosition!]! @derivedFrom(field: "adapter")
+}
+
+# UniswapV2 代币头寸
+type UniswapV2TokenPosition @entity(immutable: false) {
+  id: ID! # 适配器地址 + 代币地址
+  adapter: UniswapV2Adapter!
+  token: Bytes!
+  counterPartyToken: Bytes!
+  vault: Bytes!
+  slippageTolerance: BigInt! # 滑点容忍度（基点）
+  liquidity: BigInt! # 当前流动性
+  tokenAmount: BigInt! # 代币数量
+  counterPartyTokenAmount: BigInt! # 对手代币数量
+}
+
+# UniswapV3 适配器
+type UniswapV3Adapter @entity(immutable: true) {
+  id: ID! # 适配器地址
+  address: Bytes!
+
+  # 代币配置和投资状态
+  tokenPositions: [UniswapV3TokenPosition!]! @derivedFrom(field: "adapter")
+}
+
+# UniswapV3 代币头寸
+type UniswapV3TokenPosition @entity(immutable: false) {
+  id: ID! # 适配器地址 + 代币地址
+  adapter: UniswapV3Adapter!
+  token: Bytes!
+  counterPartyToken: Bytes!
+  vault: Bytes!
+  slippageTolerance: BigInt! # 滑点容忍度（基点）
+  feeTier: BigInt! # 费率层级
+  tickLower: BigInt! # 价格区间下限
+  tickUpper: BigInt! # 价格区间上限
+  tokenId: BigInt! # NFT ID
+  liquidity: BigInt! # 当前流动性
+  tokenAmount: BigInt! # 代币数量
+  counterPartyTokenAmount: BigInt! # 配对代币数量
+}
+
+# 用户交互实体
+type User @entity(immutable: true) {
+  id: ID! # 用户地址
+  address: Bytes!
+
+  # 统计字段
+  totalDeposited: BigInt! # 总存款金额
+  totalShares: BigInt! # 总份额
+  activeVaults: [Bytes!]! # 活跃金库地址列表
+  # 关联关系
+  deposits: [Deposit!]! @derivedFrom(field: "user")
+  redeems: [Redeem!]! @derivedFrom(field: "user")
+  vaultBalances: [UserVaultBalance!]! @derivedFrom(field: "user")
+}
+
+# 用户金库余额实体
+type UserVaultBalance @entity(immutable: false) {
+  id: ID! # 用户地址 + 金库地址
+  user: User!
+  vault: Vault!
+  totalDeposited: BigInt! # 累计存款金额
+  totalRedeemed: BigInt! # 累计赎回金额
+  currentShares: BigInt! # 当前持有份额
+  currentValue: BigInt! # 当前价值（基于份额计算）
+  lastUpdated: BigInt! # 最后更新时间
+}
+
+# 交易记录实体
+type Deposit @entity(immutable: true) {
+  id: ID! # 交易哈希 + 日志索引
+  vault: Vault!
+  user: User!
+  assets: BigInt!
+  userShares: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Redeem @entity(immutable: true) {
+  id: ID! # 交易哈希 + 日志索引
+  vault: Vault!
+  user: User!
+  assets: BigInt!
+  shares: BigInt!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
