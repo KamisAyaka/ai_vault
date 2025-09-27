@@ -1,0 +1,19 @@
+query GetDeposits($first: Int = 10, $skip: Int = 0, $orderBy: Deposit_orderBy, $orderDirection: OrderDirection) {
+  deposits(first: $first, skip: $skip, orderBy: $orderBy, orderDirection: $orderDirection) {
+    id
+    vault {
+      id
+      address
+      name
+    }
+    user {
+      id
+      address
+    }
+    assets
+    userShares
+    blockNumber
+    blockTimestamp
+    transactionHash
+  }
+}

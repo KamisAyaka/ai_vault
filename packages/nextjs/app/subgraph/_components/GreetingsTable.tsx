@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GetGreetingsDocument, execute } from "~~/.graphclient";
+import { GetVaultsDocument, execute } from "~~/.graphclient";
 import { Address } from "~~/components/scaffold-eth";
 
-const GreetingsTable = () => {
-  const [greetingsData, setGreetingsData] = useState<any>(null);
+const VaultsTable = () => {
+  const [vaultsData, setVaultsData] = useState<any>(null);
   const [error, setError] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!execute || !GetGreetingsDocument) {
+      if (!execute || !GetVaultsDocument) {
         return;
       }
       try {
-        const { data: result } = await execute(GetGreetingsDocument, {});
-        setGreetingsData(result);
+        const { data: result } = await execute(GetVaultsDocument, {});
+        setVaultsData(result);
         console.log(result);
       } catch (err) {
         setError(err);
@@ -37,18 +37,28 @@ const GreetingsTable = () => {
           <thead>
             <tr className="rounded-xl">
               <th className="bg-primary"></th>
-              <th className="bg-primary">Sender</th>
-              <th className="bg-primary">Greetings</th>
+              <th className="bg-primary">Vault Address</th>
+              <th className="bg-primary">Name</th>
+              <th className="bg-primary">Manager</th>
+              <th className="bg-primary">Total Assets</th>
+              <th className="bg-primary">Total Supply</th>
+              <th className="bg-primary">Active</th>
             </tr>
           </thead>
           <tbody>
-            {greetingsData?.greetings?.map((greeting: any, index: number) => (
-              <tr key={greeting.id}>
+            {vaultsData?.vaults?.map((vault: any, index: number) => (
+              <tr key={vault.id}>
                 <th>{index + 1}</th>
                 <td>
-                  <Address address={greeting?.sender?.address} />
+                  <Address address={vault?.address} />
                 </td>
-                <td>{greeting.greeting}</td>
+                <td>{vault.name}</td>
+                <td>
+                  <Address address={vault?.manager?.address} />
+                </td>
+                <td>{vault.totalAssets?.toString()}</td>
+                <td>{vault.totalSupply?.toString()}</td>
+                <td>{vault.isActive ? "Yes" : "No"}</td>
               </tr>
             ))}
           </tbody>
@@ -58,4 +68,4 @@ const GreetingsTable = () => {
   );
 };
 
-export default GreetingsTable;
+export default VaultsTable;

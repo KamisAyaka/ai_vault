@@ -1,0 +1,28 @@
+query GetUserVaultBalances($userAddress: String!, $first: Int = 10, $skip: Int = 0) {
+  userVaultBalances(
+    where: { user: $userAddress }
+    first: $first
+    skip: $skip
+    orderBy: lastUpdated
+    orderDirection: desc
+  ) {
+    id
+    user {
+      id
+      address
+    }
+    vault {
+      id
+      address
+      name
+      isActive
+      totalAssets
+      totalSupply
+    }
+    totalDeposited
+    totalRedeemed
+    currentShares
+    currentValue
+    lastUpdated
+  }
+}

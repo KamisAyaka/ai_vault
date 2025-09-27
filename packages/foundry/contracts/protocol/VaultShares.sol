@@ -90,7 +90,7 @@ contract VaultShares is
      * @notice 更新完整的适配器和分配比例列表
      * @param allocations 新的适配器和分配比例列表
      */
-    function updateHoldingAllocation(Allocation[] memory allocations) public override(IVaultShares) onlyOwner {
+    function updateHoldingAllocation(Allocation[] calldata allocations) public override(IVaultShares) onlyOwner {
         // 首先撤回当前所有已分配的投资
         withdrawAllInvestments();
 
@@ -111,11 +111,11 @@ contract VaultShares is
      * @param investAllocations 对应的投资分配比例数组
      */
     function partialUpdateHoldingAllocation(
-        uint256[] memory divestAdapterIndices,
-        uint256[] memory divestAmounts,
-        uint256[] memory investAdapterIndices,
-        uint256[] memory investAmounts,
-        uint256[] memory investAllocations
+        uint256[] calldata divestAdapterIndices,
+        uint256[] calldata divestAmounts,
+        uint256[] calldata investAdapterIndices,
+        uint256[] calldata investAmounts,
+        uint256[] calldata investAllocations
     ) external override(IVaultShares) onlyOwner {
         // 验证输入参数
         uint256 divestLength = divestAdapterIndices.length;

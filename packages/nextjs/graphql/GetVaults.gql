@@ -1,0 +1,34 @@
+query GetVaults($first: Int = 10, $skip: Int = 0, $orderBy: Vault_orderBy, $orderDirection: OrderDirection) {
+  vaults(first: $first, skip: $skip, orderBy: $orderBy, orderDirection: $orderDirection) {
+    id
+    address
+    name
+    isActive
+    totalAssets
+    totalSupply
+    manager {
+      id
+      address
+      owner
+    }
+    createdAt
+    updatedAt
+    deposits(first: 5, orderBy: blockTimestamp, orderDirection: desc) {
+      id
+      user {
+        id
+        address
+      }
+      assets
+      userShares
+      blockTimestamp
+      transactionHash
+    }
+    allocations {
+      id
+      adapterAddress
+      adapterType
+      allocation
+    }
+  }
+}

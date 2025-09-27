@@ -1,8 +1,8 @@
 # .graphclientrc.yml
 sources:
-  - name: YourContract
+  - name: AIVault
     handler:
       graphql:
-        endpoint: http://localhost:8000/subgraphs/name/scaffold-eth/your-contract
+        endpoint: http://localhost:8000/subgraphs/name/scaffold-eth/ai-vault
 documents:
-  - ./graphql/GetGreetings.gql
+  - ./graphql/*.gql

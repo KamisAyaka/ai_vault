@@ -27,7 +27,8 @@ contract RealisticUniswapV3Pool {
         token1 = _token1;
         fee = _fee;
         sqrtPriceX96 = _sqrtPriceX96;
-        tick = TickMath.getTickAtSqrtRatio(_sqrtPriceX96);
+        // 简化的 tick 计算，避免使用 getTickAtSqrtRatio
+        tick = int24(int256(uint256(_sqrtPriceX96)) / 1e12);
         liquidity = 0;
     }
 
@@ -84,7 +85,8 @@ contract RealisticUniswapV3Pool {
         } else {
             sqrtPriceX96 = uint160(uint256(sqrtPriceX96) - priceImpact);
         }
-        tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+        // 简化的 tick 计算，避免使用 getTickAtSqrtRatio
+        tick = int24(int256(uint256(sqrtPriceX96)) / 1e12);
     }
 }
 

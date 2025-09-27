@@ -79,7 +79,7 @@ contract AIAgentVaultManager is Ownable {
      * @param adapterIndices 适配器索引数组，指定要使用的适配器
      * @param allocationData 新的资产分配数据
      */
-    function updateHoldingAllocation(IERC20 token, uint256[] memory adapterIndices, uint256[] memory allocationData)
+    function updateHoldingAllocation(IERC20 token, uint256[] calldata adapterIndices, uint256[] calldata allocationData)
         external
         onlyOwner
     {
@@ -119,11 +119,11 @@ contract AIAgentVaultManager is Ownable {
      */
     function partialUpdateHoldingAllocation(
         IERC20 token,
-        uint256[] memory divestAdapterIndices,
-        uint256[] memory divestAmounts,
-        uint256[] memory investAdapterIndices,
-        uint256[] memory investAmounts,
-        uint256[] memory investAllocations
+        uint256[] calldata divestAdapterIndices,
+        uint256[] calldata divestAmounts,
+        uint256[] calldata investAdapterIndices,
+        uint256[] calldata investAmounts,
+        uint256[] calldata investAllocations
     ) external onlyOwner {
         uint256 divestLength = divestAdapterIndices.length;
         uint256 investLength = investAdapterIndices.length;

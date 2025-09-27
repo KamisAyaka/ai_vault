@@ -1,0 +1,47 @@
+query GetVaultById($id: ID!) {
+  vault(id: $id) {
+    id
+    address
+    name
+    isActive
+    totalAssets
+    totalSupply
+    manager {
+      id
+      address
+      owner
+    }
+    createdAt
+    updatedAt
+    deposits(first: 100, orderBy: blockTimestamp, orderDirection: desc) {
+      id
+      user {
+        id
+        address
+      }
+      assets
+      userShares
+      blockNumber
+      blockTimestamp
+      transactionHash
+    }
+    redeems(first: 100, orderBy: blockTimestamp, orderDirection: desc) {
+      id
+      user {
+        id
+        address
+      }
+      assets
+      shares
+      blockNumber
+      blockTimestamp
+      transactionHash
+    }
+    allocations {
+      id
+      adapterAddress
+      adapterType
+      allocation
+    }
+  }
+}

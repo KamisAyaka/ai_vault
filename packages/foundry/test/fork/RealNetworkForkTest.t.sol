@@ -8,8 +8,8 @@ import "../../contracts/protocol/VaultShares.sol";
 import "../../contracts/protocol/investableUniverseAdapters/AaveAdapter.sol";
 import "../../contracts/protocol/investableUniverseAdapters/UniswapV2Adapter.sol";
 import "../../contracts/protocol/investableUniverseAdapters/UniswapV3Adapter.sol";
-import "../../contracts/vendor/UniswapV3/core/IUniswapV3Pool.sol";
-import "../../contracts/vendor/UniswapV3/core/IUniswapV3Factory.sol";
+import "../../contracts/vendor/UniswapV3/core/IMinimalUniswapV3Pool.sol";
+import "../../contracts/vendor/UniswapV3/core/IMinimalUniswapV3Factory.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
@@ -195,11 +195,12 @@ contract RealNetworkForkTest is Test {
         _createVault();
 
         // 先查询当前池子的价格信息
-        address poolAddress = IUniswapV3Factory(UNISWAP_V3_FACTORY_MAINNET).getPool(WBTC_MAINNET, USDC_MAINNET, 3000);
+        address poolAddress =
+            IMinimalUniswapV3Factory(UNISWAP_V3_FACTORY_MAINNET).getPool(WBTC_MAINNET, USDC_MAINNET, 3000);
         require(poolAddress != address(0), "Pool does not exist");
         console.log("Pool address:", poolAddress);
 
-        (uint160 sqrtPriceX96, int24 currentTick,,,,,) = IUniswapV3Pool(poolAddress).slot0();
+        (uint160 sqrtPriceX96, int24 currentTick,,,,,) = IMinimalUniswapV3Pool(poolAddress).slot0();
         console.log("Current pool sqrtPriceX96:", sqrtPriceX96);
         console.log("Current pool tick:", currentTick);
 
@@ -296,10 +297,11 @@ contract RealNetworkForkTest is Test {
         _createVault();
 
         // 先查询当前池子的价格信息
-        address poolAddress = IUniswapV3Factory(UNISWAP_V3_FACTORY_MAINNET).getPool(USDC_MAINNET, WETH_MAINNET, 3000);
+        address poolAddress =
+            IMinimalUniswapV3Factory(UNISWAP_V3_FACTORY_MAINNET).getPool(USDC_MAINNET, WETH_MAINNET, 3000);
         require(poolAddress != address(0), "Pool does not exist");
 
-        (, int24 currentTick,,,,,) = IUniswapV3Pool(poolAddress).slot0();
+        (, int24 currentTick,,,,,) = IMinimalUniswapV3Pool(poolAddress).slot0();
 
         // 计算合理的 tick 范围
         int24 tickRange = 2000; // 大约 20% 的范围
@@ -466,8 +468,9 @@ contract RealNetworkForkTest is Test {
         );
 
         // 配置 UniswapV3 适配器 - 使用合理的 tick 范围
-        address poolAddress = IUniswapV3Factory(UNISWAP_V3_FACTORY_MAINNET).getPool(USDC_MAINNET, WETH_MAINNET, 3000);
-        (, int24 currentTick,,,,,) = IUniswapV3Pool(poolAddress).slot0();
+        address poolAddress =
+            IMinimalUniswapV3Factory(UNISWAP_V3_FACTORY_MAINNET).getPool(USDC_MAINNET, WETH_MAINNET, 3000);
+        (, int24 currentTick,,,,,) = IMinimalUniswapV3Pool(poolAddress).slot0();
 
         int24 tickRange = 2000; // 大约 20% 的范围
         int24 tickLower = currentTick - tickRange;

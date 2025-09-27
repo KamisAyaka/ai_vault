@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     MockToken: {
-      address: "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
+      address: "0x90bb87c6258ad0d309d2f3a263d3bc7b0b9f522d",
       abi: [
         {
           type: "constructor",
@@ -353,10 +353,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 1,
+      deployedOnBlock: 21,
     },
     AIAgentVaultManager: {
-      address: "0xe1aa25618fa0c7a1cfdab5d6b456af611873b629",
+      address: "0x7c10a8944baa22a41a51b82dc419e866a04e55db",
       abi: [
         {
           type: "constructor",
@@ -732,10 +732,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 3,
+      deployedOnBlock: 27,
     },
     MockAavePool: {
-      address: "0xe1da8919f262ee86f9be05059c9280142cf23f48",
+      address: "0xdc88b5feffd566bfa016b6b9268ea29929e7adf1",
       abi: [
         {
           type: "constructor",
@@ -1088,10 +1088,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 3,
+      deployedOnBlock: 28,
     },
     AaveAdapter: {
-      address: "0x5b3120d0da5fdcba7aef87a9c3c64829c1c0d76b",
+      address: "0x5268dce6def0b42d3c315de18f2eb43fea782835",
       abi: [
         {
           type: "constructor",
@@ -1387,10 +1387,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 10,
+      deployedOnBlock: 48,
     },
     UniswapV2Adapter: {
-      address: "0x33b1b5aa9aa4da83a332f0bc5cac6a903fde5d92",
+      address: "0xec12943948293be030811514e0b374d040f60f56",
       abi: [
         {
           type: "constructor",
@@ -1860,10 +1860,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 10,
+      deployedOnBlock: 49,
     },
     UniswapV3Adapter: {
-      address: "0x19a1c09fe3399c4daaa2c98b936a8e460fc5eaa4",
+      address: "0xa922c3227149d9bc5001d796aa418b590d0c4a7b",
       abi: [
         {
           type: "constructor",
@@ -2475,10 +2475,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 11,
+      deployedOnBlock: 49,
     },
     VaultShares: {
-      address: "0x49b8e3b089d4ebf9f37b1da9b839ec013c2cd8c9",
+      address: "0x0d8694f47cdc22bb8c6d2668a38d07a439f378f9",
       abi: [
         {
           type: "constructor",
@@ -3579,7 +3579,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 12,
+      deployedOnBlock: 49,
     },
     VaultSharesETH: {
       address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e",
