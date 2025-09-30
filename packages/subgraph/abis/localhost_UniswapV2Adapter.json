@@ -6,6 +6,11 @@
         "name": "uniswapRouter",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "uniswapFactory",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -124,6 +129,13 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initializeFactory",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",

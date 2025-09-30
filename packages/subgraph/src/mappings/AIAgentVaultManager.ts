@@ -31,10 +31,14 @@ export function handleVaultCreatedAndRegistered(
   let vault = new Vault(vaultId);
   vault.address = event.params.vault;
   vault.name = event.params.vaultName;
+  vault.symbol = ""; // 默认值，需要从VaultImplementation合约获取
+  vault.fee = BigInt.fromI32(0); // 默认值，需要从VaultImplementation合约获取
   vault.isActive = true;
   vault.totalAssets = BigInt.fromI32(0);
   vault.totalSupply = BigInt.fromI32(0);
   vault.manager = managerId;
+  vault.factory = ""; // 默认值，需要从VaultFactory获取
+  vault.asset = ""; // 默认值，需要从VaultImplementation合约获取
   vault.createdAt = event.block.timestamp;
   vault.updatedAt = event.block.timestamp;
   vault.save();

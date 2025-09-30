@@ -6,26 +6,35 @@
     "MockToken": {
       "address": "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35"
     },
-    "AIAgentVaultManager": {
-      "address": "0xe1aa25618fa0c7a1cfdab5d6b456af611873b629"
-    },
-    "MockAavePool": {
+    "VaultFactory": {
       "address": "0xe1da8919f262ee86f9be05059c9280142cf23f48"
     },
-    "AaveAdapter": {
-      "address": "0x5b3120d0da5fdcba7aef87a9c3c64829c1c0d76b"
+    "VaultImplementation": {
+      "address": "0x36005a8e2295e5186699663a4f4d9ce3da89aefa"
     },
-    "UniswapV2Adapter": {
+    "AIAgentVaultManager": {
+      "address": "0x8ce361602b935680e8dec218b820ff5056beb7af"
+    },
+    "MockAavePool": {
+      "address": "0x0c8e79f3534b00d9a3d4a856b665bf4ebc22f2ba"
+    },
+    "AaveAdapter": {
       "address": "0x33b1b5aa9aa4da83a332f0bc5cac6a903fde5d92"
     },
-    "UniswapV3Adapter": {
+    "UniswapV2Adapter": {
       "address": "0x19a1c09fe3399c4daaa2c98b936a8e460fc5eaa4"
     },
-    "VaultShares": {
+    "UniswapV3Adapter": {
       "address": "0x49b8e3b089d4ebf9f37b1da9b839ec013c2cd8c9"
+    },
+    "VaultShares": {
+      "address": "0x0d8694f47cdc22bb8c6d2668a38d07a439f378f9"
     },
     "VaultSharesETH": {
       "address": "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e"
+    },
+    "MockWETH9": {
+      "address": "0xa15bb66138824a1c7167f5e85b957d04dd34e468"
     }
   }
 }

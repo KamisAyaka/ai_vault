@@ -2,11 +2,31 @@
 
 ## 项目概述
 
-这是一个基于 ERC-4626 标准的 AI 代理金库管理系统，允许用户将资金存入金库，由 AI 代理自动分配到不同的 DeFi 协议中获取收益。系统支持 Aave、Uniswap V2、Uniswap V3 等主流 DeFi 协议。
+这是一个基于 ERC-4626 标准的 AI 代理金库管理系统，采用工厂模式（Factory Pattern）和最小代理模式（Minimal Proxy Pattern）来创建和管理金库。系统允许用户将资金存入金库，由 AI 代理自动分配到不同的 DeFi 协议中获取收益。系统支持 Aave、Uniswap V2、Uniswap V3 等主流 DeFi 协议。
 
 ## 核心合约架构
 
 ### 1. 主要合约组件
+
+#### VaultFactory (金库工厂)
+
+- **功能**: 使用最小代理模式创建和管理金库实例
+- **权限**: 仅工厂所有者可调用
+- **核心功能**:
+  - 创建新的金库实例（按代币类型）
+  - 批量创建金库
+  - 查询已创建的金库
+  - 防止重复创建相同代币的金库
+
+#### VaultImplementation (金库实现)
+
+- **功能**: 基于 ERC-4626 的投资金库实现合约，支持代理模式
+- **特点**: 使用 Initializable 支持代理模式初始化
+- **核心功能**:
+  - 标准 ERC-4626 功能（存款、取款、赎回）
+  - 投资策略管理
+  - 管理费收取
+  - 防重入保护
 
 #### AIAgentVaultManager (AI 代理金库管理器)
 
@@ -16,12 +36,6 @@
   - 添加/管理金库
   - 更新投资分配策略
   - 管理协议适配器
-
-#### VaultShares (ERC-4626 金库)
-
-- **功能**: 标准 ERC-4626 金库，支持任意 ERC20 资产
-- **用户功能**: 存款、取款、查看收益
-- **管理功能**: 投资策略配置
 
 #### VaultSharesETH (ETH 金库)
 
@@ -58,19 +72,45 @@ interface VaultManagement {
 }
 ```
 
-#### 1.2 用户投资界面
+#### 1.2 金库创建界面（管理员功能）
+
+```typescript
+interface VaultCreation {
+  // 创建单个金库
+  createVault: {
+    asset: string; // 代币地址
+    vaultName: string; // 金库名称
+    vaultSymbol: string; // 金库代币符号
+    fee: bigint; // 管理费率（基点，10000 = 100%）
+  };
+
+  // 批量创建金库
+  createVaultsBatch: {
+    assets: string[]; // 代币地址数组
+    vaultNames: string[]; // 金库名称数组
+    vaultSymbols: string[]; // 金库代币符号数组
+    fees: bigint[]; // 管理费率数组
+  };
+
+  // 查询金库
+  getVault: (asset: string) => Promise<string>; // 返回金库地址
+  hasVault: (asset: string) => Promise<boolean>; // 检查是否已有金库
+}
+```
+
+#### 1.3 用户投资界面
 
 ```typescript
 interface UserInvestment {
   // 存款功能
   deposit: {
-    // 普通ERC20资产存款 (VaultShares)
+    // 普通ERC20资产存款 (VaultImplementation)
     deposit: (assets: bigint, receiver: string) => Promise<bigint>;
 
     // ETH存款（仅限VaultSharesETH）
     depositETH: (receiver: string) => Promise<bigint>;
 
-    // 按份额铸造 (VaultShares)
+    // 按份额铸造 (VaultImplementation)
     mint: (shares: bigint, receiver: string) => Promise<bigint>;
 
     // 按份额铸造ETH（仅限VaultSharesETH）
@@ -79,14 +119,14 @@ interface UserInvestment {
 
   // 取款功能
   withdraw: {
-    // 按资产数量取款 (VaultShares)
+    // 按资产数量取款 (VaultImplementation)
     withdraw: (
       assets: bigint,
       receiver: string,
       owner: string
     ) => Promise<bigint>;
 
-    // 按份额赎回 (VaultShares)
+    // 按份额赎回 (VaultImplementation)
     redeem: (
       shares: bigint,
       receiver: string,
@@ -323,9 +363,51 @@ const fetchDeposits = async (first: number = 10, skip: number = 0) => {
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useAccount } from "wagmi";
 
-// 存款操作
+// ============ 金库工厂操作（管理员功能） ============
+
+// 创建单个金库
+const { writeContractAsync: createVaultAsync } = useScaffoldWriteContract({
+  contractName: "VaultFactory",
+});
+
+const handleCreateVault = async (
+  asset: string,
+  vaultName: string,
+  vaultSymbol: string,
+  fee: bigint
+) => {
+  const result = await createVaultAsync({
+    functionName: "createVault",
+    args: [asset, vaultName, vaultSymbol, fee],
+  });
+  return result;
+};
+
+// 批量创建金库
+const { writeContractAsync: createVaultsBatchAsync } = useScaffoldWriteContract(
+  {
+    contractName: "VaultFactory",
+  }
+);
+
+const handleCreateVaultsBatch = async (
+  assets: string[],
+  vaultNames: string[],
+  vaultSymbols: string[],
+  fees: bigint[]
+) => {
+  const result = await createVaultsBatchAsync({
+    functionName: "createVaultsBatch",
+    args: [assets, vaultNames, vaultSymbols, fees],
+  });
+  return result;
+};
+
+// ============ 金库操作（用户功能） ============
+
+// 存款操作（VaultImplementation）
 const { writeContractAsync: depositAsync } = useScaffoldWriteContract({
-  contractName: "VaultShares",
+  contractName: "VaultImplementation",
 });
 
 const handleDeposit = async (assets: bigint, receiver: string) => {
@@ -351,9 +433,9 @@ const handleDepositETH = async (receiver: string, ethAmount: bigint) => {
   return result;
 };
 
-// 按份额铸造
+// 按份额铸造（VaultImplementation）
 const { writeContractAsync: mintAsync } = useScaffoldWriteContract({
-  contractName: "VaultShares",
+  contractName: "VaultImplementation",
 });
 
 const handleMint = async (shares: bigint, receiver: string) => {
@@ -382,9 +464,9 @@ const handleMintETH = async (
   return result;
 };
 
-// 取款操作
+// 取款操作（VaultImplementation）
 const { writeContractAsync: withdrawAsync } = useScaffoldWriteContract({
-  contractName: "VaultShares",
+  contractName: "VaultImplementation",
 });
 
 const handleWithdraw = async (
@@ -399,9 +481,9 @@ const handleWithdraw = async (
   return result;
 };
 
-// 赎回操作
+// 赎回操作（VaultImplementation）
 const { writeContractAsync: redeemAsync } = useScaffoldWriteContract({
-  contractName: "VaultShares",
+  contractName: "VaultImplementation",
 });
 
 const handleRedeem = async (
@@ -453,7 +535,133 @@ const handleRedeemETH = async (
 
 ### 2. 组件实现建议
 
-#### 2.1 金库卡片组件
+#### 2.1 金库创建组件（管理员功能）
+
+```typescript
+import { useState } from "react";
+import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { Address } from "~~/components/scaffold-eth";
+
+interface VaultCreationFormProps {
+  onVaultCreated?: (vaultAddress: string) => void;
+}
+
+const VaultCreationForm: React.FC<VaultCreationFormProps> = ({
+  onVaultCreated,
+}) => {
+  const [asset, setAsset] = useState("");
+  const [vaultName, setVaultName] = useState("");
+  const [vaultSymbol, setVaultSymbol] = useState("");
+  const [fee, setFee] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+
+  const { writeContractAsync: createVaultAsync } = useScaffoldWriteContract({
+    contractName: "VaultFactory",
+  });
+
+  const handleCreateVault = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!asset || !vaultName || !vaultSymbol || !fee) return;
+
+    setIsCreating(true);
+    try {
+      const result = await createVaultAsync({
+        functionName: "createVault",
+        args: [asset, vaultName, vaultSymbol, BigInt(parseInt(fee))],
+      });
+
+      console.log("Vault created:", result);
+      onVaultCreated?.(result);
+
+      // 重置表单
+      setAsset("");
+      setVaultName("");
+      setVaultSymbol("");
+      setFee("");
+    } catch (error) {
+      console.error("Failed to create vault:", error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <div className="vault-creation bg-base-100 p-6 rounded-xl shadow-lg">
+      <h3 className="text-xl font-bold mb-4">Create New Vault</h3>
+
+      <form onSubmit={handleCreateVault} className="space-y-4">
+        <div>
+          <label className="label">
+            <span className="label-text">Asset Token Address</span>
+          </label>
+          <input
+            type="text"
+            value={asset}
+            onChange={(e) => setAsset(e.target.value)}
+            placeholder="0x..."
+            className="input input-bordered w-full"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="label">
+            <span className="label-text">Vault Name</span>
+          </label>
+          <input
+            type="text"
+            value={vaultName}
+            onChange={(e) => setVaultName(e.target.value)}
+            placeholder="USDC Vault"
+            className="input input-bordered w-full"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="label">
+            <span className="label-text">Vault Symbol</span>
+          </label>
+          <input
+            type="text"
+            value={vaultSymbol}
+            onChange={(e) => setVaultSymbol(e.target.value)}
+            placeholder="vUSDC"
+            className="input input-bordered w-full"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="label">
+            <span className="label-text">Management Fee (basis points)</span>
+          </label>
+          <input
+            type="number"
+            value={fee}
+            onChange={(e) => setFee(e.target.value)}
+            placeholder="100 (1%)"
+            min="0"
+            max="10000"
+            className="input input-bordered w-full"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isCreating || !asset || !vaultName || !vaultSymbol || !fee}
+          className="btn btn-primary w-full"
+        >
+          {isCreating ? "Creating Vault..." : "Create Vault"}
+        </button>
+      </form>
+    </div>
+  );
+};
+```
+
+#### 2.2 金库卡片组件
 
 ```typescript
 import { useVault } from "~~/hooks/useVault";
@@ -902,12 +1110,14 @@ yarn graphclient:build
 
 ### 2. 合约部署顺序
 
-1. 部署协议适配器（AaveAdapter, UniswapV2Adapter, UniswapV3Adapter）
-2. 部署 AIAgentVaultManager
-3. 部署 VaultShares 和 VaultSharesETH 金库
-4. 配置适配器参数
-5. 将金库添加到管理器
-6. 启动 Subgraph 服务并部署
+1. **部署协议适配器**（AaveAdapter, UniswapV2Adapter, UniswapV3Adapter）
+2. **部署 AIAgentVaultManager**
+3. **部署 VaultImplementation**（金库实现合约）
+4. **部署 VaultFactory**（金库工厂合约）
+5. **部署 VaultSharesETH**（ETH 金库）
+6. **配置适配器参数**
+7. **通过工厂创建金库实例**
+8. **启动 Subgraph 服务并部署**
 
 ### 3. 前端配置
 
@@ -916,33 +1126,237 @@ yarn graphclient:build
 export const scaffoldConfig = {
   targetNetworks: [hardhat, sepolia, mainnet],
   contracts: {
+    // 核心合约
+    VaultFactory: {
+      address: "0xe1da8919f262ee86f9be05059c9280142cf23f48",
+      abi: VaultFactoryABI,
+    },
+    VaultImplementation: {
+      address: "0x36005a8e2295e5186699663a4f4d9ce3da89aefa", // 通过工厂创建的金库实例
+      abi: VaultImplementationABI,
+    },
     AIAgentVaultManager: {
-      address: "0x...",
+      address: "0x8ce361602b935680e8dec218b820ff5056beb7af",
       abi: AIAgentVaultManagerABI,
     },
-    VaultShares: {
-      address: "0x...",
-      abi: VaultSharesABI,
-    },
     VaultSharesETH: {
-      address: "0x...",
+      address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e",
       abi: VaultSharesETHABI,
     },
     // 适配器合约
     AaveAdapter: {
-      address: "0x...",
+      address: "0x33b1b5aa9aa4da83a332f0bc5cac6a903fde5d92",
       abi: AaveAdapterABI,
     },
     UniswapV2Adapter: {
-      address: "0x...",
+      address: "0x19a1c09fe3399c4daaa2c98b936a8e460fc5eaa4",
       abi: UniswapV2AdapterABI,
     },
     UniswapV3Adapter: {
-      address: "0x...",
+      address: "0x49b8e3b089d4ebf9f37b1da9b839ec013c2cd8c9",
       abi: UniswapV3AdapterABI,
+    },
+    // 测试代币
+    MockToken: {
+      address: "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
+      abi: MockTokenABI,
+    },
+    MockWETH9: {
+      address: "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
+      abi: MockWETH9ABI,
     },
   },
 };
+```
+
+### 4. 工厂模式使用说明
+
+#### 4.1 创建金库流程
+
+```typescript
+// 1. 通过工厂查询是否已有金库
+const { data: hasVault } = useScaffoldReadContract({
+  contractName: "VaultFactory",
+  functionName: "hasVault",
+  args: [tokenAddress],
+});
+
+// 2. 如果没有金库，创建新金库
+const { writeContractAsync: createVault } = useScaffoldWriteContract({
+  contractName: "VaultFactory",
+});
+
+const createNewVault = async () => {
+  await createVault({
+    functionName: "createVault",
+    args: [
+      tokenAddress, // 代币地址
+      "USDC Vault", // 金库名称
+      "vUSDC", // 金库符号
+      BigInt(100), // 管理费率（100 = 1%）
+    ],
+  });
+};
+
+// 3. 获取创建的金库地址
+const { data: vaultAddress } = useScaffoldReadContract({
+  contractName: "VaultFactory",
+  functionName: "getVault",
+  args: [tokenAddress],
+});
+```
+
+#### 4.2 动态金库交互
+
+```typescript
+// 使用动态获取的金库地址进行交互
+const { writeContractAsync: depositAsync } = useScaffoldWriteContract({
+  contractName: "VaultImplementation",
+  address: vaultAddress, // 动态金库地址
+});
+
+const handleDeposit = async (amount: bigint) => {
+  await depositAsync({
+    functionName: "deposit",
+    args: [amount, userAddress],
+  });
+};
+```
+
+## 子图数据模型更新
+
+### 新增实体
+
+#### VaultFactory 实体
+
+```graphql
+type VaultFactory @entity(immutable: true) {
+  id: ID! # 工厂合约地址
+  address: Bytes!
+  vaultImplementation: Bytes! # 金库实现合约地址
+  vaultManager: Bytes! # 金库管理者合约地址
+  createdAt: BigInt!
+  updatedAt: BigInt!
+
+  # 关联关系
+  vaults: [Vault!]! @derivedFrom(field: "factory")
+}
+```
+
+#### VaultManager 实体
+
+```graphql
+type VaultManager @entity(immutable: true) {
+  id: ID! # 管理器地址
+  address: Bytes!
+  owner: Bytes!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+
+  # 关联关系
+  vaults: [Vault!]! @derivedFrom(field: "manager")
+}
+```
+
+#### Asset 实体
+
+```graphql
+type Asset @entity(immutable: true) {
+  id: ID! # 资产代币地址
+  address: Bytes!
+  symbol: String!
+  name: String!
+  decimals: Int!
+  createdAt: BigInt!
+
+  # 关联关系
+  vault: Vault @derivedFrom(field: "asset")
+}
+```
+
+### 更新的 Vault 实体
+
+```graphql
+type Vault @entity(immutable: false) {
+  id: ID! # 金库地址
+  address: Bytes!
+  name: String!
+  symbol: String!
+  fee: BigInt! # 管理费率（基点）
+  isActive: Boolean!
+  totalAssets: BigInt!
+  totalSupply: BigInt!
+  factory: VaultFactory! # 创建此金库的工厂
+  manager: VaultManager! # 金库管理者（也是所有者）
+  asset: Asset! # 金库支持的资产
+  createdAt: BigInt!
+  updatedAt: BigInt!
+
+  # 关联关系
+  deposits: [Deposit!]! @derivedFrom(field: "vault")
+  redeems: [Redeem!]! @derivedFrom(field: "vault")
+  allocations: [Allocation!]! @derivedFrom(field: "vault")
+}
+```
+
+### 查询示例
+
+```typescript
+// 查询所有金库及其工厂信息
+const queryAllVaults = `
+  query GetAllVaults {
+    vaults {
+      id
+      address
+      name
+      symbol
+      isActive
+      totalAssets
+      totalSupply
+      factory {
+        id
+        address
+        vaultImplementation
+        vaultManager
+      }
+      manager {
+        id
+        address
+        owner
+      }
+      asset {
+        id
+        address
+        symbol
+        name
+        decimals
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+// 查询特定工厂创建的金库
+const queryVaultsByFactory = `
+  query GetVaultsByFactory($factoryId: ID!) {
+    vaultFactory(id: $factoryId) {
+      id
+      address
+      vaultImplementation
+      vaultManager
+      vaults {
+        id
+        address
+        name
+        symbol
+        isActive
+        totalAssets
+        totalSupply
+      }
+    }
+  }
+`;
 ```
 
 ## 安全注意事项
@@ -952,3 +1366,5 @@ export const scaffoldConfig = {
 3. **重入攻击防护**: 合约已实现 ReentrancyGuard
 4. **输入验证**: 前端需要验证用户输入的有效性
 5. **错误处理**: 实现完善的错误处理和用户提示
+6. **工厂模式安全**: 确保只有工厂所有者可以创建金库
+7. **代理模式安全**: 验证金库初始化只能执行一次

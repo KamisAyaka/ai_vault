@@ -23,6 +23,11 @@ contract MockUniswapV2Factory {
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair;
     }
+
+    function getPairAddress(address tokenA, address tokenB) external view returns (address pair) {
+        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        return getPair[token0][token1];
+    }
 }
 
 /// -----------------------------------------------------------------------

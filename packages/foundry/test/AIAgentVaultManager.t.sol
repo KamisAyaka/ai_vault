@@ -3,7 +3,8 @@ pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 import "../contracts/protocol/AIAgentVaultManager.sol";
-import "../contracts/protocol/VaultShares.sol";
+import "../contracts/protocol/VaultFactory.sol";
+import "../contracts/protocol/VaultImplementation.sol";
 import "../contracts/protocol/VaultSharesETH.sol";
 import { MockAdapter } from "./mock/MockAdapter.sol";
 import { MockToken } from "./mock/MockToken.sol";
@@ -11,6 +12,7 @@ import { MockWETH9 } from "./mock/MockWETH9.sol";
 
 contract AIAgentVaultManagerTest is Test {
     AIAgentVaultManager public manager;
+    VaultFactory public vaultFactory;
     MockToken public token;
     MockWETH9 public weth;
     address public owner;
@@ -18,21 +20,16 @@ contract AIAgentVaultManagerTest is Test {
 
     // Helper function to create and add a vault
     function _createAndAddVault(MockToken asset) internal returns (address) {
-        VaultShares vault = new VaultShares(
-            IVaultShares.ConstructorData({
-                asset: asset,
-                Fee: 1000,
-                vaultName: string.concat("Test ", asset.name()),
-                vaultSymbol: string.concat("TEST", asset.symbol())
-            })
+        address vault = vaultFactory.createVault(
+            asset,
+            string.concat("Test ", asset.name()),
+            string.concat("TEST", asset.symbol()),
+            1000 // 0.1% fee
         );
 
-        // Transfer ownership to manager
-        vault.transferOwnership(address(manager));
-
-        vm.prank(owner);
-        manager.addVault(asset, address(vault));
-        return address(vault);
+        // VaultFactory already transfers ownership to manager
+        manager.addVault(asset, vault);
+        return vault;
     }
 
     function setUp() public {
@@ -40,40 +37,38 @@ contract AIAgentVaultManagerTest is Test {
         user = address(0x123);
 
         weth = new MockWETH9();
-        manager = new AIAgentVaultManager(); // 不再需要 WETH 参数
         token = new MockToken("Test Token", "TEST");
+
+        // 部署工厂
+        VaultImplementation implementation = new VaultImplementation();
+        manager = new AIAgentVaultManager();
+        vaultFactory = new VaultFactory(address(implementation), address(manager));
 
         // Transfer some tokens to the user for testing
         token.transfer(user, 1000 * 10 ** 18);
     }
 
     function testAddVault() public {
-        // First create a vault manually
-        VaultShares vault = new VaultShares(
-            IVaultShares.ConstructorData({ asset: token, Fee: 1000, vaultName: "Test Vault", vaultSymbol: "TEST" })
-        );
+        // First create a vault using factory
+        address vault = vaultFactory.createVault(token, "Test Vault", "TEST", 1000);
 
-        // Transfer ownership to manager
-        vault.transferOwnership(address(manager));
+        // VaultFactory already transfers ownership to manager, so no need to transfer again
 
-        vm.prank(owner);
-        manager.addVault(token, address(vault));
+        // 不需要 vm.prank，因为测试合约就是所有者
+        manager.addVault(token, vault);
 
-        assertTrue(address(vault) != address(0));
+        assertTrue(vault != address(0));
         assertTrue(manager.getAllAdapters().length == 0);
     }
 
     function testAddVaultNotOwner() public {
-        VaultShares vault = new VaultShares(
-            IVaultShares.ConstructorData({ asset: token, Fee: 1000, vaultName: "Test Vault", vaultSymbol: "TEST" })
-        );
+        address vault = vaultFactory.createVault(token, "Test Vault", "TEST", 1000);
 
-        // Transfer ownership to manager
-        vault.transferOwnership(address(manager));
+        // VaultFactory already transfers ownership to manager, so no need to transfer again
 
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
-        manager.addVault(token, address(vault));
+        manager.addVault(token, vault);
     }
 
     function testAddETHVault() public {
@@ -82,7 +77,6 @@ contract AIAgentVaultManagerTest is Test {
             IVaultShares.ConstructorData({ asset: weth, Fee: 1000, vaultName: "Test ETH Vault", vaultSymbol: "TESTETH" })
         );
 
-        vm.prank(owner);
         manager.addVault(weth, address(ethVault));
 
         assertTrue(address(ethVault) != address(0));
@@ -106,7 +100,6 @@ contract AIAgentVaultManagerTest is Test {
     function testAddAdapter() public {
         MockAdapter adapter = new MockAdapter("Test Adapter");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         assertTrue(manager.isAdapterApproved(IProtocolAdapter(address(adapter))));
@@ -123,7 +116,6 @@ contract AIAgentVaultManagerTest is Test {
     }
 
     function testAddAdapterZeroAddress() public {
-        vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(
                 AIAgentVaultManager.AIAgentVaultManager__AdapterNotApproved.selector, IProtocolAdapter(address(0))
@@ -135,10 +127,8 @@ contract AIAgentVaultManagerTest is Test {
     function testAddAdapterAlreadyApproved() public {
         MockAdapter adapter = new MockAdapter("Test Adapter");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
-        vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(
                 AIAgentVaultManager.AIAgentVaultManager__AdapterAlreadyApproved.selector,
@@ -150,17 +140,13 @@ contract AIAgentVaultManagerTest is Test {
 
     function testUpdateHoldingAllocation() public {
         // Create vault first
-        vm.prank(owner);
         _createAndAddVault(token);
 
         // Add adapters
         MockAdapter adapter1 = new MockAdapter("Adapter 1");
         MockAdapter adapter2 = new MockAdapter("Adapter 2");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter1)));
-
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter2)));
 
         // Update allocation
@@ -172,7 +158,6 @@ contract AIAgentVaultManagerTest is Test {
         allocationData[0] = 600; // 60%
         allocationData[1] = 400; // 40%
 
-        vm.prank(owner);
         manager.updateHoldingAllocation(token, adapterIndices, allocationData);
 
         // Allocation updated event should be emitted
@@ -181,13 +166,11 @@ contract AIAgentVaultManagerTest is Test {
 
     function testUpdateHoldingAllocationInvalidParams() public {
         // Create vault first
-        vm.prank(owner);
         _createAndAddVault(token);
 
         // Add adapters
         MockAdapter adapter1 = new MockAdapter("Adapter 1");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter1)));
 
         // Try with mismatched array lengths
@@ -198,19 +181,16 @@ contract AIAgentVaultManagerTest is Test {
         allocationData[0] = 600;
         allocationData[1] = 400;
 
-        vm.prank(owner);
         vm.expectRevert(AIAgentVaultManager.AIAgentVaultManager__InvalidAllocation.selector);
         manager.updateHoldingAllocation(token, adapterIndices, allocationData);
     }
 
     function testUpdateHoldingAllocationInvalidAdapterIndex() public {
         // Create vault first
-        vm.prank(owner);
         _createAndAddVault(token);
 
         // Add one adapter
         MockAdapter adapter = new MockAdapter("Test Adapter");
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         // Try to use an invalid adapter index
@@ -220,7 +200,6 @@ contract AIAgentVaultManagerTest is Test {
         uint256[] memory allocationData = new uint256[](1);
         allocationData[0] = 1000;
 
-        vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(AIAgentVaultManager.AIAgentVaultManager__InvalidAdapterIndex.selector, 5)
         );
@@ -236,7 +215,6 @@ contract AIAgentVaultManagerTest is Test {
         uint256[] memory allocationData = new uint256[](1);
         allocationData[0] = 1000;
 
-        vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(AIAgentVaultManager.AIAgentVaultManager__VaultNotRegistered.selector, address(0))
         );
@@ -245,17 +223,13 @@ contract AIAgentVaultManagerTest is Test {
 
     function testPartialUpdateHoldingAllocation() public {
         // Create vault first
-        vm.prank(owner);
         address vaultAddress = _createAndAddVault(token);
 
         // Add adapters
         MockAdapter adapter1 = new MockAdapter("Adapter 1");
         MockAdapter adapter2 = new MockAdapter("Adapter 2");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter1)));
-
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter2)));
 
         // First set an allocation so we have something to divest from
@@ -267,7 +241,6 @@ contract AIAgentVaultManagerTest is Test {
         initialAllocationData[0] = 600; // 60%
         initialAllocationData[1] = 400; // 40%
 
-        vm.prank(owner);
         manager.updateHoldingAllocation(token, initialAdapterIndices, initialAllocationData);
 
         // Transfer some tokens to vault so it can invest
@@ -293,7 +266,6 @@ contract AIAgentVaultManagerTest is Test {
         uint256[] memory investAllocations = new uint256[](1);
         investAllocations[0] = 500;
 
-        vm.prank(owner);
         manager.partialUpdateHoldingAllocation(
             token, divestAdapterIndices, divestAmounts, investAdapterIndices, investAmounts, investAllocations
         );
@@ -301,7 +273,6 @@ contract AIAgentVaultManagerTest is Test {
 
     function testPartialUpdateHoldingAllocationInvalidParams() public {
         // Create vault first
-        vm.prank(owner);
         _createAndAddVault(token);
 
         // Try with mismatched divest array lengths
@@ -321,7 +292,6 @@ contract AIAgentVaultManagerTest is Test {
         uint256[] memory investAllocations = new uint256[](1);
         investAllocations[0] = 500;
 
-        vm.prank(owner);
         vm.expectRevert(AIAgentVaultManager.AIAgentVaultManager__InvalidAllocation.selector);
         manager.partialUpdateHoldingAllocation(
             token, divestAdapterIndices, divestAmounts, investAdapterIndices, investAmounts, investAllocations
@@ -346,7 +316,6 @@ contract AIAgentVaultManagerTest is Test {
         uint256[] memory investAllocations = new uint256[](1);
         investAllocations[0] = 500;
 
-        vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(AIAgentVaultManager.AIAgentVaultManager__VaultNotRegistered.selector, address(0))
         );
@@ -357,10 +326,8 @@ contract AIAgentVaultManagerTest is Test {
 
     function testWithdrawAllInvestments() public {
         // Create vault first
-        vm.prank(owner);
         _createAndAddVault(token);
 
-        vm.prank(owner);
         manager.withdrawAllInvestments(token);
         // Should not revert
     }
@@ -368,7 +335,6 @@ contract AIAgentVaultManagerTest is Test {
     function testWithdrawAllInvestmentsVaultNotRegistered() public {
         MockToken anotherToken = new MockToken("Another Token", "ANOTHER");
 
-        vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(AIAgentVaultManager.AIAgentVaultManager__VaultNotRegistered.selector, address(0))
         );
@@ -377,10 +343,8 @@ contract AIAgentVaultManagerTest is Test {
 
     function testSetVaultNotActive() public {
         // Create vault first
-        vm.prank(owner);
         _createAndAddVault(token);
 
-        vm.prank(owner);
         manager.setVaultNotActive(token);
         // Should emit event and not revert
     }
@@ -388,7 +352,6 @@ contract AIAgentVaultManagerTest is Test {
     function testSetVaultNotActiveVaultNotRegistered() public {
         MockToken anotherToken = new MockToken("Another Token", "ANOTHER");
 
-        vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(AIAgentVaultManager.AIAgentVaultManager__VaultNotRegistered.selector, address(0))
         );
@@ -399,13 +362,11 @@ contract AIAgentVaultManagerTest is Test {
         // Add adapter
         MockAdapter adapter = new MockAdapter("Test Adapter");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         // Execute call
         bytes memory data = abi.encodeWithSelector(adapter.getName.selector);
 
-        vm.prank(owner);
         manager.execute(0, 0, data);
 
         // Should not revert - the call succeeded
@@ -415,7 +376,6 @@ contract AIAgentVaultManagerTest is Test {
     function testExecuteInvalidIndex() public {
         bytes memory data = abi.encodeWithSignature("getName()");
 
-        vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(AIAgentVaultManager.AIAgentVaultManager__InvalidAdapterIndex.selector, 0)
         );
@@ -425,13 +385,11 @@ contract AIAgentVaultManagerTest is Test {
     function testExecuteAdapterCallFailed() public {
         // Add adapter
         MockAdapter adapter = new MockAdapter("Test Adapter");
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         // Execute call with a function that doesn't exist
         bytes memory data = abi.encodeWithSignature("nonExistentFunction()");
 
-        vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(AIAgentVaultManager.AIAgentVaultManager__AdapterCallFailed.selector));
         manager.execute(0, 0, data);
     }
@@ -441,10 +399,7 @@ contract AIAgentVaultManagerTest is Test {
         MockAdapter adapter1 = new MockAdapter("Adapter 1");
         MockAdapter adapter2 = new MockAdapter("Adapter 2");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter1)));
-
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter2)));
 
         // Prepare batch execution
@@ -460,7 +415,6 @@ contract AIAgentVaultManagerTest is Test {
         data[0] = abi.encodeWithSelector(adapter1.getName.selector);
         data[1] = abi.encodeWithSelector(adapter2.getName.selector);
 
-        vm.prank(owner);
         manager.executeBatch(adapterIndices, values, data);
 
         // Should not revert - the calls succeeded
@@ -470,7 +424,6 @@ contract AIAgentVaultManagerTest is Test {
     function testExecuteBatchInvalidAdapterIndex() public {
         // Add one adapter
         MockAdapter adapter = new MockAdapter("Test Adapter");
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         // Prepare batch execution with invalid index
@@ -486,7 +439,6 @@ contract AIAgentVaultManagerTest is Test {
         data[0] = abi.encodeWithSelector(adapter.getName.selector);
         data[1] = abi.encodeWithSelector(adapter.getName.selector);
 
-        vm.prank(owner);
         vm.expectRevert(
             abi.encodeWithSelector(AIAgentVaultManager.AIAgentVaultManager__InvalidAdapterIndex.selector, 5)
         );
@@ -504,7 +456,6 @@ contract AIAgentVaultManagerTest is Test {
         bytes[] memory data = new bytes[](1);
         data[0] = "";
 
-        vm.prank(owner);
         vm.expectRevert(AIAgentVaultManager.AIAgentVaultManager__BatchLengthMismatch.selector);
         manager.executeBatch(adapterIndices, values, data);
     }
@@ -513,7 +464,6 @@ contract AIAgentVaultManagerTest is Test {
     function testExecuteBatchAdapterCallFailed() public {
         // Add adapter
         MockAdapter adapter = new MockAdapter("Test Adapter");
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         // Prepare batch execution with a call that will fail
@@ -527,7 +477,6 @@ contract AIAgentVaultManagerTest is Test {
         bytes[] memory data = new bytes[](1);
         data[0] = abi.encodeWithSignature("nonExistentFunction()");
 
-        vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(AIAgentVaultManager.AIAgentVaultManager__AdapterCallFailed.selector));
         manager.executeBatch(adapterIndices, values, data);
     }
@@ -536,17 +485,13 @@ contract AIAgentVaultManagerTest is Test {
 
     function testPartialUpdateHoldingAllocationInvalidInvestParams() public {
         // Create vault first
-        vm.prank(owner);
         _createAndAddVault(token);
 
         // Add adapters
         MockAdapter adapter1 = new MockAdapter("Adapter 1");
         MockAdapter adapter2 = new MockAdapter("Adapter 2");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter1)));
-
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter2)));
 
         // Try with mismatched invest array lengths
@@ -566,7 +511,6 @@ contract AIAgentVaultManagerTest is Test {
         uint256[] memory investAllocations = new uint256[](1);
         investAllocations[0] = 500;
 
-        vm.prank(owner);
         vm.expectRevert(AIAgentVaultManager.AIAgentVaultManager__InvalidAllocation.selector);
         manager.partialUpdateHoldingAllocation(
             token, divestAdapterIndices, divestAmounts, investAdapterIndices, investAmounts, investAllocations
@@ -575,17 +519,13 @@ contract AIAgentVaultManagerTest is Test {
 
     function testPartialUpdateHoldingAllocationInvalidDivestParams() public {
         // Create vault first
-        vm.prank(owner);
         _createAndAddVault(token);
 
         // Add adapters
         MockAdapter adapter1 = new MockAdapter("Adapter 1");
         MockAdapter adapter2 = new MockAdapter("Adapter 2");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter1)));
-
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter2)));
 
         // Try with mismatched divest array lengths
@@ -605,7 +545,6 @@ contract AIAgentVaultManagerTest is Test {
         uint256[] memory investAllocations = new uint256[](1);
         investAllocations[0] = 500;
 
-        vm.prank(owner);
         vm.expectRevert(AIAgentVaultManager.AIAgentVaultManager__InvalidAllocation.selector);
         manager.partialUpdateHoldingAllocation(
             token, divestAdapterIndices, divestAmounts, investAdapterIndices, investAmounts, investAllocations
@@ -618,7 +557,6 @@ contract AIAgentVaultManagerTest is Test {
         uint256[] memory values = new uint256[](0);
         bytes[] memory data = new bytes[](0);
 
-        vm.prank(owner);
         manager.executeBatch(adapterIndices, values, data);
 
         // Should not revert - the calls succeeded
@@ -627,7 +565,6 @@ contract AIAgentVaultManagerTest is Test {
     function testExecuteBatchWithSingleAdapter() public {
         // Add adapter
         MockAdapter adapter = new MockAdapter("Test Adapter");
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         // Prepare batch execution with single adapter
@@ -640,7 +577,6 @@ contract AIAgentVaultManagerTest is Test {
         bytes[] memory data = new bytes[](1);
         data[0] = abi.encodeWithSelector(adapter.getName.selector);
 
-        vm.prank(owner);
         manager.executeBatch(adapterIndices, values, data);
 
         // Should not revert - the calls succeeded
@@ -649,7 +585,6 @@ contract AIAgentVaultManagerTest is Test {
     function testExecuteWithValue() public {
         // Add adapter
         MockAdapter adapter = new MockAdapter("Test Adapter");
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         // Fund the manager contract with ETH
@@ -658,7 +593,6 @@ contract AIAgentVaultManagerTest is Test {
         // Execute call with ETH value
         bytes memory data = abi.encodeWithSelector(adapter.getNamePayable.selector);
 
-        vm.prank(owner);
         manager.execute(0, 1 ether, data);
 
         // Should not revert - the call succeeded
@@ -667,7 +601,6 @@ contract AIAgentVaultManagerTest is Test {
     function testExecuteBatchWithValue() public {
         // Add adapter
         MockAdapter adapter = new MockAdapter("Test Adapter");
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         // Fund the manager contract with ETH
@@ -683,7 +616,6 @@ contract AIAgentVaultManagerTest is Test {
         bytes[] memory data = new bytes[](1);
         data[0] = abi.encodeWithSelector(adapter.getNamePayable.selector);
 
-        vm.prank(owner);
         manager.executeBatch(adapterIndices, values, data);
 
         // Should not revert - the calls succeeded
@@ -701,13 +633,9 @@ contract AIAgentVaultManagerTest is Test {
         MockAdapter adapter2 = new MockAdapter("Adapter 2");
         MockAdapter adapter3 = new MockAdapter("Adapter 3");
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter1)));
-
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter2)));
 
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter3)));
 
         // Get all adapters
@@ -727,7 +655,6 @@ contract AIAgentVaultManagerTest is Test {
     function testIsAdapterApprovedTrue() public {
         // Add adapter and check approval
         MockAdapter adapter = new MockAdapter("Test Adapter");
-        vm.prank(owner);
         manager.addAdapter(IProtocolAdapter(address(adapter)));
 
         assertTrue(manager.isAdapterApproved(IProtocolAdapter(address(adapter))));

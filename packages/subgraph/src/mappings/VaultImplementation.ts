@@ -4,16 +4,80 @@ import {
   Redeem,
   NoLongerActive,
   HoldingAllocationUpdated,
-} from "../../generated/VaultShares/VaultShares";
-import { IProtocolAdapter } from "../../generated/VaultShares/IProtocolAdapter";
+} from "../../generated/VaultImplementation/VaultImplementation";
+import { IProtocolAdapter } from "../../generated/VaultImplementation/IProtocolAdapter";
 import {
   Vault,
   User,
+  UserStats,
   Deposit as DepositEntity,
   Redeem as RedeemEntity,
   Allocation,
   UserVaultBalance,
 } from "../../generated/schema";
+
+// 辅助函数：更新用户统计信息
+function updateUserStats(
+  userId: string,
+  depositAmount: BigInt,
+  sharesAmount: BigInt,
+  isDeposit: boolean,
+  vaultId: Bytes,
+  blockTimestamp: BigInt
+): void {
+  let userStats = UserStats.load(userId);
+
+  if (!userStats) {
+    userStats = new UserStats(userId);
+    userStats.user = userId;
+    userStats.totalDeposited = BigInt.fromI32(0);
+    userStats.totalShares = BigInt.fromI32(0);
+    userStats.activeVaults = [];
+  }
+
+  if (isDeposit) {
+    userStats.totalDeposited = userStats.totalDeposited.plus(depositAmount);
+    userStats.totalShares = userStats.totalShares.plus(sharesAmount);
+
+    // 添加到活跃金库列表
+    let activeVaults = userStats.activeVaults;
+    let found = false;
+    for (let i = 0; i < activeVaults.length; i++) {
+      let vault = activeVaults[i];
+      if (vault && vault.equals(vaultId)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      activeVaults.push(vaultId);
+      userStats.activeVaults = activeVaults;
+    }
+  } else {
+    userStats.totalShares = userStats.totalShares.minus(sharesAmount);
+
+    // 检查是否还有剩余份额，如果没有则从活跃金库列表中移除
+    let userVaultBalanceId = userId.concat("-").concat(vaultId.toHexString());
+    let userVaultBalance = UserVaultBalance.load(userVaultBalanceId);
+    if (
+      userVaultBalance &&
+      userVaultBalance.currentShares.equals(BigInt.fromI32(0))
+    ) {
+      let activeVaults = userStats.activeVaults;
+      let newActiveVaults: Bytes[] = [];
+      for (let i = 0; i < activeVaults.length; i++) {
+        let vault = activeVaults[i];
+        if (vault && !vault.equals(vaultId)) {
+          newActiveVaults.push(vault);
+        }
+      }
+      userStats.activeVaults = newActiveVaults;
+    }
+  }
+
+  userStats.lastUpdated = blockTimestamp;
+  userStats.save();
+}
 
 // 辅助函数：更新用户金库余额
 function updateUserVaultBalance(
@@ -63,26 +127,6 @@ function updateUserVaultBalance(
   userVaultBalance.save();
 }
 
-// 辅助函数：更新用户统计信息
-function updateUserStatistics(userId: string, blockTimestamp: BigInt): void {
-  let user = User.load(userId);
-  if (!user) return;
-
-  // 重新计算用户统计信息
-  let totalDeposited = BigInt.fromI32(0);
-  let totalShares = BigInt.fromI32(0);
-  let activeVaults: Bytes[] = [];
-
-  // 这里需要查询所有相关的 UserVaultBalance 实体
-  // 由于 Graph Protocol 的限制，我们使用一个简化的方法
-  // 在实际部署时，可能需要通过事件日志来维护这些统计
-
-  user.totalDeposited = totalDeposited;
-  user.totalShares = totalShares;
-  user.activeVaults = activeVaults;
-  user.save();
-}
-
 export function handleDeposit(event: Deposit): void {
   // 获取或创建用户实体
   let userId = event.params.receiver.toHexString();
@@ -90,9 +134,6 @@ export function handleDeposit(event: Deposit): void {
   if (!user) {
     user = new User(userId);
     user.address = event.params.receiver;
-    user.totalDeposited = BigInt.fromI32(0);
-    user.totalShares = BigInt.fromI32(0);
-    user.activeVaults = [];
     user.save();
   }
 
@@ -100,13 +141,18 @@ export function handleDeposit(event: Deposit): void {
   let vaultId = event.address.toHexString();
   let vault = Vault.load(vaultId);
   if (!vault) {
+    // 如果金库不存在，说明可能是通过工厂创建的，需要先创建基本实体
     vault = new Vault(vaultId);
     vault.address = event.address;
     vault.name = "";
+    vault.symbol = "";
+    vault.fee = BigInt.fromI32(0);
     vault.isActive = true;
     vault.totalAssets = BigInt.fromI32(0);
     vault.totalSupply = BigInt.fromI32(0);
+    vault.factory = "";
     vault.manager = "";
+    vault.asset = "";
     vault.createdAt = event.block.timestamp;
     vault.updatedAt = event.block.timestamp;
     vault.save();
@@ -143,18 +189,14 @@ export function handleDeposit(event: Deposit): void {
   );
 
   // 更新用户统计信息
-  user.totalDeposited = user.totalDeposited.plus(event.params.assets);
-  user.totalShares = user.totalShares.plus(event.params.userShares);
-
-  // 更新活跃金库列表
-  let activeVaults = user.activeVaults;
-  let vaultIdBytes = event.address; // 使用 Bytes 类型
-  if (activeVaults.indexOf(vaultIdBytes) == -1) {
-    activeVaults.push(vaultIdBytes);
-    user.activeVaults = activeVaults;
-  }
-
-  user.save();
+  updateUserStats(
+    userId,
+    event.params.assets,
+    event.params.userShares,
+    true, // isDeposit
+    event.address,
+    event.block.timestamp
+  );
 }
 
 export function handleRedeem(event: Redeem): void {
@@ -164,9 +206,6 @@ export function handleRedeem(event: Redeem): void {
   if (!user) {
     user = new User(userId);
     user.address = event.params.receiver;
-    user.totalDeposited = BigInt.fromI32(0);
-    user.totalShares = BigInt.fromI32(0);
-    user.activeVaults = [];
     user.save();
   }
 
@@ -206,25 +245,14 @@ export function handleRedeem(event: Redeem): void {
   );
 
   // 更新用户统计信息
-  user.totalShares = user.totalShares.minus(event.params.shares);
-
-  // 检查是否还有剩余份额，如果没有则从活跃金库列表中移除
-  let userVaultBalanceId = userId.concat("-").concat(vaultId);
-  let userVaultBalance = UserVaultBalance.load(userVaultBalanceId);
-  if (
-    userVaultBalance &&
-    userVaultBalance.currentShares.equals(BigInt.fromI32(0))
-  ) {
-    let activeVaults = user.activeVaults;
-    let vaultIdBytes = event.address; // 使用 Bytes 类型
-    let index = activeVaults.indexOf(vaultIdBytes);
-    if (index != -1) {
-      activeVaults.splice(index, 1);
-      user.activeVaults = activeVaults;
-    }
-  }
-
-  user.save();
+  updateUserStats(
+    userId,
+    event.params.assets,
+    event.params.shares,
+    false, // isDeposit = false (isRedeem)
+    event.address,
+    event.block.timestamp
+  );
 }
 
 export function handleNoLongerActive(event: NoLongerActive): void {
@@ -248,10 +276,14 @@ export function handleHoldingAllocationUpdated(
     vault = new Vault(vaultId);
     vault.address = event.address;
     vault.name = "";
+    vault.symbol = "";
+    vault.fee = BigInt.fromI32(0);
     vault.isActive = true;
     vault.totalAssets = BigInt.fromI32(0);
     vault.totalSupply = BigInt.fromI32(0);
+    vault.factory = "";
     vault.manager = "";
+    vault.asset = "";
     vault.createdAt = event.block.timestamp;
     vault.updatedAt = event.block.timestamp;
     vault.save();

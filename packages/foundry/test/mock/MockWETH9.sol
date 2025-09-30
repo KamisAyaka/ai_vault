@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import { IWETH9 } from "../../contracts/interfaces/IWETH9.sol";
+import {IWETH9} from "../../contracts/interfaces/IWETH9.sol";
 
 // Mock WETH9 合约用于测试
 contract MockWETH9 is IWETH9 {
@@ -38,7 +38,10 @@ contract MockWETH9 is IWETH9 {
         return true;
     }
 
-    function allowance(address owner, address spender) public view returns (uint256) {
+    function allowance(
+        address owner,
+        address spender
+    ) public view returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -47,7 +50,11 @@ contract MockWETH9 is IWETH9 {
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 amount) public returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public returns (bool) {
         _spendAllowance(from, msg.sender, amount);
         _transfer(from, to, amount);
         return true;
@@ -62,12 +69,19 @@ contract MockWETH9 is IWETH9 {
         payable(msg.sender).transfer(amount);
     }
 
+    function mint(address to, uint256 amount) public {
+        _mint(to, amount);
+    }
+
     function _transfer(address from, address to, uint256 amount) internal {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
 
         uint256 fromBalance = _balances[from];
-        require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+        require(
+            fromBalance >= amount,
+            "ERC20: transfer amount exceeds balance"
+        );
         unchecked {
             _balances[from] = fromBalance - amount;
             _balances[to] += amount;
@@ -98,10 +112,17 @@ contract MockWETH9 is IWETH9 {
         _allowances[owner][spender] = amount;
     }
 
-    function _spendAllowance(address owner, address spender, uint256 amount) internal {
+    function _spendAllowance(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "ERC20: insufficient allowance");
+            require(
+                currentAllowance >= amount,
+                "ERC20: insufficient allowance"
+            );
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
             }

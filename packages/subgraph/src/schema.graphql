@@ -1,4 +1,16 @@
 # 核心实体定义
+type VaultFactory @entity(immutable: true) {
+  id: ID! # 工厂合约地址
+  address: Bytes!
+  vaultImplementation: Bytes! # 金库实现合约地址
+  vaultManager: Bytes! # 金库管理者合约地址
+  createdAt: BigInt!
+  updatedAt: BigInt!
+
+  # 关联关系
+  vaults: [Vault!]! @derivedFrom(field: "factory")
+}
+
 type VaultManager @entity(immutable: true) {
   id: ID! # 管理器地址
   address: Bytes!
@@ -10,14 +22,30 @@ type VaultManager @entity(immutable: true) {
   vaults: [Vault!]! @derivedFrom(field: "manager")
 }
 
+type Asset @entity(immutable: true) {
+  id: ID! # 资产代币地址
+  address: Bytes!
+  symbol: String!
+  name: String!
+  decimals: Int!
+  createdAt: BigInt!
+
+  # 关联关系
+  vault: Vault @derivedFrom(field: "asset")
+}
+
 type Vault @entity(immutable: false) {
   id: ID! # 金库地址
   address: Bytes!
   name: String!
+  symbol: String!
+  fee: BigInt! # 管理费率（基点）
   isActive: Boolean!
   totalAssets: BigInt!
   totalSupply: BigInt!
+  factory: VaultFactory! # 创建此金库的工厂
   manager: VaultManager! # 金库管理者（也是所有者）
+  asset: Asset! # 金库支持的资产
   createdAt: BigInt!
   updatedAt: BigInt!
 
@@ -107,14 +135,23 @@ type User @entity(immutable: true) {
   id: ID! # 用户地址
   address: Bytes!
 
-  # 统计字段
-  totalDeposited: BigInt! # 总存款金额
-  totalShares: BigInt! # 总份额
-  activeVaults: [Bytes!]! # 活跃金库地址列表
   # 关联关系
   deposits: [Deposit!]! @derivedFrom(field: "user")
   redeems: [Redeem!]! @derivedFrom(field: "user")
   vaultBalances: [UserVaultBalance!]! @derivedFrom(field: "user")
+  userStats: UserStats @derivedFrom(field: "user")
+}
+
+# 用户统计信息实体
+type UserStats @entity(immutable: false) {
+  id: ID! # 用户地址
+  user: User!
+
+  # 统计字段
+  totalDeposited: BigInt! # 总存款金额
+  totalShares: BigInt! # 总份额
+  activeVaults: [Bytes!]! # 活跃金库地址列表
+  lastUpdated: BigInt! # 最后更新时间
 }
 
 # 用户金库余额实体

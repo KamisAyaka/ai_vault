@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import { ERC4626, ERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
-import { IVaultShares, IERC4626 } from "../interfaces/IVaultShares.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IProtocolAdapter } from "../interfaces/IProtocolAdapter.sol";
+import {ERC4626, ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {IVaultShares, IERC4626} from "../interfaces/IVaultShares.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IProtocolAdapter} from "../interfaces/IProtocolAdapter.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /**
- * @title VaultShares
- * @dev 基于 ERC-4626 的投资金库合约，支持任意 ERC20 资产
+ * @title VaultImplementation
+ * @dev 基于 ERC-4626 的投资金库实现合约，支持代理模式
  * @dev 继承自 ERC4626（基础代币功能）、IVaultShares（自定义接口）、ReentrancyGuard（防重入保护）
- * @dev 纯 ERC20 资产金库，不包含 ETH 相关逻辑
+ * @dev 使用Initializable支持代理模式的初始化
  */
-contract VaultShares is
+contract VaultImplementation is
     ERC4626, // OpenZeppelin标准ERC4626实现
     IVaultShares, // 自定义VaultShares接口
     ReentrancyGuard, // 防止重入攻击
-    Ownable // 所有权控制，用于AI代理访问控制
+    Ownable, // 所有权控制，用于AI代理访问控制
+    Initializable // 支持代理模式初始化
 {
     using SafeERC20 for IERC20;
 
@@ -28,8 +31,11 @@ contract VaultShares is
     uint256 internal constant BASIS_POINTS_DIVISOR = 1e4; // 10000 basis points = 100%
     uint256 internal constant ALLOCATION_PRECISION = 1000;
 
-    uint256 internal immutable i_Fee;
+    uint256 internal s_Fee;
     bool private s_isActive;
+    IERC20 private s_asset;
+    string private s_name;
+    string private s_symbol;
 
     // 保存当前已分配的适配器和分配比例
     Allocation[] private s_allocations;
@@ -46,9 +52,10 @@ contract VaultShares is
                             错误定义
     //////////////////////////////////////////////////////////////*/
 
-    error VaultShares__DepositMoreThanMax(uint256 amount, uint256 max);
-    error VaultShares__VaultNotActive();
-    error VaultShares__InvalidAllocation();
+    error VaultImplementation__DepositMoreThanMax(uint256 amount, uint256 max);
+    error VaultImplementation__VaultNotActive();
+    error VaultImplementation__InvalidAllocation();
+    error VaultImplementation__AlreadyInitialized();
 
     /*//////////////////////////////////////////////////////////////
                                修饰符
@@ -57,7 +64,7 @@ contract VaultShares is
     /// @dev 仅当金库处于活跃状态时可调用
     modifier isActive() {
         if (!s_isActive) {
-            revert VaultShares__VaultNotActive();
+            revert VaultImplementation__VaultNotActive();
         }
         _;
     }
@@ -65,13 +72,37 @@ contract VaultShares is
     /*//////////////////////////////////////////////////////////////
                                构造函数
     //////////////////////////////////////////////////////////////*/
-    constructor(ConstructorData memory constructorData)
-        ERC4626(constructorData.asset)
-        ERC20(constructorData.vaultName, constructorData.vaultSymbol)
+    constructor()
+        ERC4626(IERC20(address(0)))
+        ERC20("", "")
         Ownable(msg.sender)
     {
-        i_Fee = constructorData.Fee;
+        // 禁用初始化器，防止直接部署
+        _disableInitializers();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                               初始化函数
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice 初始化金库（用于代理模式）
+     * @param constructorData 构造函数数据
+     * @param vaultManager 金库管理者地址
+     */
+    function initialize(
+        ConstructorData memory constructorData,
+        address vaultManager
+    ) external initializer {
+        // 设置状态变量
+        s_asset = constructorData.asset;
+        s_name = constructorData.vaultName;
+        s_symbol = constructorData.vaultSymbol;
+        s_Fee = constructorData.Fee;
         s_isActive = true;
+
+        // 直接设置owner为vaultManager
+        _transferOwnership(vaultManager);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -90,7 +121,9 @@ contract VaultShares is
      * @notice 更新完整的适配器和分配比例列表
      * @param allocations 新的适配器和分配比例列表
      */
-    function updateHoldingAllocation(Allocation[] calldata allocations) public override(IVaultShares) onlyOwner {
+    function updateHoldingAllocation(
+        Allocation[] calldata allocations
+    ) public override(IVaultShares) onlyOwner {
         // 首先撤回当前所有已分配的投资
         withdrawAllInvestments();
 
@@ -125,8 +158,8 @@ contract VaultShares is
         // 从指定适配器中撤资
         for (uint256 i = 0; i < divestLength; i++) {
             uint256 adapterIndex = divestAdapterIndices[i];
-            if (adapterIndex > allocationsLength) {
-                revert VaultShares__InvalidAllocation();
+            if (adapterIndex >= allocationsLength) {
+                revert VaultImplementation__InvalidAllocation();
             }
             IProtocolAdapter adapter = s_allocations[adapterIndex].adapter;
             adapter.divest(IERC20(asset()), divestAmounts[i]);
@@ -135,8 +168,8 @@ contract VaultShares is
         // 更新指定适配器的分配比例并投资
         for (uint256 i = 0; i < investLength; i++) {
             uint256 adapterIndex = investAdapterIndices[i];
-            if (adapterIndex > allocationsLength) {
-                revert VaultShares__InvalidAllocation();
+            if (adapterIndex >= allocationsLength) {
+                revert VaultImplementation__InvalidAllocation();
             }
             uint256 amount = investAmounts[i];
             IProtocolAdapter adapter = s_allocations[adapterIndex].adapter;
@@ -176,7 +209,10 @@ contract VaultShares is
      * @dev 覆盖 Openzeppelin 的 deposit 实现
      * @dev 向 用户 和 管理员铸造管理费份额
      */
-    function deposit(uint256 assets, address receiver)
+    function deposit(
+        uint256 assets,
+        address receiver
+    )
         public
         override(ERC4626, IERC4626)
         nonReentrant
@@ -184,12 +220,15 @@ contract VaultShares is
         returns (uint256)
     {
         if (assets > maxDeposit(receiver)) {
-            revert VaultShares__DepositMoreThanMax(assets, maxDeposit(receiver));
+            revert VaultImplementation__DepositMoreThanMax(
+                assets,
+                maxDeposit(receiver)
+            );
         }
 
         uint256 shares = previewDeposit(assets);
         // 计算管理费应得份额
-        uint256 feeShares = (shares * i_Fee) / BASIS_POINTS_DIVISOR; // 1%费用
+        uint256 feeShares = (shares * s_Fee) / BASIS_POINTS_DIVISOR; // 管理费
 
         // 用户实际获得份额 = 总份额 - 管理费
         uint256 userShares = shares - feeShares;
@@ -209,10 +248,13 @@ contract VaultShares is
     }
 
     /**
-     * @dev 覆盖 Openzeppelin 的 mint 实现
+     * @dev 覆盖 OpenZeppelin 的 mint 实现
      * @dev 向 DAO 和 管理员铸造管理费份额
      */
-    function mint(uint256 shares, address receiver)
+    function mint(
+        uint256 shares,
+        address receiver
+    )
         public
         override(IERC4626, ERC4626)
         nonReentrant
@@ -220,13 +262,16 @@ contract VaultShares is
         returns (uint256)
     {
         if (shares > maxMint(receiver)) {
-            revert VaultShares__DepositMoreThanMax(shares, maxMint(receiver));
+            revert VaultImplementation__DepositMoreThanMax(
+                shares,
+                maxMint(receiver)
+            );
         }
 
         uint256 assets = previewMint(shares);
 
         // 计算管理费
-        uint256 feeShares = (shares * i_Fee) / BASIS_POINTS_DIVISOR; // 1%费用
+        uint256 feeShares = (shares * s_Fee) / BASIS_POINTS_DIVISOR; // 管理费
         uint256 userShares = shares - feeShares;
 
         // 铸造份额
@@ -247,12 +292,11 @@ contract VaultShares is
      * @notice 用户赎回资产
      * @dev 覆盖标准redeem实现
      */
-    function redeem(uint256 shares, address receiver, address ownerAddr)
-        public
-        override(IERC4626, ERC4626)
-        nonReentrant
-        returns (uint256 assets)
-    {
+    function redeem(
+        uint256 shares,
+        address receiver,
+        address ownerAddr
+    ) public override(IERC4626, ERC4626) nonReentrant returns (uint256 assets) {
         uint256 maxShares = maxRedeem(ownerAddr);
         if (shares > maxShares) {
             revert ERC4626ExceededMaxRedeem(ownerAddr, shares, maxShares);
@@ -272,12 +316,11 @@ contract VaultShares is
      * @notice 用户提取资产
      * @dev 覆盖标准withdraw实现
      */
-    function withdraw(uint256 assets, address receiver, address ownerAddr)
-        public
-        override(IERC4626, ERC4626)
-        nonReentrant
-        returns (uint256 shares)
-    {
+    function withdraw(
+        uint256 assets,
+        address receiver,
+        address ownerAddr
+    ) public override(IERC4626, ERC4626) nonReentrant returns (uint256 shares) {
         shares = previewWithdraw(assets);
         uint256 maxAssets = maxWithdraw(ownerAddr);
         if (assets > maxAssets) {
@@ -310,7 +353,8 @@ contract VaultShares is
         // 遍历所有配置的适配器并按分配比例投资
         for (uint256 i = 0; i < allocationsLength; i++) {
             // 计算应投资的资产数量
-            uint256 amountToInvest = (assets * s_allocations[i].allocation) / ALLOCATION_PRECISION;
+            uint256 amountToInvest = (assets * s_allocations[i].allocation) /
+                ALLOCATION_PRECISION;
 
             // 如果投资金额大于0，则调用适配器进行投资
             if (amountToInvest > 0) {
@@ -338,7 +382,8 @@ contract VaultShares is
         // 根据分配比例从各个适配器中撤资
         for (uint256 i = 0; i < allocationsLength; i++) {
             // 计算应从该适配器撤资的资产数量
-            uint256 amountToDivest = (assets * s_allocations[i].allocation) / ALLOCATION_PRECISION;
+            uint256 amountToDivest = (assets * s_allocations[i].allocation) /
+                ALLOCATION_PRECISION;
 
             // 如果撤资金额大于0，则调用适配器进行撤资
             if (amountToDivest > 0) {
@@ -358,7 +403,43 @@ contract VaultShares is
         return s_isActive;
     }
 
-    function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
+    /**
+     * @notice 重写ERC20的name函数，返回金库名称
+     */
+    function name()
+        public
+        view
+        override(ERC20, IERC20Metadata)
+        returns (string memory)
+    {
+        return s_name;
+    }
+
+    /**
+     * @notice 重写ERC20的symbol函数，返回金库符号
+     */
+    function symbol()
+        public
+        view
+        override(ERC20, IERC20Metadata)
+        returns (string memory)
+    {
+        return s_symbol;
+    }
+
+    /**
+     * @notice 重写ERC4626的asset函数，返回底层资产
+     */
+    function asset() public view override(ERC4626, IERC4626) returns (address) {
+        return address(s_asset);
+    }
+
+    function totalAssets()
+        public
+        view
+        override(ERC4626, IERC4626)
+        returns (uint256)
+    {
         // 获取合约中剩余的底层资产余额
         uint256 assetsInContract = IERC20(asset()).balanceOf(address(this));
 
@@ -366,7 +447,9 @@ contract VaultShares is
         uint256 assetsInAdapters = 0;
         uint256 allocationsLength = s_allocations.length;
         for (uint256 i = 0; i < allocationsLength; i++) {
-            assetsInAdapters += s_allocations[i].adapter.getTotalValue(IERC20(asset()));
+            assetsInAdapters += s_allocations[i].adapter.getTotalValue(
+                IERC20(asset())
+            );
         }
 
         // 总资产 = 合约中的资产 + 适配器中的资产

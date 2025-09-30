@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import { Test, console } from "forge-std/Test.sol";
 import { VaultSharesETH } from "../contracts/protocol/VaultSharesETH.sol";
-import { VaultShares } from "../contracts/protocol/VaultShares.sol";
+import { VaultImplementation } from "../contracts/protocol/VaultImplementation.sol";
 import { IVaultShares } from "../contracts/interfaces/IVaultShares.sol";
 import { MockWETH9 } from "./mock/MockWETH9.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";

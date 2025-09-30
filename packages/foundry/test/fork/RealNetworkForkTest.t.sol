@@ -4,7 +4,9 @@ pragma solidity ^0.8.25;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "../../contracts/protocol/AIAgentVaultManager.sol";
-import "../../contracts/protocol/VaultShares.sol";
+import "../../contracts/protocol/VaultFactory.sol";
+import "../../contracts/protocol/VaultImplementation.sol";
+import "../../contracts/protocol/VaultSharesETH.sol";
 import "../../contracts/protocol/investableUniverseAdapters/AaveAdapter.sol";
 import "../../contracts/protocol/investableUniverseAdapters/UniswapV2Adapter.sol";
 import "../../contracts/protocol/investableUniverseAdapters/UniswapV3Adapter.sol";
@@ -23,6 +25,8 @@ contract RealNetworkForkTest is Test {
 
     // 核心合约
     AIAgentVaultManager public manager;
+    VaultFactory public vaultFactory;
+    VaultImplementation public vaultImplementation;
     address public owner;
     address public user;
 
@@ -40,6 +44,7 @@ contract RealNetworkForkTest is Test {
     // 真实协议地址 (Mainnet)
     address public constant AAVE_POOL_MAINNET = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
     address public constant UNISWAP_V2_ROUTER_MAINNET = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    address public constant UNISWAP_V2_FACTORY_MAINNET = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
     address public constant UNISWAP_V3_ROUTER_MAINNET = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
     address public constant UNISWAP_V3_POSITION_MANAGER_MAINNET = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public constant UNISWAP_V3_FACTORY_MAINNET = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
@@ -47,11 +52,13 @@ contract RealNetworkForkTest is Test {
 
     // 金库地址
     address payable public vaultAddress;
+    VaultSharesETH public ethVault;
 
     // 事件
     event ForkTestStarted(string network, uint256 blockNumber);
     event AdapterDeployed(string adapterName, address adapterAddress);
     event VaultCreated(address vaultAddress);
+    event ETHVaultCreated(address ethVaultAddress);
     event InvestmentTested(string protocol, uint256 amount, bool success);
     event TestCompleted(string testName, bool success);
 
@@ -146,7 +153,7 @@ contract RealNetworkForkTest is Test {
         console.log("=== Testing UniswapV2 Protocol Integration ===");
 
         _deployManager();
-        uniswapV2Adapter = new UniswapV2Adapter(UNISWAP_V2_ROUTER_MAINNET);
+        uniswapV2Adapter = new UniswapV2Adapter(UNISWAP_V2_ROUTER_MAINNET, UNISWAP_V2_FACTORY_MAINNET);
         emit AdapterDeployed("UniswapV2", address(uniswapV2Adapter));
 
         _createVault();
@@ -388,7 +395,7 @@ contract RealNetworkForkTest is Test {
         vm.prank(user);
         IERC20(USDC_MAINNET).approve(vaultAddress, 10000 * 1e6);
         vm.prank(user);
-        VaultShares(vaultAddress).deposit(10000 * 1e6, user);
+        VaultImplementation(vaultAddress).deposit(10000 * 1e6, user);
 
         // 验证各协议的投资价值
         uint256 aaveValue = aaveAdapter.getTotalValue(IERC20(USDC_MAINNET));
@@ -406,11 +413,101 @@ contract RealNetworkForkTest is Test {
         emit TestCompleted("Multi-Protocol Investment", true);
     }
 
+    /**
+     * @notice 测试ETH金库集成
+     */
+    function testETHVaultIntegration() public {
+        vm.selectFork(mainnetFork);
+        console.log("=== Testing ETH Vault Integration ===");
+
+        _deployManager();
+        _deployRealAdapters();
+        _createVault();
+        _createETHVault();
+        _configureAdapters();
+        _configureETHAdapters();
+        _addAdaptersToManager();
+
+        // 设置ETH金库的投资分配
+        _setETHVaultAllocation();
+
+        // 测试ETH存款和投资
+        _testETHDepositAndInvestment();
+
+        // 测试ETH提取
+        _testETHRedeem();
+
+        console.log("=== ETH Vault Integration Test Completed ===");
+    }
+
+    /**
+     * @notice 测试ETH金库多协议投资
+     */
+    function testETHVaultMultiProtocolInvestment() public {
+        vm.selectFork(mainnetFork);
+        console.log("=== Testing ETH Vault Multi-Protocol Investment ===");
+
+        _deployManager();
+        _deployRealAdapters();
+        _createVault();
+        _createETHVault();
+        _configureAdapters();
+        _configureETHAdapters();
+        _addAdaptersToManager();
+
+        // 设置ETH金库的投资分配
+        _setETHVaultAllocation();
+
+        // 给用户一些ETH进行测试
+        vm.deal(user, 10 ether);
+
+        // 用户使用ETH存款到ETH金库
+        vm.prank(user);
+        uint256 shares = ethVault.depositETH{ value: 5 ether }(user);
+
+        assertTrue(shares > 0, "User should receive shares");
+        assertEq(ethVault.balanceOf(user), shares, "User should have correct shares");
+        console.log("ETH deposit successful, received", shares, "shares");
+
+        // 验证投资结果
+        uint256 aaveValue = aaveAdapter.getTotalValue(IERC20(WETH_MAINNET));
+        uint256 uniswapV2Value = uniswapV2Adapter.getTotalValue(IERC20(WETH_MAINNET));
+
+        console.log("Aave investment value:", aaveValue);
+        console.log("UniswapV2 investment value:", uniswapV2Value);
+
+        // 验证投资分配是否正确
+        assertTrue(aaveValue > 0, "Aave should have invested value");
+        assertTrue(uniswapV2Value > 0, "UniswapV2 should have invested value");
+
+        // 测试部分提取
+        uint256 userSharesBefore = ethVault.balanceOf(user);
+        uint256 userETHBefore = user.balance;
+
+        vm.prank(user);
+        uint256 assets = ethVault.redeemETH(userSharesBefore / 2, user, user);
+
+        assertTrue(assets > 0, "Should receive ETH assets");
+        assertGt(user.balance, userETHBefore, "User should receive ETH");
+        console.log("ETH withdrawal successful, received", assets, "ETH");
+
+        emit TestCompleted("ETH Vault Multi-Protocol Investment", true);
+    }
+
     // ============ 内部辅助函数 ============
 
     function _deployManager() internal {
+        // 部署实现合约
+        vaultImplementation = new VaultImplementation();
+        console.log("VaultImplementation deployed at:", address(vaultImplementation));
+
+        // 部署管理器
         manager = new AIAgentVaultManager(); // 不再需要 WETH 参数
         console.log("Manager deployed at:", address(manager));
+
+        // 部署工厂合约
+        vaultFactory = new VaultFactory(address(vaultImplementation), address(manager));
+        console.log("VaultFactory deployed at:", address(vaultFactory));
     }
 
     function _deployRealAdapters() internal {
@@ -419,7 +516,7 @@ contract RealNetworkForkTest is Test {
         emit AdapterDeployed("Aave", address(aaveAdapter));
 
         // 部署 UniswapV2 适配器
-        uniswapV2Adapter = new UniswapV2Adapter(UNISWAP_V2_ROUTER_MAINNET);
+        uniswapV2Adapter = new UniswapV2Adapter(UNISWAP_V2_ROUTER_MAINNET, UNISWAP_V2_FACTORY_MAINNET);
         emit AdapterDeployed("UniswapV2", address(uniswapV2Adapter));
 
         // 部署 UniswapV3 适配器
@@ -433,23 +530,21 @@ contract RealNetworkForkTest is Test {
     }
 
     function _createVault() internal {
-        // Create vault manually first
-        VaultShares vault = new VaultShares(
-            IVaultShares.ConstructorData({
-                asset: IERC20(USDC_MAINNET),
-                Fee: 1000,
-                vaultName: "Test USDC Vault",
-                vaultSymbol: "TESTUSDC"
-            })
+        // Create vault using factory
+        vaultAddress = payable(
+            vaultFactory.createVault(
+                IERC20(USDC_MAINNET),
+                "Test USDC Vault",
+                "TESTUSDC",
+                1000 // 10% fee
+            )
         );
 
-        // Transfer ownership to manager
-        vault.transferOwnership(address(manager));
+        // VaultFactory already transfers ownership to manager, so no need to transfer again
 
         // Add vault to manager
-        manager.addVault(IERC20(USDC_MAINNET), address(vault));
+        manager.addVault(IERC20(USDC_MAINNET), vaultAddress);
 
-        vaultAddress = payable(address(vault));
         emit VaultCreated(vaultAddress);
         assertNotEq(vaultAddress, address(0), "Vault should be created");
         console.log("Vault created at:", vaultAddress);
@@ -515,7 +610,7 @@ contract RealNetworkForkTest is Test {
         // 模拟用户存款
         vm.prank(user);
         IERC20(USDC_MAINNET).approve(vaultAddress, 1000 * 1e6);
-        VaultShares(vaultAddress).deposit(1000 * 1e6, user);
+        VaultImplementation(vaultAddress).deposit(1000 * 1e6, user);
 
         console.log("Investment flow test completed");
     }
@@ -524,7 +619,7 @@ contract RealNetworkForkTest is Test {
         console.log("Testing asset management...");
 
         // 测试资产查询 - 通过金库合约查询总资产
-        uint256 totalValue = VaultShares(vaultAddress).totalAssets();
+        uint256 totalValue = VaultImplementation(vaultAddress).totalAssets();
         assertGt(totalValue, 0, "Total value should be positive");
 
         console.log("Total vault value:", totalValue);
@@ -633,5 +728,129 @@ contract RealNetworkForkTest is Test {
             console.log("Warning: Whale doesn't have enough tokens, skipping funding");
             console.log("Whale has:", whaleBalance, "but need:", amount);
         }
+    }
+
+    // ============ ETH金库相关辅助函数 ============
+
+    function _createETHVault() internal {
+        // 创建ETH金库构造函数数据
+        IVaultShares.ConstructorData memory constructorData = IVaultShares.ConstructorData({
+            asset: IERC20(WETH_MAINNET),
+            Fee: 100, // 1% 费用
+            vaultName: "ETH Vault Guardian",
+            vaultSymbol: "vgETH"
+        });
+
+        // 部署ETH金库
+        ethVault = new VaultSharesETH(constructorData);
+
+        // 转移所有权给管理器
+        ethVault.transferOwnership(address(manager));
+
+        // 添加ETH金库到管理器
+        manager.addVault(IERC20(WETH_MAINNET), address(ethVault));
+
+        emit ETHVaultCreated(address(ethVault));
+        assertNotEq(address(ethVault), address(0), "ETH Vault should be created");
+        console.log("ETH Vault created at:", address(ethVault));
+    }
+
+    function _configureETHAdapters() internal {
+        // 配置Aave适配器以使用WETH
+        aaveAdapter.setTokenVault(IERC20(WETH_MAINNET), address(ethVault));
+
+        // 配置UniswapV2适配器以使用WETH
+        uniswapV2Adapter.setTokenConfig(
+            IERC20(WETH_MAINNET),
+            100, // 1% slippage
+            IERC20(USDC_MAINNET),
+            address(ethVault)
+        );
+
+        // 配置UniswapV3适配器以使用WETH
+        address poolAddress =
+            IMinimalUniswapV3Factory(UNISWAP_V3_FACTORY_MAINNET).getPool(WETH_MAINNET, USDC_MAINNET, 3000);
+
+        if (poolAddress != address(0)) {
+            (, int24 currentTick,,,,,) = IMinimalUniswapV3Pool(poolAddress).slot0();
+
+            int24 tickRange = 2000; // 大约 20% 的范围
+            int24 tickLower = currentTick - tickRange;
+            int24 tickUpper = currentTick + tickRange;
+
+            // 确保 tick 对齐到 fee tier 的倍数
+            tickLower = (tickLower / 60) * 60;
+            tickUpper = (tickUpper / 60) * 60;
+
+            if (tickLower >= tickUpper) {
+                tickLower = tickUpper - 60;
+            }
+
+            uniswapV3Adapter.setTokenConfig(
+                IERC20(WETH_MAINNET),
+                IERC20(USDC_MAINNET),
+                1000, // 10% slippage
+                3000, // 0.3% fee tier
+                tickLower,
+                tickUpper,
+                address(ethVault)
+            );
+        }
+    }
+
+    function _setETHVaultAllocation() internal {
+        // 设置ETH金库的投资分配（只测试Aave和UniswapV2，因为UniswapV3需要池子存在）
+        uint256[] memory adapterIndices = new uint256[](2);
+        adapterIndices[0] = 0; // Aave
+        adapterIndices[1] = 1; // UniswapV2
+
+        uint256[] memory allocationData = new uint256[](2);
+        allocationData[0] = 600; // 60% to Aave
+        allocationData[1] = 400; // 40% to UniswapV2
+
+        manager.updateHoldingAllocation(IERC20(WETH_MAINNET), adapterIndices, allocationData);
+
+        console.log("ETH vault allocation set: Aave 60%, UniswapV2 40%");
+    }
+
+    function _testETHDepositAndInvestment() internal {
+        console.log("Testing ETH deposit and investment...");
+
+        // 给用户一些ETH进行测试
+        vm.deal(user, 5 ether);
+
+        // 用户使用ETH存款到ETH金库
+        vm.prank(user);
+        uint256 shares = ethVault.depositETH{ value: 2 ether }(user);
+
+        assertTrue(shares > 0, "User should receive shares");
+        assertEq(ethVault.balanceOf(user), shares, "User should have correct shares");
+        console.log("ETH deposit successful, received", shares, "shares");
+
+        // 验证投资结果
+        uint256 aaveValue = aaveAdapter.getTotalValue(IERC20(WETH_MAINNET));
+        uint256 uniswapV2Value = uniswapV2Adapter.getTotalValue(IERC20(WETH_MAINNET));
+
+        console.log("Aave investment value:", aaveValue);
+        console.log("UniswapV2 investment value:", uniswapV2Value);
+
+        // 验证投资分配是否正确
+        assertTrue(aaveValue > 0, "Aave should have invested value");
+        assertTrue(uniswapV2Value > 0, "UniswapV2 should have invested value");
+    }
+
+    function _testETHRedeem() internal {
+        console.log("Testing ETH redeem...");
+
+        uint256 userSharesBefore = ethVault.balanceOf(user);
+        uint256 userETHBefore = user.balance;
+
+        // 用户提取一半的份额
+        vm.prank(user);
+        uint256 assets = ethVault.redeemETH(userSharesBefore / 2, user, user);
+
+        assertTrue(assets > 0, "Should receive ETH assets");
+        assertGt(user.balance, userETHBefore, "User should receive ETH");
+        console.log("ETH withdrawal successful, received", assets, "ETH");
     }
 }

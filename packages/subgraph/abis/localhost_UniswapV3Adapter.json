@@ -162,7 +162,7 @@
           {
             "name": "pool",
             "type": "address",
-            "internalType": "contract IUniswapV3Pool"
+            "internalType": "contract IMinimalUniswapV3Pool"
           },
           {
             "name": "VaultAddress",
@@ -281,7 +281,7 @@
       {
         "name": "pool",
         "type": "address",
-        "internalType": "contract IUniswapV3Pool"
+        "internalType": "contract IMinimalUniswapV3Pool"
       },
       {
         "name": "VaultAddress",

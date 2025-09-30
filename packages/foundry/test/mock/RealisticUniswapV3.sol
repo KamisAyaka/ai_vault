@@ -22,7 +22,12 @@ contract RealisticUniswapV3Pool {
     int24 public tick;
     uint128 public liquidity; // 当前池子的总流动性
 
-    constructor(address _token0, address _token1, uint24 _fee, uint160 _sqrtPriceX96) {
+    constructor(
+        address _token0,
+        address _token1,
+        uint24 _fee,
+        uint160 _sqrtPriceX96
+    ) {
         token0 = _token0;
         token1 = _token1;
         fee = _fee;
@@ -32,12 +37,28 @@ contract RealisticUniswapV3Pool {
         liquidity = 0;
     }
 
-    function slot0() external view returns (uint160 sqrtPriceX96_, int24 tick_, uint16, uint16, uint16, uint8, bool) {
+    function slot0()
+        external
+        view
+        returns (
+            uint160 sqrtPriceX96_,
+            int24 tick_,
+            uint16,
+            uint16,
+            uint16,
+            uint8,
+            bool
+        )
+    {
         return (sqrtPriceX96, tick, 0, 0, 0, 0, true);
     }
 
     /// @notice 更真实的swap实现
-    function swap(address tokenIn, address recipient, uint256 amountIn) external returns (uint256 amountOut) {
+    function swap(
+        address tokenIn,
+        address recipient,
+        uint256 amountIn
+    ) external returns (uint256 amountOut) {
         require(tokenIn == token0 || tokenIn == token1, "Invalid tokenIn");
 
         bool zeroForOne = tokenIn == token0;
@@ -49,10 +70,18 @@ contract RealisticUniswapV3Pool {
             // token0 -> token1
             // 使用更真实的价格计算
             amountOut = _calculateAmountOut(amountIn, true);
+            // 如果池子没有足够的token1，动态铸造（用于测试）
+            if (IERC20(token1).balanceOf(address(this)) < amountOut) {
+                _mintTokenIfNeeded(token1, amountOut);
+            }
             IERC20(token1).transfer(recipient, amountOut);
         } else {
             // token1 -> token0
             amountOut = _calculateAmountOut(amountIn, false);
+            // 如果池子没有足够的token0，动态铸造（用于测试）
+            if (IERC20(token0).balanceOf(address(this)) < amountOut) {
+                _mintTokenIfNeeded(token0, amountOut);
+            }
             IERC20(token0).transfer(recipient, amountOut);
         }
 
@@ -62,15 +91,34 @@ contract RealisticUniswapV3Pool {
         return amountOut;
     }
 
-    function _calculateAmountOut(uint256 amountIn, bool zeroForOne) internal view returns (uint256 amountOut) {
+    function _calculateAmountOut(
+        uint256 amountIn,
+        bool zeroForOne
+    ) internal view returns (uint256 amountOut) {
         if (zeroForOne) {
             // token0 -> token1: amountOut = amountIn * price
-            amountOut = FullMath.mulDiv(amountIn, sqrtPriceX96, FixedPoint96.Q96);
-            amountOut = FullMath.mulDiv(amountOut, sqrtPriceX96, FixedPoint96.Q96);
+            amountOut = FullMath.mulDiv(
+                amountIn,
+                sqrtPriceX96,
+                FixedPoint96.Q96
+            );
+            amountOut = FullMath.mulDiv(
+                amountOut,
+                sqrtPriceX96,
+                FixedPoint96.Q96
+            );
         } else {
             // token1 -> token0: amountOut = amountIn / price
-            amountOut = FullMath.mulDiv(amountIn, FixedPoint96.Q96, sqrtPriceX96);
-            amountOut = FullMath.mulDiv(amountOut, FixedPoint96.Q96, sqrtPriceX96);
+            amountOut = FullMath.mulDiv(
+                amountIn,
+                FixedPoint96.Q96,
+                sqrtPriceX96
+            );
+            amountOut = FullMath.mulDiv(
+                amountOut,
+                FixedPoint96.Q96,
+                sqrtPriceX96
+            );
         }
 
         // 应用手续费
@@ -88,17 +136,43 @@ contract RealisticUniswapV3Pool {
         // 简化的 tick 计算，避免使用 getTickAtSqrtRatio
         tick = int24(int256(uint256(sqrtPriceX96)) / 1e12);
     }
+
+    /// @notice 如果池子没有足够的代币余额，动态铸造代币（仅用于测试）
+    function _mintTokenIfNeeded(address token, uint256 amount) internal {
+        // 检查代币是否支持mint函数（MockToken和MockWETH9都支持）
+        try IERC20(token).transfer(address(this), 0) returns (bool) {
+            // 如果是MockToken或MockWETH9，尝试调用mint函数
+            (bool success, ) = token.call(
+                abi.encodeWithSignature(
+                    "mint(address,uint256)",
+                    address(this),
+                    amount
+                )
+            );
+            require(success, "Failed to mint token for pool");
+        } catch {
+            // 如果代币不支持mint，则跳过（这不应该发生在我们的测试环境中）
+            revert("Token does not support minting");
+        }
+    }
 }
 
 /// -----------------------------------------------------------------------
 /// 更真实的Uniswap V3 Factory Mock
 /// -----------------------------------------------------------------------
 contract RealisticUniswapV3Factory {
-    mapping(address => mapping(address => mapping(uint24 => address))) public getPool;
+    mapping(address => mapping(address => mapping(uint24 => address)))
+        public getPool;
 
-    function createPool(address tokenA, address tokenB, uint24 fee) external returns (address pool) {
+    function createPool(
+        address tokenA,
+        address tokenB,
+        uint24 fee
+    ) external returns (address pool) {
         require(tokenA != tokenB, "IDENTICAL_ADDRESSES");
-        (address t0, address t1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        (address t0, address t1) = tokenA < tokenB
+            ? (tokenA, tokenB)
+            : (tokenB, tokenA);
 
         RealisticUniswapV3Pool newPool = new RealisticUniswapV3Pool(
             t0,
@@ -109,6 +183,11 @@ contract RealisticUniswapV3Factory {
         pool = address(newPool);
         getPool[t0][t1][fee] = pool;
         getPool[t1][t0][fee] = pool;
+    }
+
+    function getPoolAddress(address tokenA, address tokenB, uint24 fee) external view returns (address pool) {
+        (address t0, address t1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        return getPool[t0][t1][fee];
     }
 }
 
@@ -170,35 +249,55 @@ contract RealisticNonfungiblePositionManager is ERC721 {
     mapping(uint256 => Position) internal _positions;
     uint256 public nextTokenId = 1;
 
-    constructor() ERC721("Realistic Uniswap V3 Positions", "RUNI-V3-POS") { }
+    constructor() ERC721("Realistic Uniswap V3 Positions", "RUNI-V3-POS") {}
 
-    function mint(MintParams calldata params)
+    function mint(
+        MintParams calldata params
+    )
         external
-        returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)
+        returns (
+            uint256 tokenId,
+            uint128 liquidity,
+            uint256 amount0,
+            uint256 amount1
+        )
     {
         require(params.deadline >= block.timestamp, "EXPIRED");
         tokenId = nextTokenId++;
 
         // 获取当前池子价格
-        RealisticUniswapV3Pool pool = RealisticUniswapV3Pool(_getPoolAddress(params.token0, params.token1, params.fee));
-        (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
+        RealisticUniswapV3Pool pool = RealisticUniswapV3Pool(
+            _getPoolAddress(params.token0, params.token1, params.fee)
+        );
+        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
 
         // 使用真实的Uniswap V3算法计算流动性
         uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(params.tickLower);
         uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(params.tickUpper);
 
         liquidity = LiquidityAmounts.getLiquidityForAmounts(
-            sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96, params.amount0Desired, params.amount1Desired
+            sqrtPriceX96,
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            params.amount0Desired,
+            params.amount1Desired
         );
 
         // 如果计算出的流动性为0，但至少有一种代币，则使用简化的计算
-        if (liquidity == 0 && (params.amount0Desired > 0 || params.amount1Desired > 0)) {
+        if (
+            liquidity == 0 &&
+            (params.amount0Desired > 0 || params.amount1Desired > 0)
+        ) {
             liquidity = uint128(params.amount0Desired + params.amount1Desired);
         }
 
         // 计算实际需要的代币数量
-        (amount0, amount1) =
-            LiquidityAmounts.getAmountsForLiquidity(sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96, liquidity);
+        (amount0, amount1) = LiquidityAmounts.getAmountsForLiquidity(
+            sqrtPriceX96,
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            liquidity
+        );
 
         _positions[tokenId] = Position({
             token0: params.token0,
@@ -213,10 +312,18 @@ contract RealisticNonfungiblePositionManager is ERC721 {
 
         // 转移代币
         if (amount0 > 0) {
-            IERC20(params.token0).transferFrom(msg.sender, address(this), amount0);
+            IERC20(params.token0).transferFrom(
+                msg.sender,
+                address(this),
+                amount0
+            );
         }
         if (amount1 > 0) {
-            IERC20(params.token1).transferFrom(msg.sender, address(this), amount1);
+            IERC20(params.token1).transferFrom(
+                msg.sender,
+                address(this),
+                amount1
+            );
         }
 
         _mint(params.recipient, tokenId);
@@ -224,35 +331,50 @@ contract RealisticNonfungiblePositionManager is ERC721 {
         return (tokenId, liquidity, amount0, amount1);
     }
 
-    function increaseLiquidity(IncreaseLiquidityParams calldata params)
-        external
-        returns (uint128 liquidity, uint256 amount0, uint256 amount1)
-    {
+    function increaseLiquidity(
+        IncreaseLiquidityParams calldata params
+    ) external returns (uint128 liquidity, uint256 amount0, uint256 amount1) {
         require(params.deadline >= block.timestamp, "EXPIRED");
-        require(_isAuthorized(ownerOf(params.tokenId), msg.sender, params.tokenId), "NOT_APPROVED");
+        require(
+            _isAuthorized(ownerOf(params.tokenId), msg.sender, params.tokenId),
+            "NOT_APPROVED"
+        );
 
         Position storage pos = _positions[params.tokenId];
 
         // 获取当前池子价格
-        RealisticUniswapV3Pool pool = RealisticUniswapV3Pool(_getPoolAddress(pos.token0, pos.token1, pos.fee));
-        (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
+        RealisticUniswapV3Pool pool = RealisticUniswapV3Pool(
+            _getPoolAddress(pos.token0, pos.token1, pos.fee)
+        );
+        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
 
         // 使用真实的Uniswap V3算法计算流动性
         uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(pos.tickLower);
         uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(pos.tickUpper);
 
         liquidity = LiquidityAmounts.getLiquidityForAmounts(
-            sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96, params.amount0Desired, params.amount1Desired
+            sqrtPriceX96,
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            params.amount0Desired,
+            params.amount1Desired
         );
 
         // 如果计算出的流动性为0，但至少有一种代币，则使用简化的计算
-        if (liquidity == 0 && (params.amount0Desired > 0 || params.amount1Desired > 0)) {
+        if (
+            liquidity == 0 &&
+            (params.amount0Desired > 0 || params.amount1Desired > 0)
+        ) {
             liquidity = uint128(params.amount0Desired + params.amount1Desired);
         }
 
         // 计算实际需要的代币数量
-        (amount0, amount1) =
-            LiquidityAmounts.getAmountsForLiquidity(sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96, liquidity);
+        (amount0, amount1) = LiquidityAmounts.getAmountsForLiquidity(
+            sqrtPriceX96,
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            liquidity
+        );
 
         // 更新position
         pos.liquidity += liquidity;
@@ -268,12 +390,14 @@ contract RealisticNonfungiblePositionManager is ERC721 {
         }
     }
 
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params)
-        external
-        returns (uint256 amount0, uint256 amount1)
-    {
+    function decreaseLiquidity(
+        DecreaseLiquidityParams calldata params
+    ) external returns (uint256 amount0, uint256 amount1) {
         require(params.deadline >= block.timestamp, "EXPIRED");
-        require(_isAuthorized(ownerOf(params.tokenId), msg.sender, params.tokenId), "NOT_APPROVED");
+        require(
+            _isAuthorized(ownerOf(params.tokenId), msg.sender, params.tokenId),
+            "NOT_APPROVED"
+        );
 
         Position storage pos = _positions[params.tokenId];
         require(pos.liquidity >= params.liquidity, "INSUFFICIENT_LIQ");
@@ -304,12 +428,21 @@ contract RealisticNonfungiblePositionManager is ERC721 {
         }
     }
 
-    function collect(CollectParams calldata params) external returns (uint256 amount0, uint256 amount1) {
-        require(_isAuthorized(ownerOf(params.tokenId), msg.sender, params.tokenId), "NOT_APPROVED");
+    function collect(
+        CollectParams calldata params
+    ) external returns (uint256 amount0, uint256 amount1) {
+        require(
+            _isAuthorized(ownerOf(params.tokenId), msg.sender, params.tokenId),
+            "NOT_APPROVED"
+        );
         Position storage pos = _positions[params.tokenId];
 
-        amount0 = params.amount0Max > pos.tokensOwed0 ? pos.tokensOwed0 : params.amount0Max;
-        amount1 = params.amount1Max > pos.tokensOwed1 ? pos.tokensOwed1 : params.amount1Max;
+        amount0 = params.amount0Max > pos.tokensOwed0
+            ? pos.tokensOwed0
+            : params.amount0Max;
+        amount1 = params.amount1Max > pos.tokensOwed1
+            ? pos.tokensOwed1
+            : params.amount1Max;
 
         pos.tokensOwed0 -= uint128(amount0);
         pos.tokensOwed1 -= uint128(amount1);
@@ -331,12 +464,17 @@ contract RealisticNonfungiblePositionManager is ERC721 {
     }
 
     function burn(uint256 tokenId) external {
-        require(_isAuthorized(ownerOf(tokenId), msg.sender, tokenId), "NOT_APPROVED");
+        require(
+            _isAuthorized(ownerOf(tokenId), msg.sender, tokenId),
+            "NOT_APPROVED"
+        );
         _burn(tokenId);
         delete _positions[tokenId];
     }
 
-    function positions(uint256 tokenId)
+    function positions(
+        uint256 tokenId
+    )
         external
         view
         returns (
@@ -377,7 +515,11 @@ contract RealisticNonfungiblePositionManager is ERC721 {
         factory = _factory;
     }
 
-    function _getPoolAddress(address token0, address token1, uint24 fee) internal view returns (address) {
+    function _getPoolAddress(
+        address token0,
+        address token1,
+        uint24 fee
+    ) internal view returns (address) {
         require(factory != address(0), "Factory not set");
         return RealisticUniswapV3Factory(factory).getPool(token0, token1, fee);
     }
@@ -409,13 +551,23 @@ contract RealisticSwapRouter {
         uint160 sqrtPriceLimitX96;
     }
 
-    function exactInputSingle(ExactInputSingleParams calldata params) external returns (uint256 amountOut) {
+    function exactInputSingle(
+        ExactInputSingleParams calldata params
+    ) external returns (uint256 amountOut) {
         require(block.timestamp <= params.deadline, "expired");
 
-        IERC20(params.tokenIn).transferFrom(msg.sender, address(this), params.amountIn);
+        IERC20(params.tokenIn).transferFrom(
+            msg.sender,
+            address(this),
+            params.amountIn
+        );
         IERC20(params.tokenIn).approve(address(pool), params.amountIn);
 
-        amountOut = pool.swap(params.tokenIn, params.recipient, params.amountIn);
+        amountOut = pool.swap(
+            params.tokenIn,
+            params.recipient,
+            params.amountIn
+        );
         require(amountOut >= params.amountOutMinimum, "Too little received");
     }
 }
@@ -430,13 +582,16 @@ contract RealisticQuoter {
         pool = RealisticUniswapV3Pool(_pool);
     }
 
-    function quoteExactInputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint160)
-        external
-        view
-        returns (uint256 amountOut)
-    {
-        (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
-        uint256 priceX96 = (uint256(sqrtPriceX96) * uint256(sqrtPriceX96)) >> 96;
+    function quoteExactInputSingle(
+        address tokenIn,
+        address tokenOut,
+        uint24 fee,
+        uint256 amountIn,
+        uint160
+    ) external view returns (uint256 amountOut) {
+        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
+        uint256 priceX96 = (uint256(sqrtPriceX96) * uint256(sqrtPriceX96)) >>
+            96;
 
         if (tokenIn == pool.token0() && tokenOut == pool.token1()) {
             amountOut = (amountIn * priceX96) / (1 << 96);
