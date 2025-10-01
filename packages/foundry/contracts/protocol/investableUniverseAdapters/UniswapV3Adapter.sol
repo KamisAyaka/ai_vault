@@ -640,8 +640,8 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
     ) internal returns (uint256 actualTokenAmount) {
         uint256 tokenId = config.tokenId;
         if (tokenId == 0) {
-            // 如果没有流动性头寸，返回0
-            return 0;
+            // 如果没有流动性头寸，抛出错误
+            revert UniswapV3Adapter__NoLiquidityPosition();
         }
 
         // 局部变量用于事件发射

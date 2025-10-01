@@ -185,8 +185,14 @@ contract RealisticUniswapV3Factory {
         getPool[t1][t0][fee] = pool;
     }
 
-    function getPoolAddress(address tokenA, address tokenB, uint24 fee) external view returns (address pool) {
-        (address t0, address t1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+    function getPoolAddress(
+        address tokenA,
+        address tokenB,
+        uint24 fee
+    ) external view returns (address pool) {
+        (address t0, address t1) = tokenA < tokenB
+            ? (tokenA, tokenB)
+            : (tokenB, tokenA);
         return getPool[t0][t1][fee];
     }
 }
@@ -577,9 +583,11 @@ contract RealisticSwapRouter {
 /// -----------------------------------------------------------------------
 contract RealisticQuoter {
     RealisticUniswapV3Pool public pool;
+    RealisticUniswapV3Factory public factory;
 
-    constructor(address _pool) {
+    constructor(address _pool, address _factory) {
         pool = RealisticUniswapV3Pool(_pool);
+        factory = RealisticUniswapV3Factory(_factory);
     }
 
     function quoteExactInputSingle(
@@ -589,13 +597,22 @@ contract RealisticQuoter {
         uint256 amountIn,
         uint160
     ) external view returns (uint256 amountOut) {
-        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
+        // 获取正确的池子地址
+        address poolAddress = factory.getPool(tokenIn, tokenOut, fee);
+        if (poolAddress == address(0)) {
+            revert("Pool not found");
+        }
+
+        RealisticUniswapV3Pool targetPool = RealisticUniswapV3Pool(poolAddress);
+        (uint160 sqrtPriceX96, , , , , , ) = targetPool.slot0();
         uint256 priceX96 = (uint256(sqrtPriceX96) * uint256(sqrtPriceX96)) >>
             96;
 
-        if (tokenIn == pool.token0() && tokenOut == pool.token1()) {
+        if (tokenIn == targetPool.token0() && tokenOut == targetPool.token1()) {
             amountOut = (amountIn * priceX96) / (1 << 96);
-        } else if (tokenIn == pool.token1() && tokenOut == pool.token0()) {
+        } else if (
+            tokenIn == targetPool.token1() && tokenOut == targetPool.token0()
+        ) {
             amountOut = (amountIn << 96) / priceX96;
         } else {
             revert("invalid pair");

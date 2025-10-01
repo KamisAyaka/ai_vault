@@ -9,7 +9,7 @@ dataSources:
     network: localhost
     source:
       abi: VaultFactory
-      address: "0xe1da8919f262ee86f9be05059c9280142cf23f48"
+      address: "0xed1db453c3156ff3155a97ad217b3087d5dc5f6e"
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -36,7 +36,7 @@ dataSources:
     network: localhost
     source:
       abi: AIAgentVaultManager
-      address: "0x8ce361602b935680e8dec218b820ff5056beb7af"
+      address: "0xe1da8919f262ee86f9be05059c9280142cf23f48"
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -62,7 +62,7 @@ dataSources:
     network: localhost
     source:
       abi: VaultImplementation
-      address: "0x36005a8e2295e5186699663a4f4d9ce3da89aefa"
+      address: "0x0c8e79f3534b00d9a3d4a856b665bf4ebc22f2ba"
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -94,7 +94,7 @@ dataSources:
     network: localhost
     source:
       abi: VaultSharesETH
-      address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e"
+      address: "0xf1078fd568ad76e49e6f88d1ff485402a086976b"
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -126,7 +126,7 @@ dataSources:
     network: localhost
     source:
       abi: AaveAdapter
-      address: "0x33b1b5aa9aa4da83a332f0bc5cac6a903fde5d92"
+      address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e"
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -150,7 +150,7 @@ dataSources:
     network: localhost
     source:
       abi: UniswapV2Adapter
-      address: "0x19a1c09fe3399c4daaa2c98b936a8e460fc5eaa4"
+      address: "0xdbd296711ec8ef9aacb623ee3f1c0922dce0d7b2"
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -178,7 +178,7 @@ dataSources:
     network: localhost
     source:
       abi: UniswapV3Adapter
-      address: "0x49b8e3b089d4ebf9f37b1da9b839ec013c2cd8c9"
+      address: "0xdfd787c807dea8d7e53311b779bc0c6a4704d286"
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6

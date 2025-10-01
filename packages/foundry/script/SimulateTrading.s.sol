@@ -63,8 +63,10 @@ contract SimulateTrading is Script {
     address public managerAddress;
     address public vaultFactoryAddress;
     address public usdcTokenAddress;
+    address public usdtTokenAddress;
     address public wethTokenAddress;
     address public usdcVaultAddress;
+    address public usdtVaultAddress;
     address public ethVaultAddress;
     address public aaveAdapterAddress;
     address public uniswapV2AdapterAddress;
@@ -77,8 +79,10 @@ contract SimulateTrading is Script {
     AIAgentVaultManager public manager;
     VaultFactory public vaultFactory;
     MockToken public usdc;
+    MockToken public usdt;
     MockWETH9 public weth;
     VaultImplementation public usdcVault;
+    VaultImplementation public usdtVault;
     VaultSharesETH public wethVault;
     AaveAdapter public aaveAdapter;
     UniswapV2Adapter public uniswapV2Adapter;
@@ -86,7 +90,6 @@ contract SimulateTrading is Script {
 
     // 额外的代币（用于测试）
     MockToken public wbtc;
-    MockToken public usdt;
     MockToken public dai;
 
     /**
@@ -136,18 +139,22 @@ contract SimulateTrading is Script {
      * @notice 获取部署的合约地址（使用 subgraph.yaml 中的地址）
      */
     function _getDeployedAddresses() internal {
-        console.log("\n--- Setting Contract Addresses from Subgraph ---");
+        console.log(
+            "\n--- Setting Contract Addresses from Latest Deployment ---"
+        );
 
-        // 使用 deployedContracts.ts 中的地址（正确校验和格式）
-        managerAddress = 0x8ce361602B935680E8DeC218b820ff5056BeB7af; // AIAgentVaultManager
-        vaultFactoryAddress = 0xe1DA8919f262Ee86f9BE05059C9280142CF23f48; // VaultFactory
+        // 使用最新部署的地址
+        managerAddress = 0xe1DA8919f262Ee86f9BE05059C9280142CF23f48; // AIAgentVaultManager
+        vaultFactoryAddress = 0xeD1DB453C3156Ff3155a97AD217b3087D5Dc5f6E; // VaultFactory
         usdcTokenAddress = 0x700b6A60ce7EaaEA56F065753d8dcB9653dbAD35; // MockToken (USDC)
-        wethTokenAddress = 0xA15BB66138824a1c7167f5E85b957d04Dd34E468; // MockWETH9
-        usdcVaultAddress = 0x36005A8e2295e5186699663a4f4D9CE3Da89Aefa; // VaultImplementation
-        ethVaultAddress = 0xf56AA3aCedDf88Ab12E494d0B96DA3C09a5d264e; // VaultSharesETH
-        aaveAdapterAddress = 0x33b1B5Aa9Aa4Da83a332F0bC5cAC6A903FDE5d92; // AaveAdapter
-        uniswapV2AdapterAddress = 0x19A1c09fE3399C4Daaa2C98b936a8E460fC5Eaa4; // UniswapV2Adapter
-        uniswapV3AdapterAddress = 0x49B8E3b089d4ebf9F37B1dA9B839Ec013C2cD8c9; // UniswapV3Adapter
+        usdtTokenAddress = 0xA15BB66138824a1c7167f5E85b957d04Dd34E468; // MockToken (USDT)
+        wethTokenAddress = 0xb19b36b1456E65E3A6D514D3F715f204BD59f431; // MockWETH9
+        usdcVaultAddress = 0x70b3Fc57004649cC6Ff54D39AB7F45b01D292AA1; // VaultImplementation (USDC)
+        usdtVaultAddress = 0xdF1967891c3329e107259CA530574Fa1036B17c3; // VaultImplementation (USDT)
+        ethVaultAddress = 0xF1078fD568Ad76E49E6F88D1fF485402a086976b; // VaultSharesETH
+        aaveAdapterAddress = 0xf56AA3aCedDf88Ab12E494d0B96DA3C09a5d264e; // AaveAdapter
+        uniswapV2AdapterAddress = 0xdBD296711eC8eF9Aacb623ee3F1C0922dce0D7b2; // UniswapV2Adapter
+        uniswapV3AdapterAddress = 0xDFD787c807DEA8d7e53311b779BC0c6a4704D286; // UniswapV3Adapter
     }
 
     /**
@@ -163,8 +170,10 @@ contract SimulateTrading is Script {
             "VaultFactory address not set"
         );
         require(usdcTokenAddress != address(0), "USDC token address not set");
+        require(usdtTokenAddress != address(0), "USDT token address not set");
         require(wethTokenAddress != address(0), "WETH token address not set");
         require(usdcVaultAddress != address(0), "USDC vault address not set");
+        require(usdtVaultAddress != address(0), "USDT vault address not set");
         require(ethVaultAddress != address(0), "ETH vault address not set");
         require(
             aaveAdapterAddress != address(0),
@@ -183,8 +192,10 @@ contract SimulateTrading is Script {
         manager = AIAgentVaultManager(managerAddress);
         vaultFactory = VaultFactory(vaultFactoryAddress);
         usdc = MockToken(usdcTokenAddress);
+        usdt = MockToken(usdtTokenAddress);
         weth = MockWETH9(wethTokenAddress);
         usdcVault = VaultImplementation(usdcVaultAddress);
+        usdtVault = VaultImplementation(usdtVaultAddress);
         wethVault = VaultSharesETH(payable(ethVaultAddress));
         aaveAdapter = AaveAdapter(aaveAdapterAddress);
         uniswapV2Adapter = UniswapV2Adapter(uniswapV2AdapterAddress);
@@ -193,8 +204,10 @@ contract SimulateTrading is Script {
         console.log("Manager connected at:", address(manager));
         console.log("VaultFactory connected at:", address(vaultFactory));
         console.log("USDC token connected at:", address(usdc));
+        console.log("USDT token connected at:", address(usdt));
         console.log("WETH token connected at:", address(weth));
         console.log("USDC vault connected at:", address(usdcVault));
+        console.log("USDT vault connected at:", address(usdtVault));
         console.log("WETH vault connected at:", address(wethVault));
         console.log("Aave adapter connected at:", address(aaveAdapter));
         console.log(
@@ -214,11 +227,9 @@ contract SimulateTrading is Script {
         console.log("\n--- Deploying Additional Test Tokens ---");
 
         wbtc = new MockToken("Wrapped Bitcoin", "WBTC");
-        usdt = new MockToken("Tether USD", "USDT");
         dai = new MockToken("Dai Stablecoin", "DAI");
 
         console.log("WBTC deployed at:", address(wbtc));
-        console.log("USDT deployed at:", address(usdt));
         console.log("DAI deployed at:", address(dai));
     }
 
@@ -236,16 +247,19 @@ contract SimulateTrading is Script {
         usdc.mint(user2, 1000000 * 10 ** 18);
         usdc.mint(user3, 1000000 * 10 ** 18);
 
+        // 提供USDT代币（如果USDT金库已部署）
+        if (usdtTokenAddress != address(0)) {
+            usdt.mint(admin, 1000000 * 10 ** 18);
+            usdt.mint(user1, 1000000 * 10 ** 18);
+            usdt.mint(user2, 1000000 * 10 ** 18);
+            usdt.mint(user3, 1000000 * 10 ** 18);
+        }
+
         // 提供额外的测试代币
         wbtc.mint(admin, 1 * 10 ** 18);
         wbtc.mint(user1, 1 * 10 ** 18);
         wbtc.mint(user2, 1 * 10 ** 18);
         wbtc.mint(user3, 1 * 10 ** 18);
-
-        usdt.mint(admin, 10000 * 10 ** 18);
-        usdt.mint(user1, 10000 * 10 ** 18);
-        usdt.mint(user2, 10000 * 10 ** 18);
-        usdt.mint(user3, 10000 * 10 ** 18);
 
         dai.mint(admin, 10000 * 10 ** 18);
         dai.mint(user1, 10000 * 10 ** 18);
@@ -281,6 +295,13 @@ contract SimulateTrading is Script {
         usdcVault.deposit(20000 * 10 ** 18, admin);
         console.log("Admin deposited 20,000 USDC to USDC vault");
 
+        // Admin 存款到 USDT 金库（如果USDT金库已部署）
+        if (usdtVaultAddress != address(0)) {
+            usdt.approve(address(usdtVault), 15000 * 10 ** 18);
+            usdtVault.deposit(15000 * 10 ** 18, admin);
+            console.log("Admin deposited 15,000 USDT to USDT vault");
+        }
+
         // Admin 存款到 WETH 金库
         wethVault.depositETH{value: 50 ether}(admin);
         console.log(
@@ -302,6 +323,16 @@ contract SimulateTrading is Script {
             console.log("Admin redeemed 1/20 of their USDC vault shares");
         }
 
+        // 从 USDT 金库赎回（如果USDT金库已部署）
+        if (usdtVaultAddress != address(0)) {
+            uint256 adminUsdtShares = usdtVault.balanceOf(admin);
+            if (adminUsdtShares > 0) {
+                uint256 redeemUsdtAmount = adminUsdtShares / 20; // 赎回1/20的份额
+                usdtVault.redeem(redeemUsdtAmount, admin, admin);
+                console.log("Admin redeemed 1/20 of their USDT vault shares");
+            }
+        }
+
         // 从 WETH 金库赎回
         uint256 adminWethShares = wethVault.balanceOf(admin);
         if (adminWethShares > 0) {
@@ -318,98 +349,169 @@ contract SimulateTrading is Script {
 
     /**
      * @notice 执行 User1 的所有操作（在自己的广播会话内）
+     * User1: 保守投资者 - 只投资稳定币，长期持有
      */
     function _executeUser1Operations() internal {
-        console.log("\n--- Executing User1 Operations ---");
+        console.log(
+            "\n--- Executing User1 Operations (Conservative Investor) ---"
+        );
 
         vm.startBroadcast(user1PrivateKey);
 
-        // 1. 存款操作
-        console.log("User1 depositing to USDC vault...");
-        usdc.approve(address(usdcVault), 10000 * 10 ** 18);
-        usdcVault.deposit(10000 * 10 ** 18, user1);
-        console.log("User1 deposited 10,000 USDC to USDC vault");
-
-        // 2. 模拟时间过去
-        vm.warp(block.timestamp + 1 days);
-        console.log("Advanced time by 1 day to simulate interest accrual");
-
-        // 3. 赎回操作
-        console.log("User1 redeeming from USDC vault...");
-        uint256 user1Shares = usdcVault.balanceOf(user1);
-        if (user1Shares > 0) {
-            uint256 redeemAmount = user1Shares / 10; // 赎回1/10的份额
-            usdcVault.redeem(redeemAmount, user1, user1);
-            console.log("User1 redeemed 1/10 of their USDC vault shares");
-        }
-
-        vm.stopBroadcast();
-        console.log("User1 operations completed successfully!");
-    }
-
-    /**
-     * @notice 执行 User2 的所有操作（在自己的广播会话内）
-     */
-    function _executeUser2Operations() internal {
-        console.log("\n--- Executing User2 Operations ---");
-
-        vm.startBroadcast(user2PrivateKey);
-
-        // 1. 存款操作
-        console.log("User2 depositing to WETH vault...");
-        wethVault.depositETH{value: 10 ether}(user2);
+        // User1: 保守投资者，只投资稳定币，大额投资
         console.log(
-            "User2 deposited 10 ETH to WETH vault (converted to WETH automatically)"
+            "User1 (Conservative) depositing large amounts to stablecoin vaults..."
         );
 
-        // 2. 模拟时间过去
-        vm.warp(block.timestamp + 1 days);
-        console.log("Advanced time by 1 day to simulate interest accrual");
+        // 大额投资USDC
+        usdc.approve(address(usdcVault), 50000 * 10 ** 18);
+        usdcVault.deposit(50000 * 10 ** 18, user1);
+        console.log("User1 deposited 50,000 USDC to USDC vault");
 
-        // 3. 赎回操作
-        console.log("User2 redeeming from WETH vault...");
-        uint256 user2Shares = wethVault.balanceOf(user2);
-        if (user2Shares > 0) {
-            uint256 redeemAmount = user2Shares / 10; // 赎回1/10的份额
-            wethVault.redeemETH(redeemAmount, user2, user2);
+        // 大额投资USDT
+        if (usdtVaultAddress != address(0)) {
+            usdt.approve(address(usdtVault), 30000 * 10 ** 18);
+            usdtVault.deposit(30000 * 10 ** 18, user1);
+            console.log("User1 deposited 30,000 USDT to USDT vault");
+        }
+
+        // 模拟时间过去（保守投资者持有更长时间）
+        vm.warp(block.timestamp + 7 days);
+        console.log("Advanced time by 7 days (User1 holds longer)");
+
+        // 保守投资者：只赎回很少一部分
+        console.log("User1 (Conservative) making minimal redemptions...");
+        uint256 user1Shares = usdcVault.balanceOf(user1);
+        if (user1Shares > 0) {
+            uint256 redeemAmount = user1Shares / 50; // 只赎回1/50的份额
+            usdcVault.redeem(redeemAmount, user1, user1);
             console.log(
-                "User2 redeemed 1/10 of their WETH vault shares and received ETH"
+                "User1 redeemed only 1/50 of their USDC vault shares (conservative)"
             );
         }
 
         vm.stopBroadcast();
-        console.log("User2 operations completed successfully!");
+        console.log(
+            "User1 (Conservative Investor) operations completed successfully!"
+        );
+    }
+
+    /**
+     * @notice 执行 User2 的所有操作（在自己的广播会话内）
+     * User2: ETH投资者 - 专注于ETH投资，中等风险
+     */
+    function _executeUser2Operations() internal {
+        console.log("\n--- Executing User2 Operations (ETH Investor) ---");
+
+        vm.startBroadcast(user2PrivateKey);
+
+        // User2: ETH投资者，专注于ETH投资
+        console.log("User2 (ETH Investor) depositing to WETH vault...");
+        wethVault.depositETH{value: 25 ether}(user2);
+        console.log(
+            "User2 deposited 25 ETH to WETH vault (converted to WETH automatically)"
+        );
+
+        // 模拟时间过去
+        vm.warp(block.timestamp + 3 days);
+        console.log("Advanced time by 3 days");
+
+        // ETH投资者：部分赎回
+        console.log("User2 (ETH Investor) making partial redemptions...");
+        uint256 user2Shares = wethVault.balanceOf(user2);
+        if (user2Shares > 0) {
+            uint256 redeemAmount = user2Shares / 5; // 赎回1/5的份额
+            wethVault.redeemETH(redeemAmount, user2, user2);
+            console.log(
+                "User2 redeemed 1/5 of their WETH vault shares and received ETH"
+            );
+        }
+
+        // 再次存款（ETH投资者喜欢加仓）
+        console.log("User2 (ETH Investor) adding more ETH...");
+        wethVault.depositETH{value: 5 ether}(user2);
+        console.log("User2 deposited additional 5 ETH to WETH vault");
+
+        vm.stopBroadcast();
+        console.log("User2 (ETH Investor) operations completed successfully!");
     }
 
     /**
      * @notice 执行 User3 的所有操作（在自己的广播会话内）
+     * User3: 活跃交易者 - 频繁交易，多样化投资
      */
     function _executeUser3Operations() internal {
-        console.log("\n--- Executing User3 Operations ---");
+        console.log("\n--- Executing User3 Operations (Active Trader) ---");
 
         vm.startBroadcast(user3PrivateKey);
 
-        // 1. 存款操作
-        console.log("User3 depositing to USDC vault...");
-        usdc.approve(address(usdcVault), 5000 * 10 ** 18);
-        usdcVault.deposit(5000 * 10 ** 18, user3);
-        console.log("User3 deposited 5,000 USDC to USDC vault");
+        // User3: 活跃交易者，多样化投资
+        console.log("User3 (Active Trader) making diversified investments...");
 
-        // 2. 模拟时间过去
+        // 第一轮投资
+        usdc.approve(address(usdcVault), 15000 * 10 ** 18);
+        usdcVault.deposit(15000 * 10 ** 18, user3);
+        console.log("User3 deposited 15,000 USDC to USDC vault");
+
+        if (usdtVaultAddress != address(0)) {
+            usdt.approve(address(usdtVault), 10000 * 10 ** 18);
+            usdtVault.deposit(10000 * 10 ** 18, user3);
+            console.log("User3 deposited 10,000 USDT to USDT vault");
+        }
+
+        // 模拟时间过去
         vm.warp(block.timestamp + 1 days);
-        console.log("Advanced time by 1 day to simulate interest accrual");
+        console.log("Advanced time by 1 day");
 
-        // 3. 赎回操作
-        console.log("User3 redeeming from USDC vault...");
+        // 活跃交易者：大量赎回
+        console.log("User3 (Active Trader) making large redemptions...");
         uint256 user3Shares = usdcVault.balanceOf(user3);
         if (user3Shares > 0) {
-            uint256 redeemAmount = user3Shares / 10; // 赎回1/10的份额
+            uint256 redeemAmount = user3Shares / 3; // 赎回1/3的份额
             usdcVault.redeem(redeemAmount, user3, user3);
-            console.log("User3 redeemed 1/10 of their USDC vault shares");
+            console.log(
+                "User3 redeemed 1/3 of their USDC vault shares (active trading)"
+            );
+        }
+
+        if (usdtVaultAddress != address(0)) {
+            uint256 user3UsdtShares = usdtVault.balanceOf(user3);
+            if (user3UsdtShares > 0) {
+                uint256 redeemUsdtAmount = user3UsdtShares / 2; // 赎回1/2的份额
+                usdtVault.redeem(redeemUsdtAmount, user3, user3);
+                console.log(
+                    "User3 redeemed 1/2 of their USDT vault shares (active trading)"
+                );
+            }
+        }
+
+        // 再次投资（活跃交易者喜欢重新配置）
+        console.log("User3 (Active Trader) rebalancing portfolio...");
+        usdc.approve(address(usdcVault), 8000 * 10 ** 18);
+        usdcVault.deposit(8000 * 10 ** 18, user3);
+        console.log("User3 deposited additional 8,000 USDC to USDC vault");
+
+        if (usdtVaultAddress != address(0)) {
+            usdt.approve(address(usdtVault), 5000 * 10 ** 18);
+            usdtVault.deposit(5000 * 10 ** 18, user3);
+            console.log("User3 deposited additional 5,000 USDT to USDT vault");
+        }
+
+        // 模拟时间过去
+        vm.warp(block.timestamp + 2 days);
+        console.log("Advanced time by 2 more days");
+
+        // 最终赎回
+        console.log("User3 (Active Trader) final redemptions...");
+        uint256 user3FinalShares = usdcVault.balanceOf(user3);
+        if (user3FinalShares > 0) {
+            uint256 finalRedeemAmount = user3FinalShares / 4; // 赎回1/4的份额
+            usdcVault.redeem(finalRedeemAmount, user3, user3);
+            console.log("User3 made final redemption of 1/4 USDC vault shares");
         }
 
         vm.stopBroadcast();
-        console.log("User3 operations completed successfully!");
+        console.log("User3 (Active Trader) operations completed successfully!");
     }
 
     /**
@@ -418,14 +520,17 @@ contract SimulateTrading is Script {
     function _logTradingResults() internal view {
         console.log("\n=== Trading Results Summary ===");
         console.log("USDC vault address:", address(usdcVault));
+        if (usdtVaultAddress != address(0)) {
+            console.log("USDT vault address:", address(usdtVault));
+        }
         console.log("WETH vault address:", address(wethVault));
         console.log("Manager address:", address(manager));
 
         console.log("\n=== Test Accounts ===");
-        console.log("Admin:", admin);
-        console.log("User1:", user1);
-        console.log("User2:", user2);
-        console.log("User3:", user3);
+        console.log("Admin:", admin, "(System Administrator)");
+        console.log("User1:", user1, "(Conservative Investor)");
+        console.log("User2:", user2, "(ETH Investor)");
+        console.log("User3:", user3, "(Active Trader)");
 
         // 显示最终金库余额
         uint256 finalUsdcVaultBalance = usdc.balanceOf(address(usdcVault));
@@ -436,6 +541,13 @@ contract SimulateTrading is Script {
             "Final USDC vault balance:",
             finalUsdcVaultBalance / 10 ** 18
         );
+        if (usdtVaultAddress != address(0)) {
+            uint256 finalUsdtVaultBalance = usdt.balanceOf(address(usdtVault));
+            console.log(
+                "Final USDT vault balance:",
+                finalUsdtVaultBalance / 10 ** 18
+            );
+        }
         console.log(
             "Final WETH vault balance:",
             finalWethVaultBalance / 10 ** 18
@@ -448,16 +560,43 @@ contract SimulateTrading is Script {
         console.log("  User3 shares:", usdcVault.balanceOf(user3) / 10 ** 18);
         console.log("  Admin shares:", usdcVault.balanceOf(admin) / 10 ** 18);
 
+        if (usdtVaultAddress != address(0)) {
+            console.log("USDT Vault:");
+            console.log(
+                "  User1 shares:",
+                usdtVault.balanceOf(user1) / 10 ** 18
+            );
+            console.log(
+                "  User3 shares:",
+                usdtVault.balanceOf(user3) / 10 ** 18
+            );
+            console.log(
+                "  Admin shares:",
+                usdtVault.balanceOf(admin) / 10 ** 18
+            );
+        }
+
         console.log("WETH Vault:");
         console.log("  User2 shares:", wethVault.balanceOf(user2) / 10 ** 18);
         console.log("  Admin shares:", wethVault.balanceOf(admin) / 10 ** 18);
 
+        console.log("\n=== Trading Behavior Summary ===");
+        console.log("1. Admin: System administrator with mixed investments");
+        console.log(
+            "2. User1 (Conservative): Large stablecoin investments, minimal redemptions, 7-day hold"
+        );
+        console.log(
+            "3. User2 (ETH Investor): ETH-focused, partial redemptions, additional deposits"
+        );
+        console.log(
+            "4. User3 (Active Trader): Diversified investments, frequent trading, portfolio rebalancing"
+        );
         console.log("\n=== Usage Instructions ===");
         console.log(
             "1. Each user executed their operations in their own broadcast session"
         );
         console.log(
-            "2. All users completed deposits and redemptions successfully"
+            "2. Different investment strategies demonstrated various user behaviors"
         );
         console.log("3. Time has been advanced to simulate interest accrual");
         console.log("4. Check subgraph for transaction data");

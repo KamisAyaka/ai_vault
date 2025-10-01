@@ -29,11 +29,15 @@ contract DeployAIVault is ScaffoldETHDeploy {
     AIAgentVaultManager public manager;
     VaultFactory public vaultFactory;
     VaultImplementation public vaultImplementation;
+
+    // 代币合约
     MockToken public usdc;
+    MockToken public usdt;
     MockWETH9 public weth;
 
     // 金库合约
     address public usdcVault;
+    address public usdtVault;
     address public ethVault;
 
     // 适配器合约
@@ -92,19 +96,29 @@ contract DeployAIVault is ScaffoldETHDeploy {
     function _deployTokens() internal {
         console.log("\n--- Deploying Token Contracts ---");
 
+        // Deploy stablecoins
         usdc = new MockToken("USD Coin", "USDC");
         console.log("USDC deployed at:", address(usdc));
 
+        usdt = new MockToken("Tether USD", "USDT");
+        console.log("USDT deployed at:", address(usdt));
+
+        // Deploy WETH
         weth = new MockWETH9();
         console.log("WETH deployed at:", address(weth));
 
         // Mint tokens to deployer for testing
         usdc.mint(deployer, 1000000 * 10 ** 18);
+        usdt.mint(deployer, 1000000 * 10 ** 18);
         // WETH doesn't need minting - it's created through deposit()
 
         console.log(
             "Deployer USDC balance:",
             usdc.balanceOf(deployer) / 10 ** 18
+        );
+        console.log(
+            "Deployer USDT balance:",
+            usdt.balanceOf(deployer) / 10 ** 18
         );
         console.log(
             "Deployer WETH balance:",
@@ -179,8 +193,13 @@ contract DeployAIVault is ScaffoldETHDeploy {
 
         // UniswapV3 Mock
         realisticUniswapV3Factory = new RealisticUniswapV3Factory();
-        address poolAddress = realisticUniswapV3Factory.createPool(
+        address usdcPoolAddress = realisticUniswapV3Factory.createPool(
             address(usdc),
+            address(weth),
+            3000
+        );
+        address usdtPoolAddress = realisticUniswapV3Factory.createPool(
+            address(usdt),
             address(weth),
             3000
         );
@@ -188,15 +207,22 @@ contract DeployAIVault is ScaffoldETHDeploy {
             "RealisticUniswapV3Factory deployed at:",
             address(realisticUniswapV3Factory)
         );
-        console.log("USDC/WETH pool address:", poolAddress);
+        console.log("USDC/WETH pool address:", usdcPoolAddress);
+        console.log("USDT/WETH pool address:", usdtPoolAddress);
 
-        // Mint tokens to pool for swapping
-        usdc.mint(poolAddress, 1000000 * 10 ** 18);
-        weth.mint(poolAddress, 1000000 * 10 ** 18);
+        // Mint tokens to pools for swapping
+        usdc.mint(usdcPoolAddress, 1000000 * 10 ** 18);
+        weth.mint(usdcPoolAddress, 1000000 * 10 ** 18);
+        usdt.mint(usdtPoolAddress, 1000000 * 10 ** 18);
+        weth.mint(usdtPoolAddress, 1000000 * 10 ** 18);
 
-        realisticUniswapV3Router = new RealisticSwapRouter(poolAddress);
+        realisticUniswapV3Router = new RealisticSwapRouter(usdcPoolAddress);
         realisticPositionManager = new RealisticNonfungiblePositionManager();
-        realisticQuoter = new RealisticQuoter(poolAddress);
+        // 传入工厂地址，让 Quoter 能够处理所有池子
+        realisticQuoter = new RealisticQuoter(
+            usdcPoolAddress,
+            address(realisticUniswapV3Factory)
+        );
 
         // Set factory reference for position manager
         realisticPositionManager.setFactory(address(realisticUniswapV3Factory));
@@ -265,11 +291,18 @@ contract DeployAIVault is ScaffoldETHDeploy {
         );
         console.log("USDC vault address:", usdcVault);
         deployments.push(Deployment("USDCVault", usdcVault));
-
-        // USDC vault ownership is already transferred to manager during creation
-
-        // Add USDC vault to manager
         manager.addVault(usdc, usdcVault);
+
+        // Create USDT vault using factory
+        usdtVault = vaultFactory.createVault(
+            usdt,
+            string.concat("Vault Guardian ", usdt.name()),
+            string.concat("vg", usdt.symbol()),
+            1000 // 10% fee
+        );
+        console.log("USDT vault address:", usdtVault);
+        deployments.push(Deployment("USDTVault", usdtVault));
+        manager.addVault(usdt, usdtVault);
 
         // Create ETH vault directly (using VaultSharesETH - only one needed)
         VaultSharesETH ethVaultContract = new VaultSharesETH(
@@ -303,53 +336,92 @@ contract DeployAIVault is ScaffoldETHDeploy {
         manager.addAdapter(IProtocolAdapter(address(uniswapV3Adapter)));
         console.log("All adapters added to manager");
 
-        // 2. Configure Aave adapter
-        mockAavePool.createAToken(address(usdc));
-        mockAavePool.setReserveNormalizedIncome(address(usdc), 1e27);
-        aaveAdapter.setTokenVault(IERC20(address(usdc)), usdcVault);
-        console.log("Aave adapter configured");
+        // 2. Configure Aave adapter for stablecoins
+        _configureAaveForToken(usdc, usdcVault);
+        _configureAaveForToken(usdt, usdtVault);
+        console.log("Aave adapter configured for stablecoins");
 
-        // 3. Configure UniswapV2 adapter
+        // 3. Configure UniswapV2 adapter for tokens
+        _configureUniswapV2ForToken(usdc, usdcVault);
+        _configureUniswapV2ForToken(usdt, usdtVault);
+        console.log("UniswapV2 adapter configured for tokens");
+
+        // 4. Configure UniswapV3 adapter for tokens
+        _configureUniswapV3ForToken(usdc, usdcVault);
+        _configureUniswapV3ForToken(usdt, usdtVault);
+        console.log("UniswapV3 adapter configured for tokens");
+
+        // 5. Set initial asset allocation for vaults
+        _setAssetAllocation(usdc, usdcVault);
+        _setAssetAllocation(usdt, usdtVault);
+        console.log("Asset allocation set for vaults");
+    }
+
+    /**
+     * @notice Configure Aave adapter for a specific token
+     */
+    function _configureAaveForToken(MockToken token, address vault) internal {
+        mockAavePool.createAToken(address(token));
+        mockAavePool.setReserveNormalizedIncome(address(token), 1e27);
+        aaveAdapter.setTokenVault(IERC20(address(token)), vault);
+    }
+
+    /**
+     * @notice Configure UniswapV2 adapter for a specific token
+     */
+    function _configureUniswapV2ForToken(
+        MockToken token,
+        address vault
+    ) internal {
         address pairAddress;
         if (
-            mockUniswapV2Factory.getPair(address(usdc), address(weth)) ==
+            mockUniswapV2Factory.getPair(address(token), address(weth)) ==
             address(0)
         ) {
             pairAddress = mockUniswapV2Factory.createPair(
-                address(usdc),
+                address(token),
                 address(weth)
             );
         } else {
             pairAddress = mockUniswapV2Factory.getPair(
-                address(usdc),
+                address(token),
                 address(weth)
             );
         }
 
         // Add initial liquidity to pair
-        _addInitialLiquidityToPair(pairAddress);
+        _addInitialLiquidityToPair(pairAddress, token);
 
         uniswapV2Adapter.setTokenConfig(
-            IERC20(address(usdc)),
+            IERC20(address(token)),
             5000, // 50% slippage - 非常宽松的滑点设置
             IERC20(address(weth)),
-            usdcVault
+            vault
         );
-        console.log("UniswapV2 adapter configured, pair address:", pairAddress);
+    }
 
-        // 4. Configure UniswapV3 adapter
+    /**
+     * @notice Configure UniswapV3 adapter for a specific token
+     */
+    function _configureUniswapV3ForToken(
+        MockToken token,
+        address vault
+    ) internal {
         uniswapV3Adapter.setTokenConfig(
-            IERC20(address(usdc)),
+            IERC20(address(token)),
             IERC20(address(weth)),
             5000, // 50% slippage - 非常宽松的滑点设置
             3000, // 0.3% fee tier
             -600, // tick lower
             600, // tick upper
-            usdcVault
+            vault
         );
-        console.log("UniswapV3 adapter configured");
+    }
 
-        // 5. Set initial asset allocation
+    /**
+     * @notice Set asset allocation for a specific token
+     */
+    function _setAssetAllocation(MockToken token, address) internal {
         uint256[] memory adapterIndices = new uint256[](3);
         adapterIndices[0] = 0; // Aave
         adapterIndices[1] = 1; // UniswapV2
@@ -360,23 +432,23 @@ contract DeployAIVault is ScaffoldETHDeploy {
         allocationData[1] = 300; // 30% to UniswapV2
         allocationData[2] = 200; // 20% to UniswapV3
 
-        manager.updateHoldingAllocation(usdc, adapterIndices, allocationData);
-        console.log(
-            "Initial asset allocation set: Aave 50%, UniswapV2 30%, UniswapV3 20%"
-        );
+        manager.updateHoldingAllocation(token, adapterIndices, allocationData);
     }
 
     /**
      * @notice Add initial liquidity to UniswapV2 pair
      */
-    function _addInitialLiquidityToPair(address pairAddress) internal {
+    function _addInitialLiquidityToPair(
+        address pairAddress,
+        MockToken token
+    ) internal {
         // Mint tokens to deployer for adding liquidity
         uint256 liquidityAmount = 100000 * 10 ** 18; // 100000 tokens
-        usdc.mint(deployer, liquidityAmount);
+        token.mint(deployer, liquidityAmount);
         weth.mint(deployer, liquidityAmount);
 
         // Transfer tokens to pair
-        usdc.transfer(pairAddress, liquidityAmount);
+        token.transfer(pairAddress, liquidityAmount);
         weth.transfer(pairAddress, liquidityAmount);
 
         // Add initial liquidity
@@ -394,13 +466,22 @@ contract DeployAIVault is ScaffoldETHDeploy {
             address(vaultImplementation)
         );
         console.log("Manager address:", address(manager));
+
+        console.log("\n--- Token Addresses ---");
         console.log("USDC token address:", address(usdc));
+        console.log("USDT token address:", address(usdt));
         console.log("WETH token address:", address(weth));
+
+        console.log("\n--- Vault Addresses ---");
         console.log("USDC vault address:", usdcVault);
+        console.log("USDT vault address:", usdtVault);
         console.log("ETH vault address:", ethVault);
+
+        console.log("\n--- Adapter Addresses ---");
         console.log("Aave adapter address:", address(aaveAdapter));
         console.log("UniswapV2 adapter address:", address(uniswapV2Adapter));
         console.log("UniswapV3 adapter address:", address(uniswapV3Adapter));
+
         console.log("\n=== Usage Instructions ===");
         console.log("1. Create more vaults using VaultFactory.createVault()");
         console.log("2. Deposit and invest through vault addresses");
@@ -410,6 +491,10 @@ contract DeployAIVault is ScaffoldETHDeploy {
         console.log(
             "4. All contract addresses saved to deployments/ directory"
         );
+        console.log("\n=== Available Vaults ===");
+        console.log("- USDC Vault: Stablecoin vault for USDC deposits");
+        console.log("- USDT Vault: Stablecoin vault for USDT deposits");
+        console.log("- ETH Vault: Ethereum vault for ETH deposits");
     }
 
     /**
@@ -423,8 +508,10 @@ contract DeployAIVault is ScaffoldETHDeploy {
             address _vaultImplementation,
             address _manager,
             address _usdc,
+            address _usdt,
             address _weth,
             address _usdcVault,
+            address _usdtVault,
             address _ethVault,
             address _aaveAdapter,
             address _uniswapV2Adapter,
@@ -436,8 +523,10 @@ contract DeployAIVault is ScaffoldETHDeploy {
             address(vaultImplementation),
             address(manager),
             address(usdc),
+            address(usdt),
             address(weth),
             usdcVault,
+            usdtVault,
             ethVault,
             address(aaveAdapter),
             address(uniswapV2Adapter),
