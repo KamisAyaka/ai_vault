@@ -2,70 +2,145 @@
 
 import Link from "next/link";
 import type { NextPage } from "next";
+import { useRef } from "react";
 import { useAccount } from "wagmi";
-import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { Address } from "~~/components/scaffold-eth";
+import { CountUp } from "~~/components/ui/CountUp";
+import { VaultCard } from "~~/components/vault/VaultCard";
+import { useVaultStats } from "~~/hooks/useVaultStats";
+import { useVaults } from "~~/hooks/useVaults";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
+import { useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 
 const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
+  const tHero = useTranslations("home.hero");
+  const tTopVaults = useTranslations("home.topVaults");
+  const tMetrics = useTranslations("home.metrics");
+
+  // Fetch top vaults
+  const { vaults, loading } = useVaults(3, 0, "totalAssets", "desc");
+  const stats = useVaultStats(vaults);
+
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const statsRef = useRef<HTMLDivElement | null>(null);
+  const topVaultsRef = useRef<HTMLDivElement | null>(null);
+
+  const formatCurrency = (value?: number) => {
+    if (!value || Number.isNaN(value)) return "$0.00";
+    return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const formatCount = (value?: number) => {
+    if (!value || Number.isNaN(value)) return "0";
+    return value.toLocaleString();
+  };
+
+  const formatPercentage = (value?: number) => {
+    if (value === undefined || Number.isNaN(value)) return "0.0%";
+    return `${value.toFixed(1)}%`;
+  };
+
+  useGsapHeroIntro(heroRef);
+  useGsapStaggerReveal(statsRef, {
+    selector: ".stats-line",
+    from: { opacity: 0 },
+    to: { opacity: 1, duration: 0.5, ease: "power2.out", stagger: 0.08 },
+    deps: [loading, stats.totalValueLockedUsd, stats.activeVaults, stats.totalUsers, stats.averageApy],
+  });
+  useGsapStaggerReveal(topVaultsRef, {
+    selector: ".vault-card-animate",
+    deps: [loading, vaults.length],
+  });
 
   return (
-    <>
-      <div className="flex items-center flex-col grow pt-10">
-        <div className="px-5">
-          <h1 className="text-center">
-            <span className="block text-2xl mb-2">Welcome to</span>
-            <span className="block text-4xl font-bold">Scaffold-ETH 2</span>
-          </h1>
-          <div className="flex justify-center items-center space-x-2 flex-col">
-            <p className="my-2 font-medium">Connected Address:</p>
-            <Address address={connectedAddress} />
-          </div>
+    <div className="relative flex grow flex-col items-center">
 
-          <p className="text-center text-lg">
-            Get started by editing{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/nextjs/app/page.tsx
-            </code>
-          </p>
-          <p className="text-center text-lg">
-            Edit your smart contract{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              YourContract.sol
-            </code>{" "}
-            in{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/hardhat/contracts
-            </code>
-          </p>
-        </div>
-
-        <div className="grow bg-base-300 w-full mt-16 px-8 py-12">
-          <div className="flex justify-center items-center gap-12 flex-col md:flex-row">
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <BugAntIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Tinker with your smart contract using the{" "}
-                <Link href="/debug" passHref className="link">
-                  Debug Contracts
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <MagnifyingGlassIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Explore your local transactions with the{" "}
-                <Link href="/blockexplorer" passHref className="link">
-                  Block Explorer
-                </Link>{" "}
-                tab.
-              </p>
+      {/* Hero Section */}
+      <div className="hero flex-1 flex items-center justify-center relative" ref={heroRef}>
+        <div className="hero-content text-center">
+          <div className="max-w-4xl">
+            <h1 className="hero-heading text-5xl md:text-7xl font-bold mb-6 text-white">
+              <span className="bg-gradient-to-r from-[#fbe6dc] to-[#803100] bg-clip-text text-transparent">
+                {tHero("tagline", "AI Vault Protocol")}
+              </span>
+            </h1>
+            <p className="hero-subheading text-xl md:text-2xl mb-6 text-white">{tHero("title")}</p>
+            <p className="hero-subheading text-lg mb-8 max-w-2xl mx-auto text-[#fbe6dc]">{tHero("subtitle")}</p>
+            <div className="flex gap-4 justify-center flex-wrap">
+              <Link
+                href="/vaults"
+                className="hero-cta btn bg-[#803100] hover:bg-[#803100]/80 border-none text-white btn-lg"
+              >
+                {tHero("explore")}
+              </Link>
+              {connectedAddress && (
+                <Link
+                  href="/admin/vaults"
+                  className="hero-cta btn bg-[#fbe6dc] hover:bg-[#fbe6dc]/80 border-none text-[#803100] btn-lg"
+                >
+                  {tHero("admin")}
+                </Link>
+              )}
             </div>
           </div>
         </div>
       </div>
-    </>
+
+      {/* Top Vaults Section */}
+      {!loading && vaults.length > 0 && (
+        <div className="w-full px-4 py-16 bg-[#fbe6dc]/10 backdrop-blur-sm" ref={topVaultsRef}>
+          <div className="container mx-auto">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold text-white">{tTopVaults("title")}</h2>
+              <Link href="/vaults" className="btn bg-[#803100] hover:bg-[#803100]/80 border-none text-white">
+                {tTopVaults("action")}
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {vaults.map(vault => (
+                <div key={vault.id} className="vault-card-animate">
+                  <VaultCard vault={vault} userAddress={connectedAddress} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compact Stats Widget */}
+      <div className="pointer-events-none fixed bottom-6 right-6 z-20 w-[min(90vw,500px)]" ref={statsRef}>
+        <div className="pointer-events-auto rounded-xl border border-[#803100]/40 bg-black/70 px-4 py-3 backdrop-blur overflow-hidden">
+          <div className="stats-line mb-2 text-xs uppercase tracking-[0.35em] text-[#fbe6dc]/60">
+            {tMetrics("title", "Protocol Snapshot")}
+          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-4">
+              <span className="loading loading-spinner loading-sm text-[#fbe6dc]"></span>
+              <span className="ml-2 text-xs text-[#fbe6dc]/80">{tMetrics("loading", "Loading...")}</span>
+            </div>
+          ) : (
+            <div className="space-y-2 text-sm text-[#fbe6dc]">
+              <div className="stats-line flex items-center justify-between overflow-hidden">
+                <span className="whitespace-nowrap">{tMetrics("tvl", "Total Value Locked")}</span>
+                <CountUp className="font-semibold text-white whitespace-nowrap" value={stats.totalValueLockedUsd} format={formatCurrency} />
+              </div>
+              <div className="stats-line flex items-center justify-between overflow-hidden">
+                <span className="whitespace-nowrap">{tMetrics("vaults", "Active Vaults")}</span>
+                <CountUp className="font-semibold text-white whitespace-nowrap" value={stats.activeVaults} format={formatCount} />
+              </div>
+              <div className="stats-line flex items-center justify-between overflow-hidden">
+                <span className="whitespace-nowrap">{tMetrics("users", "Total Users")}</span>
+                <CountUp className="font-semibold text-white whitespace-nowrap" value={stats.totalUsers} format={formatCount} />
+              </div>
+              <div className="stats-line flex items-center justify-between overflow-hidden">
+                <span className="whitespace-nowrap">{tMetrics("apy", "Average APY")}</span>
+                <CountUp className="font-semibold text-success whitespace-nowrap" value={stats.averageApy} format={formatPercentage} />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
