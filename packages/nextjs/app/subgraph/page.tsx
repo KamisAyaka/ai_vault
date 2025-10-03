@@ -1,25 +1,32 @@
-import React from "react";
+"use client";
+
+import React, { useRef } from "react";
 import Link from "next/link";
 import VaultsTable from "./_components/GreetingsTable";
 import type { NextPage } from "next";
 import { MagnifyingGlassIcon, PlusIcon, PowerIcon, RocketLaunchIcon } from "@heroicons/react/24/outline";
+import { useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
 
 const Subgraph: NextPage = () => {
+  const heroRef = useRef<HTMLDivElement | null>(null);
+
+  useGsapHeroIntro(heroRef);
+
   return (
     <>
       <div>
-        <div className="flex items-center flex-col flex-grow pt-10">
-          <h1 className="text-center mb-8">
+        <div className="flex items-center flex-col flex-grow pt-10" ref={heroRef}>
+          <h1 className="hero-heading text-center mb-8">
             <span className="block text-2xl mb-2">Welcome to</span>
             <span className="block text-4xl font-bold">AI Vault Protocol</span>
           </h1>
-          <p className="text-center text-lg">
+          <p className="hero-subheading text-center text-lg">
             Monitor vault performance and user interactions through the subgraph at{" "}
             <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
               packages/subgraph/subgraph.yaml
             </code>
           </p>
-          <p className="text-center text-lg">
+          <p className="hero-subheading text-center text-lg">
             Track vaults, deposits, allocations, and adapter positions in{" "}
             <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
               schema.graphql
@@ -29,7 +36,7 @@ const Subgraph: NextPage = () => {
               packages/subgraph/src
             </code>
           </p>
-          <p className="text-center text-lg">
+          <p className="hero-subheading text-center text-lg">
             Data is processed using AssemblyScript Mappings in{" "}
             <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
               packages/subgraph/src/mappings/

@@ -1,0 +1,444 @@
+{
+  "common": {
+    "actions": {
+      "viewAll": "查看全部 →",
+      "explore": "去探索",
+      "loading": "加载中...",
+      "reset": "重置",
+      "confirm": "确认",
+      "cancel": "取消"
+    },
+    "notices": {
+      "transactionSuccess": "交易已成功提交！"
+    },
+    "status": {
+      "active": "活跃",
+      "inactive": "暂停"
+    },
+    "timeRanges": {
+      "7d": "7天",
+      "30d": "30天",
+      "90d": "90天",
+      "all": "全部"
+    },
+    "tables": {
+      "rank": "排名",
+      "vault": "金库",
+      "tvl": "TVL",
+      "apy": "年化收益",
+      "revenue7d": "7日收益",
+      "users": "用户数",
+      "status": "状态",
+      "type": "类型",
+      "amount": "数量",
+      "shares": "份额",
+      "valueUsd": "价值 (USD)",
+      "time": "时间",
+      "transaction": "交易哈希",
+      "total": "合计"
+    },
+    "activity": {
+      "deposit": "存入",
+      "withdraw": "取出"
+    }
+  },
+  "menu": {
+    "home": "首页",
+    "vaults": "金库",
+    "analytics": "数据分析",
+    "portfolio": "我的组合",
+    "admin": "后台",
+    "strategies": "策略管理",
+    "adapters": "适配器",
+    "batch": "批量创建",
+    "subgraph": "子图",
+    "debug": "调试合约"
+  },
+  "header": {
+    "switcher": {
+      "label": "语言"
+    }
+  },
+  "home": {
+    "hero": {
+      "tagline": "AI 金库协议",
+      "title": "AI 驱动的 DeFi 金库自动化投资",
+      "subtitle": "通过 AI 策略自动在 Aave、Uniswap V2、Uniswap V3 等主流协议之间分配资产，最大化收益。",
+      "explore": "浏览金库",
+      "admin": "管理后台"
+    },
+    "metrics": {
+      "title": "协议概览",
+      "loading": "指标加载中...",
+      "tvl": "总锁仓量",
+      "vaults": "活跃金库",
+      "users": "累计用户",
+      "apy": "平均年化"
+    },
+    "features": {
+      "invest": {
+        "title": "投资赚取收益",
+        "description": "探索多协议收益金库，资金自动分配，持续复利",
+        "action": "前往金库 →"
+      },
+      "analytics": {
+        "title": "实时数据分析",
+        "description": "实时跟踪金库表现、用户行为与协议分配情况",
+        "action": "查看分析 →"
+      },
+      "manage": {
+        "title": "智能化后台管理",
+        "description": "快速创建金库、配置策略与管理状态",
+        "action": "进入后台 →"
+      }
+    },
+    "topVaults": {
+      "title": "表现最佳的金库",
+      "action": "查看全部 →"
+    },
+    "how": {
+      "title": "运作流程",
+      "steps": {
+        "connect": {
+          "title": "连接钱包",
+          "description": "连接任意钱包后即可开始"
+        },
+        "choose": {
+          "title": "选择金库",
+          "description": "按资产与收益偏好挑选金库"
+        },
+        "deposit": {
+          "title": "存入资产",
+          "description": "存入对应资产开始获取收益"
+        },
+        "earn": {
+          "title": "自动赚取收益",
+          "description": "AI 自动调优策略，持续复利"
+        }
+      }
+    }
+  },
+  "vaults": {
+    "title": "AI 金库协议",
+    "subtitle": "AI 驱动的 DeFi 金库自动化投资",
+    "search": "按名称或地址搜索金库...",
+    "filters": {
+      "all": "全部",
+      "usdc": "USDC",
+      "weth": "WETH",
+      "dai": "DAI"
+    },
+    "loading": "金库加载中...",
+    "errors": {
+      "load": "金库数据加载失败"
+    },
+    "empty": {
+      "title": "未找到匹配的金库",
+      "hintFiltered": "请尝试调整搜索条件或筛选项",
+      "hintEmpty": "当前还没有创建任何金库"
+    }
+  },
+  "analytics": {
+    "loading": "数据分析加载中...",
+    "error": "数据分析加载失败",
+    "title": "数据分析中心",
+    "breadcrumbs": {
+      "home": "首页",
+      "analytics": "数据分析"
+    },
+    "timeRanges": {
+      "label": "区间"
+    },
+    "overview": {
+      "title": "协议总览",
+      "tvl": "总锁仓价值",
+      "vaults": "金库总数",
+      "vaultsActive": "活跃",
+      "users": "总用户数",
+      "apy": "平均年化",
+      "pending": "计算中..."
+    },
+    "charts": {
+      "tvlTitle": "TVL 趋势（7天）",
+      "tvlLoading": "正在加载 TVL 趋势...",
+      "assetsTitle": "资产分布",
+      "assetsLoading": "正在加载资产分布...",
+      "protocolTitle": "协议分布",
+      "protocolLoading": "正在加载协议分布...",
+      "depositsTitle": "存款趋势（7天）",
+      "withdrawalsTitle": "取款趋势（7天）",
+      "totals": {
+        "deposits": "总存款",
+        "withdrawals": "总取款",
+        "count": "笔数",
+        "average": "平均值",
+        "current": "当前"
+      }
+    },
+    "ranking": {
+      "title": "金库性能排行"
+    },
+    "activity": {
+      "title": "24 小时实时活动",
+      "loading": "正在加载活动数据..."
+    }
+  },
+  "portfolio": {
+    "connectNotice": "请先连接钱包以查看投资组合。",
+    "loading": "正在加载投资组合...",
+    "error": "投资组合加载失败",
+    "title": "我的投资组合",
+    "breadcrumbs": {
+      "home": "首页",
+      "portfolio": "我的组合"
+    },
+    "stats": {
+      "totalValue": "组合总价值",
+      "totalPnL": "总盈亏",
+      "totalFees": "累计手续费",
+      "vaultCount": "持有金库数",
+      "deposits": "总存款",
+      "withdrawals": "总取款"
+    },
+    "revenue": {
+      "title": "收益趋势",
+      "period": {
+        "7d": "最近7天",
+        "30d": "最近30天",
+        "90d": "最近90天",
+        "all": "全部"
+      },
+      "loading": "正在加载收益趋势..."
+    },
+    "positions": {
+      "title": "持仓详情",
+      "empty": {
+        "title": "暂无持仓",
+        "description": "您还没有在任何金库中进行投资。",
+        "cta": "前往金库 →"
+      },
+      "table": {
+        "value": "持仓价值",
+        "pnl": "盈亏",
+        "shares": "持有份额",
+        "days": "持有天数",
+        "action": "查看详情"
+      }
+    },
+    "fees": {
+      "title": "手续费明细",
+      "management": "管理费 (1%/年)",
+      "performance": "业绩费 (20%)",
+      "daysHeld": "持有天数",
+      "total": "合计"
+    },
+    "transactions": {
+      "title": "交易历史"
+    }
+  },
+  "vaultCard": {
+    "labels": {
+      "tvl": "TVL",
+      "apy": "年化收益",
+      "netYield": "净收益",
+      "fees": "手续费",
+      "managementFee": "管理费",
+      "performanceFee": "业绩费",
+      "totalFees": "累计手续费",
+      "strategies": "投资策略",
+      "position": "我的持仓",
+      "shares": "持有份额",
+      "currentValue": "当前价值",
+      "totalDeposited": "累计存入",
+      "totalWithdrawn": "累计取出",
+      "profitLoss": "盈亏"
+    },
+    "messages": {
+      "noPosition": "您还没有在该金库中持仓。",
+      "inactive": "已停用"
+    },
+    "actions": {
+      "deposit": "存入",
+      "mint": "按份额铸造",
+      "withdraw": "取出",
+      "details": "详情",
+      "view": "前往详情"
+    }
+  },
+  "admin": {
+    "adaptersPage": {
+      "title": "适配器管理",
+      "breadcrumb": {
+        "home": "首页",
+        "admin": "管理后台",
+        "current": "适配器管理"
+      },
+      "badge": "协议管理",
+      "descriptionTitle": "适配器管理说明",
+      "descriptionBody": "在这里管理所有 DeFi 协议适配器。添加新的适配器以扩展策略选项，移除不再使用的适配器。每个适配器代表一个与特定 DeFi 协议交互的接口。"
+    },
+    "adapterManager": {
+      "sections": {
+        "add": "添加新适配器",
+        "registered": "已注册适配器",
+        "config": "适配器参数配置",
+        "aave": "Aave V3 适配器",
+        "uniswapV2": "Uniswap V2 适配器",
+        "uniswapV3": "Uniswap V3 适配器"
+      },
+      "labels": {
+        "name": "名称",
+        "address": "适配器地址",
+        "status": "状态",
+        "select": "选择适配器",
+        "token": "资产 Token 地址",
+        "counterparty": "对手资产地址",
+        "slippage": "滑点容忍度 (基点)",
+        "vault": "Vault 地址",
+        "feeTier": "费率等级 (例如 500)",
+        "tickLower": "下界 Tick",
+        "tickUpper": "上界 Tick"
+      },
+      "buttons": {
+        "add": "添加适配器",
+        "adding": "添加中...",
+        "updateAave": "更新 Aave 配置",
+        "updateUniswapV2": "更新 Uniswap V2 配置",
+        "updateUniswapV3": "更新 Uniswap V3 配置",
+        "updating": "提交中..."
+      },
+      "table": {
+        "empty": "尚未添加任何适配器",
+        "approved": "已激活",
+        "pending": "待批准",
+        "loading": "加载中..."
+      },
+      "notifications": {
+        "addressRequired": "请输入适配器地址。",
+        "addressInvalid": "请输入有效的以太坊地址。",
+        "addSuccess": "适配器添加成功！",
+        "addFailed": "添加适配器失败。",
+        "tokenVaultInvalid": "请输入合法的 Token 和 Vault 地址。",
+        "aaveUpdated": "Aave 适配器配置已更新。",
+        "configFailed": "配置失败。",
+        "addressesInvalid": "请输入合法的地址配置。",
+        "slippageRequired": "请输入滑点容忍度 (基点)。",
+        "slippageInvalid": "滑点容忍度格式不正确。",
+        "numberInvalid": "请输入正确的数值参数。",
+        "uniswapV2Updated": "Uniswap V2 适配器配置已更新。",
+        "uniswapV3Updated": "Uniswap V3 适配器配置已更新。"
+      }
+    },
+    "strategiesPage": {
+      "loading": "加载策略管理...",
+      "error": "加载失败",
+      "title": "投资策略管理",
+      "badge": "AI 代理模式",
+      "breadcrumbs": {
+        "home": "首页",
+        "admin": "管理后台",
+        "current": "策略管理"
+      },
+      "stats": {
+        "managedAssets": "总管理资产",
+        "activeStrategies": "活跃策略数",
+        "averageApy": "平均 APY"
+      },
+      "selector": {
+        "title": "金库选择器",
+        "searchPlaceholder": "搜索金库...",
+        "listLabel": "金库列表",
+        "empty": "请先在左侧选择一个金库查看策略。"
+      },
+      "current": {
+        "title": "当前投资分配策略",
+        "empty": "暂无分配策略",
+        "table": {
+          "adapter": "协议适配器",
+          "allocation": "分配比例",
+          "amount": "分配金额",
+          "apy": "APY"
+        }
+      },
+      "actions": {
+        "edit": "编辑分配策略",
+        "withdrawAll": "撤回所有投资",
+        "apply": "执行策略更新",
+        "applying": "更新中..."
+      },
+      "edit": {
+        "title": "编辑投资分配策略",
+        "noAdapters": "未检测到已注册的协议适配器，请先在适配器管理中添加。",
+        "labels": {
+          "adapter": "适配器",
+          "allocation": "分配比例 (%)"
+        },
+        "summary": {
+          "total": "总分配比例:"
+        }
+      },
+      "partial": {
+        "title": "部分策略调整",
+        "description": "对指定协议增加或减少资金，其余协议按比例自动调整。",
+        "divestHeading": "撤资目标",
+        "investHeading": "投资目标",
+        "labels": {
+          "adapter": "选择协议",
+          "divestAmount": "撤资金额",
+          "investAmount": "投资金额",
+          "targetAllocation": "目标分配比例 (%)"
+        },
+        "placeholders": {
+          "selectAdapter": "选择协议"
+        },
+        "buttons": {
+          "reset": "重置",
+          "submit": "执行部分调整",
+          "submitting": "执行中..."
+        }
+      },
+      "history": {
+        "title": "策略调整历史",
+        "table": {
+          "time": "时间",
+          "type": "操作类型",
+          "detail": "详情",
+          "executor": "执行者"
+        },
+        "badges": {
+          "full": "完整更新",
+          "partial": "部分调整"
+        }
+      }
+    },
+    "strategies": {
+      "notifications": {
+        "vaultRequired": "请选择需要调整的金库。",
+        "totalMustBeHundred": "总分配比例必须等于 100%。",
+        "assetUnavailable": "无法获取金库资产地址。",
+        "noAdapters": "未在合约中发现可用适配器。",
+        "adapterUnavailable": "适配器未注册或不可用",
+        "updateSuccess": "策略更新成功！",
+        "updateFailed": "策略更新失败。",
+        "withdrawSuccess": "已撤回所有投资！",
+        "withdrawFailed": "撤回失败。",
+        "targetRequired": "请至少选择一个撤资或投资目标。",
+        "divestAmountRequired": "撤资金额必须大于 0。",
+        "divestAdapterMissing": "撤资协议适配器未找到。",
+        "divestAmountInvalid": "撤资金额格式不正确。",
+        "investAmountRequired": "投资金额必须大于 0。",
+        "investAdapterMissing": "投资协议适配器未找到。",
+        "investAmountInvalid": "投资金额格式不正确。",
+        "adjustmentInfoRequired": "请填写有效的调整信息。",
+        "partialSuccess": "部分策略调整成功！",
+        "partialFailed": "部分策略调整失败。"
+      },
+      "confirmations": {
+        "withdrawAll": "确认要从所有协议撤回 \"{vault}\" 的投资吗？\n\n此操作可能需要一些时间。"
+      },
+      "history": {
+        "empty": "请先在左侧选择一个金库查看策略。"
+      }
+    }
+  }
+}
