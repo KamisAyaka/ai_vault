@@ -9,8 +9,8 @@ import "../contracts/protocol/AIAgentVaultManager.sol";
 import "./mock/MockToken.sol";
 import "./mock/MockAdapter.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IVaultShares} from "../contracts/interfaces/IVaultShares.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IVaultShares } from "../contracts/interfaces/IVaultShares.sol";
 
 contract VaultSharesTest is Test {
     VaultFactory public vaultFactory;
@@ -34,10 +34,7 @@ contract VaultSharesTest is Test {
         vaultManager = new AIAgentVaultManager();
 
         // 部署工厂合约
-        vaultFactory = new VaultFactory(
-            address(vaultImplementation),
-            address(vaultManager)
-        );
+        vaultFactory = new VaultFactory(address(vaultImplementation), address(vaultManager));
 
         token = new MockToken("Test Token", "TEST");
         token.transfer(user, 1000 * 10 ** 18);
@@ -65,19 +62,10 @@ contract VaultSharesTest is Test {
     }
 
     // 辅助函数：设置金库的投资分配
-    function _setVaultAllocations(
-        IProtocolAdapter[] memory adapters,
-        uint256[] memory allocations
-    ) internal {
-        IVaultShares.Allocation[]
-            memory vaultAllocations = new IVaultShares.Allocation[](
-                adapters.length
-            );
+    function _setVaultAllocations(IProtocolAdapter[] memory adapters, uint256[] memory allocations) internal {
+        IVaultShares.Allocation[] memory vaultAllocations = new IVaultShares.Allocation[](adapters.length);
         for (uint256 i = 0; i < adapters.length; i++) {
-            vaultAllocations[i] = IVaultShares.Allocation({
-                adapter: adapters[i],
-                allocation: allocations[i]
-            });
+            vaultAllocations[i] = IVaultShares.Allocation({ adapter: adapters[i], allocation: allocations[i] });
         }
         // 使用vaultManager来设置投资分配
         vm.prank(address(vaultManager));
@@ -114,10 +102,7 @@ contract VaultSharesTest is Test {
         console.log("actual shares:", shares);
         console.log("expectedFeeShares:", expectedFeeShares);
         console.log("expectedTotalShares:", expectedTotalShares);
-        console.log(
-            "vaultManager balance:",
-            vault.balanceOf(address(vaultManager))
-        );
+        console.log("vaultManager balance:", vault.balanceOf(address(vaultManager)));
 
         assertEq(vault.balanceOf(user), shares); // User gets the returned shares
         assertEq(vault.balanceOf(address(vaultManager)), expectedFeeShares); // VaultManager gets fee shares
@@ -169,9 +154,7 @@ contract VaultSharesTest is Test {
         allocations[1] = 400; // 40%
 
         // 使用辅助函数设置投资分配
-        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](
-            adapterIndices.length
-        );
+        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](adapterIndices.length);
         for (uint256 i = 0; i < adapterIndices.length; i++) {
             adapters[i] = vaultManager.getAllAdapters()[adapterIndices[i]];
         }
@@ -191,14 +174,8 @@ contract VaultSharesTest is Test {
         // 打印适配器地址以便调试
         console.log("Adapter 0 address:", address(vaultAdapters[0]));
         console.log("Adapter 1 address:", address(vaultAdapters[1]));
-        console.log(
-            "Adapter 0 total value:",
-            vaultAdapters[0].getTotalValue(IERC20(address(token)))
-        );
-        console.log(
-            "Adapter 1 total value:",
-            vaultAdapters[1].getTotalValue(IERC20(address(token)))
-        );
+        console.log("Adapter 0 total value:", vaultAdapters[0].getTotalValue(IERC20(address(token))));
+        console.log("Adapter 1 total value:", vaultAdapters[1].getTotalValue(IERC20(address(token))));
 
         // 暂时注释掉断言以便调试
         // assertEq(adapters[0].getTotalValue(IERC20(address(token))), 60 * 10 ** 18);
@@ -210,12 +187,11 @@ contract VaultSharesTest is Test {
         vaultManager.addAdapter(IProtocolAdapter(address(adapter)));
 
         // 直接设置金库的投资分配
-        IVaultShares.Allocation[]
-            memory allocations = new IVaultShares.Allocation[](1);
+        IVaultShares.Allocation[] memory allocations = new IVaultShares.Allocation[](1);
         allocations[0] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter)),
             allocation: 1000 // 100%
-        });
+         });
 
         // 使用vaultManager来设置投资分配
         vm.prank(address(vaultManager));
@@ -301,9 +277,7 @@ contract VaultSharesTest is Test {
         token.approve(address(vault), 100 * 10 ** 18);
 
         vm.prank(user);
-        vm.expectRevert(
-            VaultImplementation.VaultImplementation__VaultNotActive.selector
-        );
+        vm.expectRevert(VaultImplementation.VaultImplementation__VaultNotActive.selector);
         vault.deposit(100 * 10 ** 18, user);
     }
 
@@ -321,11 +295,7 @@ contract VaultSharesTest is Test {
 
         // VaultManager can withdraw their shares
         vm.prank(address(vaultManager));
-        uint256 assets = vault.redeem(
-            1 * 10 ** 18,
-            address(vaultManager),
-            address(vaultManager)
-        );
+        uint256 assets = vault.redeem(1 * 10 ** 18, address(vaultManager), address(vaultManager));
 
         // Should get back 1 token
         assertEq(assets, 1 * 10 ** 18);
@@ -339,16 +309,15 @@ contract VaultSharesTest is Test {
         // 适配器已经在setUp中添加了，不需要重复添加
 
         // Initial allocation - both adapters
-        IVaultShares.Allocation[]
-            memory initialAllocations = new IVaultShares.Allocation[](2);
+        IVaultShares.Allocation[] memory initialAllocations = new IVaultShares.Allocation[](2);
         initialAllocations[0] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter1)),
             allocation: 1000 // 100%
-        });
+         });
         initialAllocations[1] = IVaultShares.Allocation({
             adapter: IProtocolAdapter(address(adapter2)),
             allocation: 0 // 0% initially
-        });
+         });
 
         // 使用vaultManager来设置投资分配
         vm.prank(address(vaultManager));
@@ -362,10 +331,7 @@ contract VaultSharesTest is Test {
         vault.deposit(100 * 10 ** 18, user);
 
         // Check initial investment - MockAdapter returns the amount invested
-        assertEq(
-            adapter1.getTotalValue(IERC20(address(token))),
-            100 * 10 ** 18
-        );
+        assertEq(adapter1.getTotalValue(IERC20(address(token))), 100 * 10 ** 18);
         assertEq(adapter2.getTotalValue(IERC20(address(token))), 0);
 
         // Partial update - move 30% from adapter1 to adapter2
@@ -386,12 +352,7 @@ contract VaultSharesTest is Test {
 
         // Then do partial update using vaultManager
         vaultManager.partialUpdateHoldingAllocation(
-            IERC20(address(token)),
-            divestIndices,
-            divestAmounts,
-            investIndices,
-            investAmounts,
-            investAllocations
+            IERC20(address(token)), divestIndices, divestAmounts, investIndices, investAmounts, investAllocations
         );
 
         // Check updated investments - MockAdapter should track the changes
@@ -432,9 +393,7 @@ contract VaultSharesTest is Test {
         uint256[] memory allocations = new uint256[](0);
 
         // 使用辅助函数设置投资分配
-        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](
-            adapterIndices.length
-        );
+        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](adapterIndices.length);
         for (uint256 i = 0; i < adapterIndices.length; i++) {
             adapters[i] = vaultManager.getAllAdapters()[adapterIndices[i]];
         }
@@ -462,9 +421,7 @@ contract VaultSharesTest is Test {
         allocations[0] = 1000; // 100%
 
         // 使用辅助函数设置投资分配
-        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](
-            adapterIndices.length
-        );
+        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](adapterIndices.length);
         for (uint256 i = 0; i < adapterIndices.length; i++) {
             adapters[i] = vaultManager.getAllAdapters()[adapterIndices[i]];
         }
@@ -515,9 +472,7 @@ contract VaultSharesTest is Test {
         uint256[] memory allocations = new uint256[](0);
 
         // 使用辅助函数设置投资分配
-        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](
-            adapterIndices.length
-        );
+        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](adapterIndices.length);
         for (uint256 i = 0; i < adapterIndices.length; i++) {
             adapters[i] = vaultManager.getAllAdapters()[adapterIndices[i]];
         }
@@ -547,9 +502,7 @@ contract VaultSharesTest is Test {
         allocations[0] = 1000; // 100%
 
         // 使用辅助函数设置投资分配
-        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](
-            adapterIndices.length
-        );
+        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](adapterIndices.length);
         for (uint256 i = 0; i < adapterIndices.length; i++) {
             adapters[i] = vaultManager.getAllAdapters()[adapterIndices[i]];
         }
@@ -658,9 +611,7 @@ contract VaultSharesTest is Test {
         allocations[0] = 0; // 0% allocation
 
         // 使用辅助函数设置投资分配
-        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](
-            adapterIndices.length
-        );
+        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](adapterIndices.length);
         for (uint256 i = 0; i < adapterIndices.length; i++) {
             adapters[i] = vaultManager.getAllAdapters()[adapterIndices[i]];
         }
@@ -690,9 +641,7 @@ contract VaultSharesTest is Test {
         allocations[0] = 1000; // 100%
 
         // 使用辅助函数设置投资分配
-        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](
-            adapterIndices.length
-        );
+        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](adapterIndices.length);
         for (uint256 i = 0; i < adapterIndices.length; i++) {
             adapters[i] = vaultManager.getAllAdapters()[adapterIndices[i]];
         }
@@ -747,9 +696,7 @@ contract VaultSharesTest is Test {
         uint256[] memory allocations = new uint256[](0);
 
         // 使用辅助函数设置投资分配
-        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](
-            adapterIndices.length
-        );
+        IProtocolAdapter[] memory adapters = new IProtocolAdapter[](adapterIndices.length);
         for (uint256 i = 0; i < adapterIndices.length; i++) {
             adapters[i] = vaultManager.getAllAdapters()[adapterIndices[i]];
         }
@@ -770,9 +717,7 @@ contract VaultSharesTest is Test {
         vaultManager.setVaultNotActive(IERC20(address(token)));
 
         // 再次设置为非活跃状态应该失败，因为已经有isActive修饰符
-        vm.expectRevert(
-            VaultImplementation.VaultImplementation__VaultNotActive.selector
-        );
+        vm.expectRevert(VaultImplementation.VaultImplementation__VaultNotActive.selector);
         vaultManager.setVaultNotActive(IERC20(address(token)));
     }
 

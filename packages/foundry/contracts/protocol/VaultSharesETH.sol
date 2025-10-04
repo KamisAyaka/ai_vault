@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {IVaultShares} from "../interfaces/IVaultShares.sol";
-import {IWETH9} from "../interfaces/IWETH9.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IProtocolAdapter} from "../interfaces/IProtocolAdapter.sol";
-import {ERC4626, ERC20, IERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+import { IVaultShares } from "../interfaces/IVaultShares.sol";
+import { IWETH9 } from "../interfaces/IWETH9.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IProtocolAdapter } from "../interfaces/IProtocolAdapter.sol";
+import { ERC4626, ERC20, IERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 
 /**
  * @title VaultSharesETH
@@ -67,9 +67,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
     /*//////////////////////////////////////////////////////////////
                                构造函数
     //////////////////////////////////////////////////////////////*/
-    constructor(
-        IVaultShares.ConstructorData memory constructorData
-    )
+    constructor(IVaultShares.ConstructorData memory constructorData)
         ERC4626(constructorData.asset)
         ERC20(constructorData.vaultName, constructorData.vaultSymbol)
         Ownable(msg.sender)
@@ -95,9 +93,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
     /**
      * @notice 更新完整的适配器和分配比例列表
      */
-    function updateHoldingAllocation(
-        Allocation[] calldata allocations
-    ) public override(IVaultShares) onlyOwner {
+    function updateHoldingAllocation(Allocation[] calldata allocations) public override(IVaultShares) onlyOwner {
         // 首先撤回当前所有已分配的投资
         withdrawAllInvestments();
 
@@ -185,7 +181,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
     receive() external payable {
         // 如果启用自动转换，则自动将 ETH 转换为 WETH
         if (msg.value > 0 && s_ethConversionEnabled) {
-            IWETH9(i_WETH).deposit{value: msg.value}();
+            IWETH9(i_WETH).deposit{ value: msg.value }();
         }
     }
 
@@ -193,19 +189,14 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
      * @notice 使用 ETH 进行存款，自动转换为 WETH
      * @dev 向 DAO 和 管理员铸造管理费份额
      */
-    function depositETH(
-        address receiver
-    ) external payable nonReentrant isActive returns (uint256) {
+    function depositETH(address receiver) external payable nonReentrant isActive returns (uint256) {
         if (msg.value == 0) {
             revert VaultSharesETH__MustSendETH();
         }
 
         uint256 assets = msg.value;
         if (assets > maxDeposit(receiver)) {
-            revert VaultSharesETH__DepositMoreThanMax(
-                assets,
-                maxDeposit(receiver)
-            );
+            revert VaultSharesETH__DepositMoreThanMax(assets, maxDeposit(receiver));
         }
 
         // 计算份额 BEFORE 转换 ETH 为 WETH，这样 totalAssets 还是原来的值
@@ -224,7 +215,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         _mint(owner(), feeShares);
 
         // 将 ETH 转换为 WETH
-        IWETH9(i_WETH).deposit{value: msg.value}();
+        IWETH9(i_WETH).deposit{ value: msg.value }();
 
         // 发出存款事件
         emit Deposit(assets, receiver, userShares);
@@ -239,19 +230,13 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
      * @notice 使用 ETH 进行铸造，自动转换为 WETH
      * @dev 向 DAO 和 管理员铸造管理费份额
      */
-    function mintETH(
-        uint256 shares,
-        address receiver
-    ) external payable nonReentrant isActive returns (uint256) {
+    function mintETH(uint256 shares, address receiver) external payable nonReentrant isActive returns (uint256) {
         if (msg.value == 0) {
             revert VaultSharesETH__MustSendETH();
         }
 
         if (shares > maxMint(receiver)) {
-            revert VaultSharesETH__DepositMoreThanMax(
-                shares,
-                maxMint(receiver)
-            );
+            revert VaultSharesETH__DepositMoreThanMax(shares, maxMint(receiver));
         }
 
         uint256 assets = previewMint(shares);
@@ -270,7 +255,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         _mint(owner(), feeShares);
 
         // 将 ETH 转换为 WETH
-        IWETH9(i_WETH).deposit{value: msg.value}();
+        IWETH9(i_WETH).deposit{ value: msg.value }();
 
         // 发出铸造事件
         emit Deposit(assets, receiver, userShares);
@@ -285,11 +270,11 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
      * @notice 使用 ETH 进行赎回，自动将 WETH 转换为 ETH
      * @dev 专门用于 ETH 退出的函数
      */
-    function redeemETH(
-        uint256 shares,
-        address receiver,
-        address ownerAddr
-    ) external nonReentrant returns (uint256 assets) {
+    function redeemETH(uint256 shares, address receiver, address ownerAddr)
+        external
+        nonReentrant
+        returns (uint256 assets)
+    {
         uint256 maxShares = maxRedeem(ownerAddr);
         if (shares > maxShares) {
             revert ERC4626ExceededMaxRedeem(ownerAddr, shares, maxShares);
@@ -323,7 +308,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         // 重新启用 ETH 自动转换
         s_ethConversionEnabled = true;
 
-        (bool success, ) = receiver.call{value: assets}("");
+        (bool success,) = receiver.call{ value: assets }("");
         if (!success) {
             revert VaultSharesETH__ETHTransferFailed();
         }
@@ -336,11 +321,11 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
      * @notice 使用 ETH 进行提取，自动将 WETH 转换为 ETH
      * @dev 专门用于 ETH 退出的函数
      */
-    function withdrawETH(
-        uint256 assets,
-        address receiver,
-        address ownerAddr
-    ) external nonReentrant returns (uint256 shares) {
+    function withdrawETH(uint256 assets, address receiver, address ownerAddr)
+        external
+        nonReentrant
+        returns (uint256 shares)
+    {
         shares = previewWithdraw(assets);
         uint256 maxAssets = maxWithdraw(ownerAddr);
         if (assets > maxAssets) {
@@ -379,7 +364,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         }
 
         // 向接收者发送ETH
-        (bool success, ) = receiver.call{value: assets}("");
+        (bool success,) = receiver.call{ value: assets }("");
         if (!success) {
             revert VaultSharesETH__ETHTransferFailed();
         }
@@ -406,8 +391,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         // 遍历所有配置的适配器并按分配比例投资
         for (uint256 i = 0; i < allocationsLength; i++) {
             // 计算应投资的资产数量
-            uint256 amountToInvest = (assets * s_allocations[i].allocation) /
-                ALLOCATION_PRECISION;
+            uint256 amountToInvest = (assets * s_allocations[i].allocation) / ALLOCATION_PRECISION;
 
             // 如果投资金额大于0，则调用适配器进行投资
             if (amountToInvest > 0) {
@@ -435,8 +419,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         // 根据分配比例从各个适配器中撤资
         for (uint256 i = 0; i < allocationsLength; i++) {
             // 计算应从该适配器撤资的资产数量
-            uint256 amountToDivest = (assets * s_allocations[i].allocation) /
-                ALLOCATION_PRECISION;
+            uint256 amountToDivest = (assets * s_allocations[i].allocation) / ALLOCATION_PRECISION;
 
             // 如果撤资金额大于0，则调用适配器进行撤资
             if (amountToDivest > 0) {
@@ -457,12 +440,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         return s_isActive;
     }
 
-    function totalAssets()
-        public
-        view
-        override(ERC4626, IERC4626)
-        returns (uint256)
-    {
+    function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
         // 获取合约中剩余的底层资产余额
         uint256 assetsInContract = IERC20(asset()).balanceOf(address(this));
 
@@ -470,9 +448,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         uint256 assetsInAdapters = 0;
         uint256 allocationsLength = s_allocations.length;
         for (uint256 i = 0; i < allocationsLength; i++) {
-            assetsInAdapters += s_allocations[i].adapter.getTotalValue(
-                IERC20(asset())
-            );
+            assetsInAdapters += s_allocations[i].adapter.getTotalValue(IERC20(asset()));
         }
 
         // 总资产 = 合约中的资产 + 适配器中的资产

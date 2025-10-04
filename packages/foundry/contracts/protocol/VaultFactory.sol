@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IVaultShares} from "../interfaces/IVaultShares.sol";
-import {IProtocolAdapter} from "../interfaces/IProtocolAdapter.sol";
-import {VaultImplementation} from "./VaultImplementation.sol";
+import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IVaultShares } from "../interfaces/IVaultShares.sol";
+import { IProtocolAdapter } from "../interfaces/IProtocolAdapter.sol";
+import { VaultImplementation } from "./VaultImplementation.sol";
 
 /**
  * @title VaultFactory
@@ -59,10 +59,7 @@ contract VaultFactory is Ownable {
      * @param _vaultImplementation 标准金库实现合约地址
      * @param _vaultManager 金库管理者合约地址
      */
-    constructor(
-        address _vaultImplementation,
-        address _vaultManager
-    ) Ownable(msg.sender) {
+    constructor(address _vaultImplementation, address _vaultManager) Ownable(msg.sender) {
         if (_vaultImplementation == address(0)) {
             revert VaultFactory__InvalidImplementation();
         }
@@ -87,12 +84,11 @@ contract VaultFactory is Ownable {
      * @param fee 管理费率（基点，10000 = 100%）
      * @return vault 新创建的金库地址
      */
-    function createVault(
-        IERC20 asset,
-        string calldata vaultName,
-        string calldata vaultSymbol,
-        uint256 fee
-    ) external onlyOwner returns (address vault) {
+    function createVault(IERC20 asset, string calldata vaultName, string calldata vaultSymbol, uint256 fee)
+        external
+        onlyOwner
+        returns (address vault)
+    {
         // 验证输入参数
         if (address(asset) == address(0)) {
             revert VaultFactory__InvalidImplementation();
@@ -120,13 +116,8 @@ contract VaultFactory is Ownable {
         vault = Clones.clone(vaultImplementation);
 
         // 初始化金库
-        IVaultShares.ConstructorData memory constructorData = IVaultShares
-            .ConstructorData({
-                asset: asset,
-                Fee: fee,
-                vaultName: vaultName,
-                vaultSymbol: vaultSymbol
-            });
+        IVaultShares.ConstructorData memory constructorData =
+            IVaultShares.ConstructorData({ asset: asset, Fee: fee, vaultName: vaultName, vaultSymbol: vaultSymbol });
 
         // 调用初始化函数，直接设置vaultManager为owner
         VaultImplementation(vault).initialize(constructorData, vaultManager);
@@ -134,14 +125,7 @@ contract VaultFactory is Ownable {
         // 记录金库信息
         vaults[asset] = vault;
 
-        emit VaultCreated(
-            vault,
-            asset,
-            msg.sender,
-            vaultName,
-            vaultSymbol,
-            fee
-        );
+        emit VaultCreated(vault, asset, msg.sender, vaultName, vaultSymbol, fee);
     }
 
     /**
@@ -160,11 +144,7 @@ contract VaultFactory is Ownable {
     ) external onlyOwner returns (address[] memory vaults_) {
         uint256 length = assets.length;
 
-        if (
-            length != vaultNames.length ||
-            length != vaultSymbols.length ||
-            length != fees.length
-        ) {
+        if (length != vaultNames.length || length != vaultSymbols.length || length != fees.length) {
             revert VaultFactory__InvalidImplementation();
         }
 
@@ -204,32 +184,17 @@ contract VaultFactory is Ownable {
             address vault = Clones.clone(vaultImplementation);
 
             // 初始化金库
-            IVaultShares.ConstructorData memory constructorData = IVaultShares
-                .ConstructorData({
-                    asset: asset,
-                    Fee: fee,
-                    vaultName: vaultName,
-                    vaultSymbol: vaultSymbol
-                });
+            IVaultShares.ConstructorData memory constructorData =
+                IVaultShares.ConstructorData({ asset: asset, Fee: fee, vaultName: vaultName, vaultSymbol: vaultSymbol });
 
             // 调用初始化函数，直接设置vaultManager为owner
-            VaultImplementation(vault).initialize(
-                constructorData,
-                vaultManager
-            );
+            VaultImplementation(vault).initialize(constructorData, vaultManager);
 
             // 记录金库信息
             vaults[asset] = vault;
 
             // 发出金库创建事件
-            emit VaultCreated(
-                vault,
-                asset,
-                msg.sender,
-                vaultName,
-                vaultSymbol,
-                fee
-            );
+            emit VaultCreated(vault, asset, msg.sender, vaultName, vaultSymbol, fee);
 
             vaults_[i] = vault;
         }

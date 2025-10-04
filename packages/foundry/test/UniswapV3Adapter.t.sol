@@ -21,16 +21,10 @@ contract UniswapV3AdapterTest is Test {
 
     event TokenConfigUpdated(address indexed token);
     event UniswapV3Invested(
-        address indexed token,
-        uint256 tokenAmount,
-        uint256 counterPartyTokenAmount,
-        uint256 liquidity
+        address indexed token, uint256 tokenAmount, uint256 counterPartyTokenAmount, uint256 liquidity
     );
     event UniswapV3Divested(address indexed token, uint256 tokenAmount);
-    event LiquidityPositionCreated(
-        address indexed vault,
-        uint256 indexed tokenId
-    );
+    event LiquidityPositionCreated(address indexed vault, uint256 indexed tokenId);
 
     function setUp() public {
         owner = address(this);
@@ -50,11 +44,7 @@ contract UniswapV3AdapterTest is Test {
         mockFactory = new RealisticUniswapV3Factory();
 
         // Create pool with correct token order
-        address poolAddress = mockFactory.createPool(
-            address(tokenA),
-            address(tokenB),
-            3000
-        ); // 0.3% fee tier
+        address poolAddress = mockFactory.createPool(address(tokenA), address(tokenB), 3000); // 0.3% fee tier
 
         // 给池子一些初始代币用于交换
         vm.prank(vault);
@@ -70,10 +60,7 @@ contract UniswapV3AdapterTest is Test {
 
         // Deploy adapter
         adapter = new UniswapV3Adapter(
-            address(mockRouter),
-            address(mockPositionManager),
-            address(mockFactory),
-            address(mockQuoter)
+            address(mockRouter), address(mockPositionManager), address(mockFactory), address(mockQuoter)
         );
 
         // Set token config
@@ -103,9 +90,7 @@ contract UniswapV3AdapterTest is Test {
         );
 
         // Check that config was set correctly
-        UniswapV3Adapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenB))
-        );
+        UniswapV3Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenB)));
         assertEq(address(config.counterPartyToken), address(tokenA));
         assertEq(config.slippageTolerance, 200);
         assertEq(config.feeTier, 3000);
@@ -116,15 +101,7 @@ contract UniswapV3AdapterTest is Test {
         // Test that non-owner cannot set token config
         vm.prank(address(0x456));
         vm.expectRevert();
-        adapter.setTokenConfig(
-            IERC20(address(tokenA)),
-            IERC20(address(tokenB)),
-            300,
-            3000,
-            -600,
-            600,
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenA)), IERC20(address(tokenB)), 300, 3000, -600, 600, vault);
     }
 
     function testUpdateTokenSlippageTolerance() public {
@@ -133,9 +110,7 @@ contract UniswapV3AdapterTest is Test {
         adapter.UpdateTokenSlippageTolerance(IERC20(address(tokenA)), 200);
 
         // Check that slippage tolerance was updated
-        UniswapV3Adapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenA))
-        );
+        UniswapV3Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenA)));
         assertEq(config.slippageTolerance, 200);
 
         // Test that non-owner cannot update slippage tolerance
@@ -152,10 +127,7 @@ contract UniswapV3AdapterTest is Test {
 
         // Test that vault can invest
         vm.prank(vault);
-        uint256 investedAmount = adapter.invest(
-            IERC20(address(tokenA)),
-            100 * 10 ** 18
-        );
+        uint256 investedAmount = adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         assertEq(investedAmount, 100 * 10 ** 18);
 
@@ -166,11 +138,7 @@ contract UniswapV3AdapterTest is Test {
     function testInvestFromNonVault() public {
         // Test that non-vault cannot invest
         vm.prank(address(0x456));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter.OnlyVaultCanCallThisFunction.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.OnlyVaultCanCallThisFunction.selector));
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
@@ -186,12 +154,8 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         //Seed pool with token balances so mock swap has liquidity to pay out
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -206,10 +170,7 @@ contract UniswapV3AdapterTest is Test {
 
         // Test that vault can divest
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            50 * 10 ** 18
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
 
         // Check that tokens were transferred back to vault
         assertGt(divestedAmount, 0);
@@ -218,11 +179,7 @@ contract UniswapV3AdapterTest is Test {
     function testDivestFromNonVault() public {
         // Test that non-vault cannot divest
         vm.prank(address(0x456));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter.OnlyVaultCanCallThisFunction.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.OnlyVaultCanCallThisFunction.selector));
         adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
@@ -255,9 +212,7 @@ contract UniswapV3AdapterTest is Test {
 
     function testSetTokenConfigInvalidToken() public {
         vm.prank(owner);
-        vm.expectRevert(
-            UniswapV3Adapter.UniswapV3Adapter__InvalidToken.selector
-        );
+        vm.expectRevert(UniswapV3Adapter.UniswapV3Adapter__InvalidToken.selector);
         adapter.setTokenConfig(
             IERC20(address(0)), // 无效的token地址
             IERC20(address(tokenB)),
@@ -271,9 +226,7 @@ contract UniswapV3AdapterTest is Test {
 
     function testSetTokenConfigInvalidCounterPartyToken() public {
         vm.prank(owner);
-        vm.expectRevert(
-            UniswapV3Adapter.UniswapV3Adapter__InvalidCounterPartyToken.selector
-        );
+        vm.expectRevert(UniswapV3Adapter.UniswapV3Adapter__InvalidCounterPartyToken.selector);
         adapter.setTokenConfig(
             IERC20(address(tokenA)),
             IERC20(address(0)), // 无效的配对代币地址
@@ -287,9 +240,7 @@ contract UniswapV3AdapterTest is Test {
 
     function testSetTokenConfigInvalidSlippageTolerance() public {
         vm.prank(owner);
-        vm.expectRevert(
-            UniswapV3Adapter.UniswapV3Adapter__InvalidSlippageTolerance.selector
-        );
+        vm.expectRevert(UniswapV3Adapter.UniswapV3Adapter__InvalidSlippageTolerance.selector);
         adapter.setTokenConfig(
             IERC20(address(tokenA)),
             IERC20(address(tokenB)),
@@ -304,24 +255,14 @@ contract UniswapV3AdapterTest is Test {
     function testDivestNoLiquidityPosition() public {
         // 尝试在没有投资的情况下撤资
         vm.prank(vault);
-        vm.expectRevert(
-            UniswapV3Adapter.UniswapV3Adapter__NoLiquidityPosition.selector
-        );
+        vm.expectRevert(UniswapV3Adapter.UniswapV3Adapter__NoLiquidityPosition.selector);
         adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
     function testGetTotalValueWithInvalidPosition() public {
         // 设置一个无效的tokenId来测试catch分支
         vm.prank(owner);
-        adapter.setTokenConfig(
-            IERC20(address(tokenB)),
-            IERC20(address(tokenA)),
-            100,
-            3000,
-            -600,
-            600,
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenB)), IERC20(address(tokenA)), 100, 3000, -600, 600, vault);
 
         // 直接设置一个无效的tokenId来触发catch分支
         // 这需要访问内部状态，我们通过投资然后完全撤资来模拟
@@ -395,12 +336,8 @@ contract UniswapV3AdapterTest is Test {
         vm.stopPrank();
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -413,10 +350,7 @@ contract UniswapV3AdapterTest is Test {
 
         // 使用最大值进行完全撤资
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            type(uint256).max
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), type(uint256).max);
 
         assertGt(divestedAmount, 0);
     }
@@ -429,12 +363,8 @@ contract UniswapV3AdapterTest is Test {
         vm.stopPrank();
 
         // 完全撤资以清除流动性
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -450,9 +380,7 @@ contract UniswapV3AdapterTest is Test {
 
         // 现在尝试再次撤资，应该抛出错误因为已经没有流动性位置
         vm.prank(vault);
-        vm.expectRevert(
-            UniswapV3Adapter.UniswapV3Adapter__NoLiquidityPosition.selector
-        );
+        vm.expectRevert(UniswapV3Adapter.UniswapV3Adapter__NoLiquidityPosition.selector);
         adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
     }
 
@@ -464,12 +392,8 @@ contract UniswapV3AdapterTest is Test {
         vm.stopPrank();
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -482,10 +406,7 @@ contract UniswapV3AdapterTest is Test {
 
         // 使用大金额进行撤资（>= 100e18）
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            100 * 10 ** 18
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         assertGt(divestedAmount, 0);
     }
@@ -498,12 +419,8 @@ contract UniswapV3AdapterTest is Test {
         vm.stopPrank();
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -516,10 +433,7 @@ contract UniswapV3AdapterTest is Test {
 
         // 使用接近全部流动性的金额进行撤资（>= 90%）
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            90 * 10 ** 18
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), 90 * 10 ** 18);
 
         assertGt(divestedAmount, 0);
     }
@@ -532,9 +446,7 @@ contract UniswapV3AdapterTest is Test {
         vm.stopPrank();
 
         // 获取第一次投资后的tokenId
-        UniswapV3Adapter.TokenConfig memory config1 = adapter.getTokenConfig(
-            IERC20(address(tokenA))
-        );
+        UniswapV3Adapter.TokenConfig memory config1 = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 firstTokenId = config1.tokenId;
         assertGt(firstTokenId, 0, "First investment should create NFT");
 
@@ -545,15 +457,9 @@ contract UniswapV3AdapterTest is Test {
         vm.stopPrank();
 
         // 验证使用的是同一个NFT
-        UniswapV3Adapter.TokenConfig memory config2 = adapter.getTokenConfig(
-            IERC20(address(tokenA))
-        );
+        UniswapV3Adapter.TokenConfig memory config2 = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 secondTokenId = config2.tokenId;
-        assertEq(
-            secondTokenId,
-            firstTokenId,
-            "Second investment should use same NFT"
-        );
+        assertEq(secondTokenId, firstTokenId, "Second investment should use same NFT");
     }
 
     function testPartialDivestmentKeepsNFT() public {
@@ -564,18 +470,13 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         // 获取投资后的tokenId
-        UniswapV3Adapter.TokenConfig memory configBefore = adapter
-            .getTokenConfig(IERC20(address(tokenA)));
+        UniswapV3Adapter.TokenConfig memory configBefore = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 tokenIdBefore = configBefore.tokenId;
         assertGt(tokenIdBefore, 0, "Investment should create NFT");
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -591,14 +492,9 @@ contract UniswapV3AdapterTest is Test {
         adapter.divest(IERC20(address(tokenA)), 30 * 10 ** 18);
 
         // 验证NFT仍然存在
-        UniswapV3Adapter.TokenConfig memory configAfter = adapter
-            .getTokenConfig(IERC20(address(tokenA)));
+        UniswapV3Adapter.TokenConfig memory configAfter = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 tokenIdAfter = configAfter.tokenId;
-        assertEq(
-            tokenIdAfter,
-            tokenIdBefore,
-            "Partial divestment should keep NFT"
-        );
+        assertEq(tokenIdAfter, tokenIdBefore, "Partial divestment should keep NFT");
     }
 
     function testFullDivestmentBurnsNFT() public {
@@ -609,18 +505,13 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         // 获取投资后的tokenId
-        UniswapV3Adapter.TokenConfig memory configBefore = adapter
-            .getTokenConfig(IERC20(address(tokenA)));
+        UniswapV3Adapter.TokenConfig memory configBefore = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 tokenIdBefore = configBefore.tokenId;
         assertGt(tokenIdBefore, 0, "Investment should create NFT");
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -636,8 +527,7 @@ contract UniswapV3AdapterTest is Test {
         adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         // 验证NFT被销毁
-        UniswapV3Adapter.TokenConfig memory configAfter = adapter
-            .getTokenConfig(IERC20(address(tokenA)));
+        UniswapV3Adapter.TokenConfig memory configAfter = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 tokenIdAfter = configAfter.tokenId;
         assertEq(tokenIdAfter, 0, "Full divestment should burn NFT");
     }
@@ -650,18 +540,13 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         // 获取投资后的tokenId
-        UniswapV3Adapter.TokenConfig memory configBefore = adapter
-            .getTokenConfig(IERC20(address(tokenA)));
+        UniswapV3Adapter.TokenConfig memory configBefore = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 tokenIdBefore = configBefore.tokenId;
         assertGt(tokenIdBefore, 0, "Investment should create NFT");
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -683,14 +568,10 @@ contract UniswapV3AdapterTest is Test {
         );
 
         // 验证创建了新的NFT
-        UniswapV3Adapter.TokenConfig memory configAfter = adapter
-            .getTokenConfig(IERC20(address(tokenA)));
+        UniswapV3Adapter.TokenConfig memory configAfter = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 tokenIdAfter = configAfter.tokenId;
         assertGt(tokenIdAfter, 0, "Config update should create new NFT");
-        assertTrue(
-            tokenIdAfter != tokenIdBefore,
-            "New NFT should be different from old one"
-        );
+        assertTrue(tokenIdAfter != tokenIdBefore, "New NFT should be different from old one");
     }
 
     function testConfigUpdateAlwaysCreatesNewNFT() public {
@@ -701,18 +582,13 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         // 获取投资后的tokenId
-        UniswapV3Adapter.TokenConfig memory configBefore = adapter
-            .getTokenConfig(IERC20(address(tokenA)));
+        UniswapV3Adapter.TokenConfig memory configBefore = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 tokenIdBefore = configBefore.tokenId;
         assertGt(tokenIdBefore, 0, "Investment should create NFT");
 
         // 给池子和position manager一些代币用于撤资和重新投资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -734,24 +610,16 @@ contract UniswapV3AdapterTest is Test {
         );
 
         // 验证创建了新的NFT
-        UniswapV3Adapter.TokenConfig memory configAfter = adapter
-            .getTokenConfig(IERC20(address(tokenA)));
+        UniswapV3Adapter.TokenConfig memory configAfter = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 tokenIdAfter = configAfter.tokenId;
         assertGt(tokenIdAfter, 0, "Config update should always create new NFT");
-        assertTrue(
-            tokenIdAfter != tokenIdBefore,
-            "New NFT should be different from old one"
-        );
+        assertTrue(tokenIdAfter != tokenIdBefore, "New NFT should be different from old one");
     }
 
     // 测试错误处理分支
     function testSetTokenConfigWithInvalidToken() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter.UniswapV3Adapter__InvalidToken.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.UniswapV3Adapter__InvalidToken.selector));
         adapter.setTokenConfig(
             IERC20(address(0)), // 无效代币地址
             IERC20(address(tokenB)),
@@ -765,13 +633,7 @@ contract UniswapV3AdapterTest is Test {
 
     function testSetTokenConfigWithInvalidSlippageTolerance() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter
-                    .UniswapV3Adapter__InvalidSlippageTolerance
-                    .selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.UniswapV3Adapter__InvalidSlippageTolerance.selector));
         adapter.setTokenConfig(
             IERC20(address(tokenA)),
             IERC20(address(tokenB)),
@@ -785,13 +647,7 @@ contract UniswapV3AdapterTest is Test {
 
     function testSetTokenConfigWithInvalidCounterPartyToken() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter
-                    .UniswapV3Adapter__InvalidCounterPartyToken
-                    .selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.UniswapV3Adapter__InvalidCounterPartyToken.selector));
         adapter.setTokenConfig(
             IERC20(address(tokenA)),
             IERC20(address(0)), // 无效配对代币地址
@@ -805,33 +661,19 @@ contract UniswapV3AdapterTest is Test {
 
     function testUpdateTokenSlippageToleranceWithInvalidToken() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter.UniswapV3Adapter__InvalidToken.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.UniswapV3Adapter__InvalidToken.selector));
         adapter.UpdateTokenSlippageTolerance(IERC20(address(0)), 200);
     }
 
     function testUpdateTokenSlippageToleranceWithInvalidSlippage() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter
-                    .UniswapV3Adapter__InvalidSlippageTolerance
-                    .selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.UniswapV3Adapter__InvalidSlippageTolerance.selector));
         adapter.UpdateTokenSlippageTolerance(IERC20(address(tokenA)), 10001);
     }
 
     function testUpdateTokenConfigWithInvalidToken() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter.UniswapV3Adapter__InvalidToken.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.UniswapV3Adapter__InvalidToken.selector));
         adapter.UpdateTokenConfig(
             IERC20(address(0)), // 无效代币地址
             IERC20(address(tokenB)),
@@ -843,13 +685,7 @@ contract UniswapV3AdapterTest is Test {
 
     function testUpdateTokenConfigWithInvalidCounterPartyToken() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter
-                    .UniswapV3Adapter__InvalidCounterPartyToken
-                    .selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.UniswapV3Adapter__InvalidCounterPartyToken.selector));
         adapter.UpdateTokenConfig(
             IERC20(address(tokenA)),
             IERC20(address(0)), // 无效配对代币地址
@@ -869,10 +705,7 @@ contract UniswapV3AdapterTest is Test {
         vm.prank(vault);
         tokenA.approve(address(adapter), 100 * 10 ** 18);
         vm.prank(vault);
-        uint256 investedAmount = adapter.invest(
-            IERC20(address(tokenA)),
-            100 * 10 ** 18
-        );
+        uint256 investedAmount = adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         assertEq(investedAmount, 100 * 10 ** 18);
     }
@@ -886,10 +719,7 @@ contract UniswapV3AdapterTest is Test {
         vm.prank(vault);
         tokenA.approve(address(adapter), 100 * 10 ** 18);
         vm.prank(vault);
-        uint256 investedAmount = adapter.invest(
-            IERC20(address(tokenA)),
-            100 * 10 ** 18
-        );
+        uint256 investedAmount = adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         assertEq(investedAmount, 100 * 10 ** 18);
     }
@@ -905,10 +735,7 @@ contract UniswapV3AdapterTest is Test {
         vm.prank(vault);
         tokenA.approve(address(adapter), 100 * 10 ** 18);
         vm.prank(vault);
-        uint256 investedAmount = adapter.invest(
-            IERC20(address(tokenA)),
-            100 * 10 ** 18
-        );
+        uint256 investedAmount = adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         assertEq(investedAmount, 100 * 10 ** 18);
     }
@@ -916,11 +743,7 @@ contract UniswapV3AdapterTest is Test {
     // 测试撤资错误情况
     function testDivestWithNoLiquidityPosition() public {
         vm.prank(vault);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV3Adapter.UniswapV3Adapter__NoLiquidityPosition.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.UniswapV3Adapter__NoLiquidityPosition.selector));
         adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
@@ -950,12 +773,8 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -968,16 +787,12 @@ contract UniswapV3AdapterTest is Test {
 
         // 使用最大值进行完全撤资
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            type(uint256).max
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), type(uint256).max);
 
         assertGt(divestedAmount, 0);
 
         // 验证NFT被销毁
-        UniswapV3Adapter.TokenConfig memory configAfter = adapter
-            .getTokenConfig(IERC20(address(tokenA)));
+        UniswapV3Adapter.TokenConfig memory configAfter = adapter.getTokenConfig(IERC20(address(tokenA)));
         assertEq(configAfter.tokenId, 0, "Full divestment should burn NFT");
     }
 
@@ -990,12 +805,8 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -1008,10 +819,7 @@ contract UniswapV3AdapterTest is Test {
 
         // 使用大金额撤资（触发完全撤资逻辑）
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            1000 * 10 ** 18
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), 1000 * 10 ** 18);
 
         assertGt(divestedAmount, 0);
     }
@@ -1027,10 +835,7 @@ contract UniswapV3AdapterTest is Test {
         vm.prank(vault);
         tokenA.approve(address(adapter), 100 * 10 ** 18);
         vm.prank(vault);
-        uint256 investedAmount = adapter.invest(
-            IERC20(address(tokenA)),
-            100 * 10 ** 18
-        );
+        uint256 investedAmount = adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         assertEq(investedAmount, 100 * 10 ** 18);
     }
@@ -1045,10 +850,7 @@ contract UniswapV3AdapterTest is Test {
         vm.prank(vault);
         tokenA.approve(address(adapter), 100 * 10 ** 18);
         vm.prank(vault);
-        uint256 investedAmount = adapter.invest(
-            IERC20(address(tokenA)),
-            100 * 10 ** 18
-        );
+        uint256 investedAmount = adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         assertEq(investedAmount, 100 * 10 ** 18);
     }
@@ -1069,12 +871,8 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -1087,10 +885,7 @@ contract UniswapV3AdapterTest is Test {
 
         // 使用小金额撤资
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            10 * 10 ** 18
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), 10 * 10 ** 18);
 
         assertGt(divestedAmount, 0);
     }
@@ -1104,20 +899,14 @@ contract UniswapV3AdapterTest is Test {
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         // 获取tokenId并设置流动性
-        UniswapV3Adapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenA))
-        );
+        UniswapV3Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenA)));
         uint256 tokenId = config.tokenId;
         uint128 currentLiquidity = 1000;
         mockPositionManager.setLiquidity(tokenId, currentLiquidity);
 
         // 给池子和position manager一些代币用于撤资
-        address token0 = address(tokenA) < address(tokenB)
-            ? address(tokenA)
-            : address(tokenB);
-        address token1 = address(tokenA) < address(tokenB)
-            ? address(tokenB)
-            : address(tokenA);
+        address token0 = address(tokenA) < address(tokenB) ? address(tokenA) : address(tokenB);
+        address token1 = address(tokenA) < address(tokenB) ? address(tokenB) : address(tokenA);
         address poolAddr = mockFactory.getPool(token0, token1, 3000);
         vm.prank(vault);
         tokenA.transfer(poolAddr, 100 * 10 ** 18);
@@ -1142,15 +931,7 @@ contract UniswapV3AdapterTest is Test {
     function testGetTotalValueWithTokenBAsAsset() public {
         // 设置tokenB作为主要资产
         vm.prank(owner);
-        adapter.setTokenConfig(
-            IERC20(address(tokenB)),
-            IERC20(address(tokenA)),
-            100,
-            3000,
-            -600,
-            600,
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenB)), IERC20(address(tokenA)), 100, 3000, -600, 600, vault);
 
         // 投资tokenB
         vm.prank(vault);
