@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { formatUnits } from "viem";
 import { useVaults } from "./useVaults";
+import { formatUnits } from "viem";
 import { useGlobalState } from "~~/services/store/store";
 import type { Vault } from "~~/types/vault";
 
@@ -104,8 +104,8 @@ export const useVaultPerformance = (limit = 100) => {
       const assetPrice = STABLE_ASSETS.has(assetSymbol)
         ? 1
         : assetSymbol === "ETH" || assetSymbol === "WETH"
-        ? nativePrice || 0
-        : 1;
+          ? nativePrice || 0
+          : 1;
 
       const currentValueUsd = currentValue * (assetPrice || 0);
       const netDepositsUsd = netDepositsValue * (assetPrice || 0);
@@ -147,7 +147,7 @@ export const useVaultPerformance = (limit = 100) => {
         .map(redeem => toNumber(toBigInt(redeem.assets), decimals))
         .reduce((max, value) => Math.max(max, value), 0);
       const maxDrawdown = netDepositsValue > 0 ? clampNumber(Math.min(maxRedeem / netDepositsValue, 1)) : 0;
-      const sharpeRatio = volatility > 0 ? clampNumber((currentAPY / 100) / volatility) : currentAPY > 0 ? 5 : 0;
+      const sharpeRatio = volatility > 0 ? clampNumber(currentAPY / 100 / volatility) : currentAPY > 0 ? 5 : 0;
 
       return {
         vault,
@@ -184,7 +184,8 @@ export const useVaultPerformance = (limit = 100) => {
 
     const averageAPY = performanceData.reduce((sum, item) => sum + item.currentAPY, 0) / performanceData.length;
     const totalFees = performanceData.reduce((sum, item) => sum + item.totalFeesPaid, 0);
-    const averageVolatility = performanceData.reduce((sum, item) => sum + item.riskMetrics.volatility, 0) / performanceData.length;
+    const averageVolatility =
+      performanceData.reduce((sum, item) => sum + item.riskMetrics.volatility, 0) / performanceData.length;
 
     const sorted = [...performanceData].sort((a, b) => b.currentAPY - a.currentAPY);
     return {

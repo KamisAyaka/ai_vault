@@ -1,6 +1,5 @@
 const DEFAULT_SUBGRAPH_URL =
-  process.env.NEXT_PUBLIC_SUBGRAPH_URL ??
-  "http://localhost:8000/subgraphs/name/scaffold-eth/ai-vault";
+  process.env.NEXT_PUBLIC_SUBGRAPH_URL ?? "http://localhost:8000/subgraphs/name/scaffold-eth/ai-vault";
 
 export const GetVaultsDocument = `
   query GetVaults($first: Int = 10, $skip: Int = 0, $orderBy: Vault_orderBy, $orderDirection: OrderDirection) {

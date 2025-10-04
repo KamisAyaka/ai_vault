@@ -4,11 +4,11 @@ import { useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { VaultStatsOverview } from "~~/components/vault/StatsCard";
 import { VaultCard } from "~~/components/vault/VaultCard";
+import { useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 import { useVaultStats } from "~~/hooks/useVaultStats";
 import { useVaults } from "~~/hooks/useVaults";
 import { useTranslations } from "~~/services/i18n/I18nProvider";
 import { notification } from "~~/utils/scaffold-eth";
-import { useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 
 const VaultsPage = () => {
   const { address: connectedAddress } = useAccount();
@@ -91,9 +91,7 @@ const VaultsPage = () => {
     <div className="relative flex grow flex-col items-center">
       <div className="relative container mx-auto px-4 py-8">
         <div className="text-center mb-8" ref={heroRef}>
-          <h1 className="hero-heading text-4xl md:text-5xl font-bold mb-3 text-white">
-            {tVaults("title")}
-          </h1>
+          <h1 className="hero-heading text-4xl md:text-5xl font-bold mb-3 text-white">{tVaults("title")}</h1>
           <p className="hero-subheading text-lg text-white">{tVaults("subtitle")}</p>
         </div>
 
@@ -171,9 +169,7 @@ const VaultsPage = () => {
           <div className="text-center py-16">
             <h3 className="text-2xl font-bold mb-2 text-white">{tVaults("empty.title")}</h3>
             <p className="text-[#fbe6dc]">
-              {searchTerm || filterAsset !== "all"
-                ? tVaults("empty.hintFiltered")
-                : tVaults("empty.hintEmpty")}
+              {searchTerm || filterAsset !== "all" ? tVaults("empty.hintFiltered") : tVaults("empty.hintEmpty")}
             </p>
           </div>
         ) : (

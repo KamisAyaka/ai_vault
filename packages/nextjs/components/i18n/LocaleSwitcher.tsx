@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { localeLabels, locales, type Locale } from "~~/i18n/config";
+import { type Locale, localeLabels, locales } from "~~/i18n/config";
 import { useI18n } from "~~/services/i18n/I18nProvider";
 
 export const LocaleSwitcher = () => {

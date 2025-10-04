@@ -3,15 +3,15 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { formatUnits, parseUnits } from "viem";
+import { CountUp } from "~~/components/ui/CountUp";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useGsapFadeReveal, useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 import { useVaultPerformance } from "~~/hooks/useVaultPerformance";
 import { useVaults } from "~~/hooks/useVaults";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 import { useGlobalState } from "~~/services/store/store";
-import { CountUp } from "~~/components/ui/CountUp";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
-import { useTranslations } from "~~/services/i18n/I18nProvider";
-import { useGsapFadeReveal, useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 
 type AllocationInput = {
   adapterAddress: string;
@@ -228,9 +228,7 @@ const StrategiesPage = () => {
       return;
     }
 
-    const confirmed = window.confirm(
-      tStrategies("confirmations.withdrawAll").replace("{vault}", selectedVault.name),
-    );
+    const confirmed = window.confirm(tStrategies("confirmations.withdrawAll").replace("{vault}", selectedVault.name));
 
     if (!confirmed) return;
 
@@ -498,7 +496,7 @@ const StrategiesPage = () => {
                           selectedVault?.id === vault.id
                             ? "bg-[#803100] text-white"
                             : "bg-black/40 hover:bg-black/60 text-[#fbe6dc] border border-[#803100]/30"
-                          }`}
+                        }`}
                       >
                         <p className="font-semibold">{vault.name}</p>
                         <div className="flex justify-between text-xs mt-1">
@@ -588,7 +586,10 @@ const StrategiesPage = () => {
                     </div>
 
                     <div className="card-actions justify-end mt-4">
-                      <button onClick={() => setIsEditing(true)} className="btn bg-[#803100] hover:bg-[#803100]/80 text-white border-none btn-sm">
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="btn bg-[#803100] hover:bg-[#803100]/80 text-white border-none btn-sm"
+                      >
                         {tPage("actions.edit")}
                       </button>
                       <button onClick={handleWithdrawAll} className="btn btn-error btn-sm" disabled={isUpdating}>
@@ -614,7 +615,9 @@ const StrategiesPage = () => {
                             <div key={index} className="bg-black/40 p-4 rounded-lg border border-[#803100]/30">
                               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                                 <div className="flex-1">
-                                  <label className="label text-xs text-[#fbe6dc] mb-1">{tPage("edit.labels.adapter")}</label>
+                                  <label className="label text-xs text-[#fbe6dc] mb-1">
+                                    {tPage("edit.labels.adapter")}
+                                  </label>
                                   <select
                                     className="select select-sm select-bordered w-full font-mono bg-black/40 border-[#803100]/30 text-white"
                                     value={allocation.adapterAddress}
@@ -629,7 +632,9 @@ const StrategiesPage = () => {
                                     }
                                     disabled={isUpdating}
                                   >
-                                    <option value="" disabled>{tPage("partial.placeholders.selectAdapter")}</option>
+                                    <option value="" disabled>
+                                      {tPage("partial.placeholders.selectAdapter")}
+                                    </option>
                                     {adapterAddresses.map((adapter, adapterIndex) => (
                                       <option key={adapter} value={adapter}>
                                         #{adapterIndex} — {adapter}
@@ -638,7 +643,9 @@ const StrategiesPage = () => {
                                   </select>
                                 </div>
                                 <div className="w-full md:w-40">
-                                  <label className="label text-xs text-[#fbe6dc] mb-1">{tPage("edit.labels.allocation")}</label>
+                                  <label className="label text-xs text-[#fbe6dc] mb-1">
+                                    {tPage("edit.labels.allocation")}
+                                  </label>
                                   <input
                                     type="number"
                                     min="0"
@@ -725,7 +732,8 @@ const StrategiesPage = () => {
                               <option value="">{tPage("partial.placeholders.selectAdapter")}</option>
                               {selectedVault.allocations?.map((allocation, index) => (
                                 <option key={index} value={allocation.adapterAddress}>
-                                  {allocation.adapterType} ({((Number(allocation.allocation) / 1000) * 100).toFixed(1)}%)
+                                  {allocation.adapterType} ({((Number(allocation.allocation) / 1000) * 100).toFixed(1)}
+                                  %)
                                 </option>
                               ))}
                             </select>
@@ -770,7 +778,8 @@ const StrategiesPage = () => {
                               <option value="">{tPage("partial.placeholders.selectAdapter")}</option>
                               {selectedVault.allocations?.map((allocation, index) => (
                                 <option key={index} value={allocation.adapterAddress}>
-                                  {allocation.adapterType} ({((Number(allocation.allocation) / 1000) * 100).toFixed(1)}%)
+                                  {allocation.adapterType} ({((Number(allocation.allocation) / 1000) * 100).toFixed(1)}
+                                  %)
                                 </option>
                               ))}
                             </select>
@@ -794,7 +803,9 @@ const StrategiesPage = () => {
                             />
                           </div>
                           <div>
-                            <label className="label text-xs text-[#fbe6dc]">{tPage("partial.labels.targetAllocation")}</label>
+                            <label className="label text-xs text-[#fbe6dc]">
+                              {tPage("partial.labels.targetAllocation")}
+                            </label>
                             <input
                               type="number"
                               min="0"

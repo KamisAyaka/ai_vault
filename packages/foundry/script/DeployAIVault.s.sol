@@ -112,18 +112,9 @@ contract DeployAIVault is ScaffoldETHDeploy {
         usdt.mint(deployer, 1000000 * 10 ** 18);
         // WETH doesn't need minting - it's created through deposit()
 
-        console.log(
-            "Deployer USDC balance:",
-            usdc.balanceOf(deployer) / 10 ** 18
-        );
-        console.log(
-            "Deployer USDT balance:",
-            usdt.balanceOf(deployer) / 10 ** 18
-        );
-        console.log(
-            "Deployer WETH balance:",
-            weth.balanceOf(deployer) / 10 ** 18
-        );
+        console.log("Deployer USDC balance:", usdc.balanceOf(deployer) / 10 ** 18);
+        console.log("Deployer USDT balance:", usdt.balanceOf(deployer) / 10 ** 18);
+        console.log("Deployer WETH balance:", weth.balanceOf(deployer) / 10 ** 18);
     }
 
     /**
@@ -147,19 +138,11 @@ contract DeployAIVault is ScaffoldETHDeploy {
 
         // Deploy implementation contract
         vaultImplementation = new VaultImplementation();
-        console.log(
-            "VaultImplementation deployed at:",
-            address(vaultImplementation)
-        );
-        deployments.push(
-            Deployment("VaultImplementation", address(vaultImplementation))
-        );
+        console.log("VaultImplementation deployed at:", address(vaultImplementation));
+        deployments.push(Deployment("VaultImplementation", address(vaultImplementation)));
 
         // Deploy factory contract
-        vaultFactory = new VaultFactory(
-            address(vaultImplementation),
-            address(manager)
-        );
+        vaultFactory = new VaultFactory(address(vaultImplementation), address(manager));
         console.log("VaultFactory deployed at:", address(vaultFactory));
         deployments.push(Deployment("VaultFactory", address(vaultFactory)));
     }
@@ -179,34 +162,15 @@ contract DeployAIVault is ScaffoldETHDeploy {
 
         // UniswapV2 Mock
         mockUniswapV2Factory = new MockUniswapV2Factory();
-        mockUniswapV2Router = new MockUniswapV2Router(
-            address(mockUniswapV2Factory)
-        );
-        console.log(
-            "MockUniswapV2Factory deployed at:",
-            address(mockUniswapV2Factory)
-        );
-        console.log(
-            "MockUniswapV2Router deployed at:",
-            address(mockUniswapV2Router)
-        );
+        mockUniswapV2Router = new MockUniswapV2Router(address(mockUniswapV2Factory));
+        console.log("MockUniswapV2Factory deployed at:", address(mockUniswapV2Factory));
+        console.log("MockUniswapV2Router deployed at:", address(mockUniswapV2Router));
 
         // UniswapV3 Mock
         realisticUniswapV3Factory = new RealisticUniswapV3Factory();
-        address usdcPoolAddress = realisticUniswapV3Factory.createPool(
-            address(usdc),
-            address(weth),
-            3000
-        );
-        address usdtPoolAddress = realisticUniswapV3Factory.createPool(
-            address(usdt),
-            address(weth),
-            3000
-        );
-        console.log(
-            "RealisticUniswapV3Factory deployed at:",
-            address(realisticUniswapV3Factory)
-        );
+        address usdcPoolAddress = realisticUniswapV3Factory.createPool(address(usdc), address(weth), 3000);
+        address usdtPoolAddress = realisticUniswapV3Factory.createPool(address(usdt), address(weth), 3000);
+        console.log("RealisticUniswapV3Factory deployed at:", address(realisticUniswapV3Factory));
         console.log("USDC/WETH pool address:", usdcPoolAddress);
         console.log("USDT/WETH pool address:", usdtPoolAddress);
 
@@ -219,10 +183,7 @@ contract DeployAIVault is ScaffoldETHDeploy {
         realisticUniswapV3Router = new RealisticSwapRouter(usdcPoolAddress);
         realisticPositionManager = new RealisticNonfungiblePositionManager();
         // 传入工厂地址，让 Quoter 能够处理所有池子
-        realisticQuoter = new RealisticQuoter(
-            usdcPoolAddress,
-            address(realisticUniswapV3Factory)
-        );
+        realisticQuoter = new RealisticQuoter(usdcPoolAddress, address(realisticUniswapV3Factory));
 
         // Set factory reference for position manager
         realisticPositionManager.setFactory(address(realisticUniswapV3Factory));
@@ -231,14 +192,8 @@ contract DeployAIVault is ScaffoldETHDeploy {
         usdc.mint(address(realisticPositionManager), 1000000 * 10 ** 18);
         weth.mint(address(realisticPositionManager), 1000000 * 10 ** 18);
 
-        console.log(
-            "RealisticSwapRouter deployed at:",
-            address(realisticUniswapV3Router)
-        );
-        console.log(
-            "RealisticPositionManager deployed at:",
-            address(realisticPositionManager)
-        );
+        console.log("RealisticSwapRouter deployed at:", address(realisticUniswapV3Router));
+        console.log("RealisticPositionManager deployed at:", address(realisticPositionManager));
         console.log("RealisticQuoter deployed at:", address(realisticQuoter));
     }
 
@@ -254,14 +209,9 @@ contract DeployAIVault is ScaffoldETHDeploy {
         deployments.push(Deployment("AaveAdapter", address(aaveAdapter)));
 
         // Deploy UniswapV2 adapter
-        uniswapV2Adapter = new UniswapV2Adapter(
-            address(mockUniswapV2Router),
-            address(mockUniswapV2Factory)
-        );
+        uniswapV2Adapter = new UniswapV2Adapter(address(mockUniswapV2Router), address(mockUniswapV2Factory));
         console.log("UniswapV2Adapter deployed at:", address(uniswapV2Adapter));
-        deployments.push(
-            Deployment("UniswapV2Adapter", address(uniswapV2Adapter))
-        );
+        deployments.push(Deployment("UniswapV2Adapter", address(uniswapV2Adapter)));
 
         // Deploy UniswapV3 adapter
         uniswapV3Adapter = new UniswapV3Adapter(
@@ -271,9 +221,7 @@ contract DeployAIVault is ScaffoldETHDeploy {
             address(realisticQuoter)
         );
         console.log("UniswapV3Adapter deployed at:", address(uniswapV3Adapter));
-        deployments.push(
-            Deployment("UniswapV3Adapter", address(uniswapV3Adapter))
-        );
+        deployments.push(Deployment("UniswapV3Adapter", address(uniswapV3Adapter)));
     }
 
     /**
@@ -369,24 +317,12 @@ contract DeployAIVault is ScaffoldETHDeploy {
     /**
      * @notice Configure UniswapV2 adapter for a specific token
      */
-    function _configureUniswapV2ForToken(
-        MockToken token,
-        address vault
-    ) internal {
+    function _configureUniswapV2ForToken(MockToken token, address vault) internal {
         address pairAddress;
-        if (
-            mockUniswapV2Factory.getPair(address(token), address(weth)) ==
-            address(0)
-        ) {
-            pairAddress = mockUniswapV2Factory.createPair(
-                address(token),
-                address(weth)
-            );
+        if (mockUniswapV2Factory.getPair(address(token), address(weth)) == address(0)) {
+            pairAddress = mockUniswapV2Factory.createPair(address(token), address(weth));
         } else {
-            pairAddress = mockUniswapV2Factory.getPair(
-                address(token),
-                address(weth)
-            );
+            pairAddress = mockUniswapV2Factory.getPair(address(token), address(weth));
         }
 
         // Add initial liquidity to pair
@@ -403,10 +339,7 @@ contract DeployAIVault is ScaffoldETHDeploy {
     /**
      * @notice Configure UniswapV3 adapter for a specific token
      */
-    function _configureUniswapV3ForToken(
-        MockToken token,
-        address vault
-    ) internal {
+    function _configureUniswapV3ForToken(MockToken token, address vault) internal {
         uniswapV3Adapter.setTokenConfig(
             IERC20(address(token)),
             IERC20(address(weth)),
@@ -438,10 +371,7 @@ contract DeployAIVault is ScaffoldETHDeploy {
     /**
      * @notice Add initial liquidity to UniswapV2 pair
      */
-    function _addInitialLiquidityToPair(
-        address pairAddress,
-        MockToken token
-    ) internal {
+    function _addInitialLiquidityToPair(address pairAddress, MockToken token) internal {
         // Mint tokens to deployer for adding liquidity
         uint256 liquidityAmount = 100000 * 10 ** 18; // 100000 tokens
         token.mint(deployer, liquidityAmount);
@@ -461,10 +391,7 @@ contract DeployAIVault is ScaffoldETHDeploy {
     function _logDeploymentInfo() internal view {
         console.log("\n=== Deployment Summary ===");
         console.log("VaultFactory address:", address(vaultFactory));
-        console.log(
-            "VaultImplementation address:",
-            address(vaultImplementation)
-        );
+        console.log("VaultImplementation address:", address(vaultImplementation));
         console.log("Manager address:", address(manager));
 
         console.log("\n--- Token Addresses ---");
@@ -485,12 +412,8 @@ contract DeployAIVault is ScaffoldETHDeploy {
         console.log("\n=== Usage Instructions ===");
         console.log("1. Create more vaults using VaultFactory.createVault()");
         console.log("2. Deposit and invest through vault addresses");
-        console.log(
-            "3. Interact with DeFi protocols directly through adapter addresses"
-        );
-        console.log(
-            "4. All contract addresses saved to deployments/ directory"
-        );
+        console.log("3. Interact with DeFi protocols directly through adapter addresses");
+        console.log("4. All contract addresses saved to deployments/ directory");
         console.log("\n=== Available Vaults ===");
         console.log("- USDC Vault: Stablecoin vault for USDC deposits");
         console.log("- USDT Vault: Stablecoin vault for USDT deposits");

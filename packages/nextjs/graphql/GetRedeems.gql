@@ -5,6 +5,13 @@ query GetRedeems($first: Int = 10, $skip: Int = 0, $orderBy: Redeem_orderBy, $or
       id
       address
       name
+      asset {
+        id
+        address
+        symbol
+        name
+        decimals
+      }
     }
     user {
       id

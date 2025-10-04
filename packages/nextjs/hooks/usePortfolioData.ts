@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useAccount } from "wagmi";
-import { formatUnits } from "viem";
 import { useVaults } from "./useVaults";
+import { formatUnits } from "viem";
+import { useAccount } from "wagmi";
 import { useGlobalState } from "~~/services/store/store";
 import type { Vault } from "~~/types/vault";
 
@@ -123,8 +123,12 @@ export const usePortfolioData = () => {
         const symbol = vault.asset?.symbol?.toUpperCase() ?? "TOKEN";
         const price = getAssetPrice(symbol, nativePrice);
 
-        const userDeposits = (vault.deposits || []).filter(deposit => deposit.user?.address?.toLowerCase() === lowerAddress);
-        const userRedeems = (vault.redeems || []).filter(redeem => redeem.user?.address?.toLowerCase() === lowerAddress);
+        const userDeposits = (vault.deposits || []).filter(
+          deposit => deposit.user?.address?.toLowerCase() === lowerAddress,
+        );
+        const userRedeems = (vault.redeems || []).filter(
+          redeem => redeem.user?.address?.toLowerCase() === lowerAddress,
+        );
 
         if (userDeposits.length === 0 && userRedeems.length === 0) {
           return null;
@@ -157,7 +161,8 @@ export const usePortfolioData = () => {
         const profitLossUsd = valueUsd + redeemedUsd - depositedUsd;
         const profitLossPercent = depositedUsd > 0 ? (profitLossUsd / depositedUsd) * 100 : 0;
 
-        const firstDepositTimestamp = userDeposits.length > 0 ? Number(userDeposits[userDeposits.length - 1].blockTimestamp) * 1000 : Date.now();
+        const firstDepositTimestamp =
+          userDeposits.length > 0 ? Number(userDeposits[userDeposits.length - 1].blockTimestamp) * 1000 : Date.now();
         const daysHeld = Math.max(1, (Date.now() - firstDepositTimestamp) / (1000 * 60 * 60 * 24));
 
         const managementFeeUsd = annualisedFee(valueUsd, 0.01, daysHeld);
@@ -186,11 +191,26 @@ export const usePortfolioData = () => {
       .filter(Boolean) as PortfolioPosition[];
   }, [vaults, lowerAddress, nativePrice]);
 
-  const totalPortfolioValue = useMemo(() => positions.reduce((sum, position) => sum + position.valueUsd, 0), [positions]);
-  const totalDepositsUsd = useMemo(() => positions.reduce((sum, position) => sum + position.totalDepositedUsd, 0), [positions]);
-  const totalWithdrawalsUsd = useMemo(() => positions.reduce((sum, position) => sum + position.totalRedeemedUsd, 0), [positions]);
-  const totalProfitLossUsd = useMemo(() => positions.reduce((sum, position) => sum + position.profitLossUsd, 0), [positions]);
-  const totalFeesUsd = useMemo(() => positions.reduce((sum, position) => sum + position.managementFeeUsd + position.performanceFeeUsd, 0), [positions]);
+  const totalPortfolioValue = useMemo(
+    () => positions.reduce((sum, position) => sum + position.valueUsd, 0),
+    [positions],
+  );
+  const totalDepositsUsd = useMemo(
+    () => positions.reduce((sum, position) => sum + position.totalDepositedUsd, 0),
+    [positions],
+  );
+  const totalWithdrawalsUsd = useMemo(
+    () => positions.reduce((sum, position) => sum + position.totalRedeemedUsd, 0),
+    [positions],
+  );
+  const totalProfitLossUsd = useMemo(
+    () => positions.reduce((sum, position) => sum + position.profitLossUsd, 0),
+    [positions],
+  );
+  const totalFeesUsd = useMemo(
+    () => positions.reduce((sum, position) => sum + position.managementFeeUsd + position.performanceFeeUsd, 0),
+    [positions],
+  );
 
   const stats = useMemo<PortfolioStats>(() => {
     const profitLossPercent = totalDepositsUsd > 0 ? (totalProfitLossUsd / totalDepositsUsd) * 100 : 0;

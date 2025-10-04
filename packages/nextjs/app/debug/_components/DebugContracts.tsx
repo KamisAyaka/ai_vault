@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef } from "react";
 import { useSessionStorage } from "usehooks-ts";
 import { BarsArrowUpIcon } from "@heroicons/react/20/solid";
 import { ContractUI } from "~~/app/debug/_components/contract";
+import { useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
 import { ContractName, GenericContract } from "~~/utils/scaffold-eth/contract";
 import { useAllContracts } from "~~/utils/scaffold-eth/contractsData";
-import { useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
 
 const selectedContractStorageKey = "scaffoldEth2.selectedContract";
 
@@ -39,7 +39,9 @@ export function DebugContracts() {
   return (
     <div className="flex flex-col gap-y-6 lg:gap-y-8 py-8 lg:py-12 justify-center items-center">
       {contractNames.length === 0 ? (
-        <p className="hero-heading text-3xl mt-14" ref={heroRef}>No contracts found!</p>
+        <p className="hero-heading text-3xl mt-14" ref={heroRef}>
+          No contracts found!
+        </p>
       ) : (
         <>
           {contractNames.length > 1 && (

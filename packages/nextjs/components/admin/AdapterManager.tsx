@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { usePublicClient } from "wagmi";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
-import { notification } from "~~/utils/scaffold-eth";
 import { useTranslations } from "~~/services/i18n/I18nProvider";
+import { notification } from "~~/utils/scaffold-eth";
 
 const INITIAL_PARTIAL_STATE = {
   token: "",
@@ -367,9 +367,7 @@ export const AdapterManager = () => {
                   {registeredAdapters.map((adapter, index) => (
                     <tr key={adapter}>
                       <td>{index + 1}</td>
-                      <td className="font-semibold">
-                        {adapterMeta[adapter]?.name ?? t("table.loading")}
-                      </td>
+                      <td className="font-semibold">{adapterMeta[adapter]?.name ?? t("table.loading")}</td>
                       <td>
                         <code className="text-sm">{formatAddress(adapter)}</code>
                       </td>

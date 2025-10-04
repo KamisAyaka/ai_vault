@@ -3,8 +3,8 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { AdapterManager } from "~~/components/admin/AdapterManager";
-import { useTranslations } from "~~/services/i18n/I18nProvider";
 import { useGsapFadeReveal, useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 
 const AdaptersPage = () => {
   const tPage = useTranslations("admin.adaptersPage");

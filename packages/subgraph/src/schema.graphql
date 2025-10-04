@@ -43,8 +43,8 @@ type Vault @entity(immutable: false) {
   isActive: Boolean!
   totalAssets: BigInt!
   totalSupply: BigInt!
-  factory: VaultFactory! # 创建此金库的工厂
-  manager: VaultManager! # 金库管理者（也是所有者）
+  factory: VaultFactory # 创建此金库的工厂（可选）
+  manager: VaultManager # 金库管理者（可选）
   asset: Asset! # 金库支持的资产
   createdAt: BigInt!
   updatedAt: BigInt!

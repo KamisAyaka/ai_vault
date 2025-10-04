@@ -41,21 +41,17 @@ contract SimulateTrading is Script {
     // ============ 测试账户定义 ============
 
     // 管理者账户
-    uint256 public constant adminPrivateKey =
-        0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a;
+    uint256 public constant adminPrivateKey = 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a;
     address public constant admin = 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65;
 
     // 用户账户
-    uint256 public constant user1PrivateKey =
-        0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356;
+    uint256 public constant user1PrivateKey = 0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356;
     address public constant user1 = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955;
 
-    uint256 public constant user2PrivateKey =
-        0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97;
+    uint256 public constant user2PrivateKey = 0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97;
     address public constant user2 = 0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f;
 
-    uint256 public constant user3PrivateKey =
-        0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6;
+    uint256 public constant user3PrivateKey = 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6;
     address public constant user3 = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
 
     // ============ 动态获取的合约地址 ============
@@ -97,9 +93,7 @@ contract SimulateTrading is Script {
      * @dev 连接到已部署的合约并执行模拟交易 - 每个用户在自己的广播内完成所有操作
      */
     function run() external {
-        console.log(
-            "=== Starting Simulated Trading with Deployed Contracts ==="
-        );
+        console.log("=== Starting Simulated Trading with Deployed Contracts ===");
         console.log("Chain ID:", block.chainid);
 
         // 1. 获取部署的合约地址
@@ -139,9 +133,7 @@ contract SimulateTrading is Script {
      * @notice 获取部署的合约地址（使用 subgraph.yaml 中的地址）
      */
     function _getDeployedAddresses() internal {
-        console.log(
-            "\n--- Setting Contract Addresses from Latest Deployment ---"
-        );
+        console.log("\n--- Setting Contract Addresses from Latest Deployment ---");
 
         // 使用最新部署的地址
         managerAddress = 0xe1DA8919f262Ee86f9BE05059C9280142CF23f48; // AIAgentVaultManager
@@ -165,28 +157,16 @@ contract SimulateTrading is Script {
 
         // 确保地址已经获取
         require(managerAddress != address(0), "Manager address not set");
-        require(
-            vaultFactoryAddress != address(0),
-            "VaultFactory address not set"
-        );
+        require(vaultFactoryAddress != address(0), "VaultFactory address not set");
         require(usdcTokenAddress != address(0), "USDC token address not set");
         require(usdtTokenAddress != address(0), "USDT token address not set");
         require(wethTokenAddress != address(0), "WETH token address not set");
         require(usdcVaultAddress != address(0), "USDC vault address not set");
         require(usdtVaultAddress != address(0), "USDT vault address not set");
         require(ethVaultAddress != address(0), "ETH vault address not set");
-        require(
-            aaveAdapterAddress != address(0),
-            "Aave adapter address not set"
-        );
-        require(
-            uniswapV2AdapterAddress != address(0),
-            "UniswapV2 adapter address not set"
-        );
-        require(
-            uniswapV3AdapterAddress != address(0),
-            "UniswapV3 adapter address not set"
-        );
+        require(aaveAdapterAddress != address(0), "Aave adapter address not set");
+        require(uniswapV2AdapterAddress != address(0), "UniswapV2 adapter address not set");
+        require(uniswapV3AdapterAddress != address(0), "UniswapV3 adapter address not set");
 
         // 连接核心合约
         manager = AIAgentVaultManager(managerAddress);
@@ -210,14 +190,8 @@ contract SimulateTrading is Script {
         console.log("USDT vault connected at:", address(usdtVault));
         console.log("WETH vault connected at:", address(wethVault));
         console.log("Aave adapter connected at:", address(aaveAdapter));
-        console.log(
-            "UniswapV2 adapter connected at:",
-            address(uniswapV2Adapter)
-        );
-        console.log(
-            "UniswapV3 adapter connected at:",
-            address(uniswapV3Adapter)
-        );
+        console.log("UniswapV2 adapter connected at:", address(uniswapV2Adapter));
+        console.log("UniswapV3 adapter connected at:", address(uniswapV3Adapter));
     }
 
     /**
@@ -274,9 +248,7 @@ contract SimulateTrading is Script {
         vm.deal(user2, 110 ether); // 10 ether for deposit + 100 ether for gas
         vm.deal(user3, 100 ether);
 
-        console.log(
-            "All test accounts funded with tokens and ETH successfully"
-        );
+        console.log("All test accounts funded with tokens and ETH successfully");
     }
 
     /**
@@ -303,10 +275,8 @@ contract SimulateTrading is Script {
         }
 
         // Admin 存款到 WETH 金库
-        wethVault.depositETH{value: 50 ether}(admin);
-        console.log(
-            "Admin deposited 50 ETH to WETH vault (converted to WETH automatically)"
-        );
+        wethVault.depositETH{ value: 50 ether }(admin);
+        console.log("Admin deposited 50 ETH to WETH vault (converted to WETH automatically)");
 
         // 2. 模拟时间过去
         vm.warp(block.timestamp + 1 days);
@@ -338,9 +308,7 @@ contract SimulateTrading is Script {
         if (adminWethShares > 0) {
             uint256 redeemWethAmount = adminWethShares / 20; // 赎回1/20的份额
             wethVault.redeemETH(redeemWethAmount, admin, admin);
-            console.log(
-                "Admin redeemed 1/20 of their WETH vault shares and received ETH"
-            );
+            console.log("Admin redeemed 1/20 of their WETH vault shares and received ETH");
         }
 
         vm.stopBroadcast();
@@ -352,16 +320,12 @@ contract SimulateTrading is Script {
      * User1: 保守投资者 - 只投资稳定币，长期持有
      */
     function _executeUser1Operations() internal {
-        console.log(
-            "\n--- Executing User1 Operations (Conservative Investor) ---"
-        );
+        console.log("\n--- Executing User1 Operations (Conservative Investor) ---");
 
         vm.startBroadcast(user1PrivateKey);
 
         // User1: 保守投资者，只投资稳定币，大额投资
-        console.log(
-            "User1 (Conservative) depositing large amounts to stablecoin vaults..."
-        );
+        console.log("User1 (Conservative) depositing large amounts to stablecoin vaults...");
 
         // 大额投资USDC
         usdc.approve(address(usdcVault), 50000 * 10 ** 18);
@@ -385,15 +349,11 @@ contract SimulateTrading is Script {
         if (user1Shares > 0) {
             uint256 redeemAmount = user1Shares / 50; // 只赎回1/50的份额
             usdcVault.redeem(redeemAmount, user1, user1);
-            console.log(
-                "User1 redeemed only 1/50 of their USDC vault shares (conservative)"
-            );
+            console.log("User1 redeemed only 1/50 of their USDC vault shares (conservative)");
         }
 
         vm.stopBroadcast();
-        console.log(
-            "User1 (Conservative Investor) operations completed successfully!"
-        );
+        console.log("User1 (Conservative Investor) operations completed successfully!");
     }
 
     /**
@@ -407,10 +367,8 @@ contract SimulateTrading is Script {
 
         // User2: ETH投资者，专注于ETH投资
         console.log("User2 (ETH Investor) depositing to WETH vault...");
-        wethVault.depositETH{value: 25 ether}(user2);
-        console.log(
-            "User2 deposited 25 ETH to WETH vault (converted to WETH automatically)"
-        );
+        wethVault.depositETH{ value: 25 ether }(user2);
+        console.log("User2 deposited 25 ETH to WETH vault (converted to WETH automatically)");
 
         // 模拟时间过去
         vm.warp(block.timestamp + 3 days);
@@ -422,14 +380,12 @@ contract SimulateTrading is Script {
         if (user2Shares > 0) {
             uint256 redeemAmount = user2Shares / 5; // 赎回1/5的份额
             wethVault.redeemETH(redeemAmount, user2, user2);
-            console.log(
-                "User2 redeemed 1/5 of their WETH vault shares and received ETH"
-            );
+            console.log("User2 redeemed 1/5 of their WETH vault shares and received ETH");
         }
 
         // 再次存款（ETH投资者喜欢加仓）
         console.log("User2 (ETH Investor) adding more ETH...");
-        wethVault.depositETH{value: 5 ether}(user2);
+        wethVault.depositETH{ value: 5 ether }(user2);
         console.log("User2 deposited additional 5 ETH to WETH vault");
 
         vm.stopBroadcast();
@@ -469,9 +425,7 @@ contract SimulateTrading is Script {
         if (user3Shares > 0) {
             uint256 redeemAmount = user3Shares / 3; // 赎回1/3的份额
             usdcVault.redeem(redeemAmount, user3, user3);
-            console.log(
-                "User3 redeemed 1/3 of their USDC vault shares (active trading)"
-            );
+            console.log("User3 redeemed 1/3 of their USDC vault shares (active trading)");
         }
 
         if (usdtVaultAddress != address(0)) {
@@ -479,9 +433,7 @@ contract SimulateTrading is Script {
             if (user3UsdtShares > 0) {
                 uint256 redeemUsdtAmount = user3UsdtShares / 2; // 赎回1/2的份额
                 usdtVault.redeem(redeemUsdtAmount, user3, user3);
-                console.log(
-                    "User3 redeemed 1/2 of their USDT vault shares (active trading)"
-                );
+                console.log("User3 redeemed 1/2 of their USDT vault shares (active trading)");
             }
         }
 
@@ -537,21 +489,12 @@ contract SimulateTrading is Script {
         uint256 finalWethVaultBalance = weth.balanceOf(address(wethVault));
 
         console.log("\n=== Final Vault Status ===");
-        console.log(
-            "Final USDC vault balance:",
-            finalUsdcVaultBalance / 10 ** 18
-        );
+        console.log("Final USDC vault balance:", finalUsdcVaultBalance / 10 ** 18);
         if (usdtVaultAddress != address(0)) {
             uint256 finalUsdtVaultBalance = usdt.balanceOf(address(usdtVault));
-            console.log(
-                "Final USDT vault balance:",
-                finalUsdtVaultBalance / 10 ** 18
-            );
+            console.log("Final USDT vault balance:", finalUsdtVaultBalance / 10 ** 18);
         }
-        console.log(
-            "Final WETH vault balance:",
-            finalWethVaultBalance / 10 ** 18
-        );
+        console.log("Final WETH vault balance:", finalWethVaultBalance / 10 ** 18);
 
         // 显示金库份额信息
         console.log("\n=== Final Vault Shares Summary ===");
@@ -562,18 +505,9 @@ contract SimulateTrading is Script {
 
         if (usdtVaultAddress != address(0)) {
             console.log("USDT Vault:");
-            console.log(
-                "  User1 shares:",
-                usdtVault.balanceOf(user1) / 10 ** 18
-            );
-            console.log(
-                "  User3 shares:",
-                usdtVault.balanceOf(user3) / 10 ** 18
-            );
-            console.log(
-                "  Admin shares:",
-                usdtVault.balanceOf(admin) / 10 ** 18
-            );
+            console.log("  User1 shares:", usdtVault.balanceOf(user1) / 10 ** 18);
+            console.log("  User3 shares:", usdtVault.balanceOf(user3) / 10 ** 18);
+            console.log("  Admin shares:", usdtVault.balanceOf(admin) / 10 ** 18);
         }
 
         console.log("WETH Vault:");
@@ -582,22 +516,12 @@ contract SimulateTrading is Script {
 
         console.log("\n=== Trading Behavior Summary ===");
         console.log("1. Admin: System administrator with mixed investments");
-        console.log(
-            "2. User1 (Conservative): Large stablecoin investments, minimal redemptions, 7-day hold"
-        );
-        console.log(
-            "3. User2 (ETH Investor): ETH-focused, partial redemptions, additional deposits"
-        );
-        console.log(
-            "4. User3 (Active Trader): Diversified investments, frequent trading, portfolio rebalancing"
-        );
+        console.log("2. User1 (Conservative): Large stablecoin investments, minimal redemptions, 7-day hold");
+        console.log("3. User2 (ETH Investor): ETH-focused, partial redemptions, additional deposits");
+        console.log("4. User3 (Active Trader): Diversified investments, frequent trading, portfolio rebalancing");
         console.log("\n=== Usage Instructions ===");
-        console.log(
-            "1. Each user executed their operations in their own broadcast session"
-        );
-        console.log(
-            "2. Different investment strategies demonstrated various user behaviors"
-        );
+        console.log("1. Each user executed their operations in their own broadcast session");
+        console.log("2. Different investment strategies demonstrated various user behaviors");
         console.log("3. Time has been advanced to simulate interest accrual");
         console.log("4. Check subgraph for transaction data");
     }

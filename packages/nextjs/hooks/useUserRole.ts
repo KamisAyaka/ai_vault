@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { useAccount } from "wagmi";
 import { useScaffoldReadContract } from "./scaffold-eth";
+import { useAccount } from "wagmi";
 
 export type UserRole = "owner" | "manager" | "ai_agent" | "user";
 
@@ -43,7 +43,14 @@ export const useUserRole = (vaultAddress?: string, options: UseUserRoleOptions =
     }
 
     return "user";
-  }, [connectedAddress, factoryOwner, options.factoryOwnerAddress, options.managerAddress, options.aiAgentAddresses, vaultAddress]);
+  }, [
+    connectedAddress,
+    factoryOwner,
+    options.factoryOwnerAddress,
+    options.managerAddress,
+    options.aiAgentAddresses,
+    vaultAddress,
+  ]);
 
   const permissions = useMemo(() => {
     return {

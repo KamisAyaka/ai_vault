@@ -27,7 +27,7 @@ export const menuLinks: HeaderMenuLink[] = [
   { labelKey: "menu.adapters", href: "/admin/adapters", ownerOnly: true },
   { labelKey: "menu.batch", href: "/admin/vaults/batch", ownerOnly: true },
   { labelKey: "menu.subgraph", href: "/subgraph" },
-  { labelKey: "menu.debug", href: "/debug" }
+  { labelKey: "menu.debug", href: "/debug" },
 ];
 
 export const HeaderMenuLinks = () => {
@@ -43,7 +43,7 @@ export const HeaderMenuLinks = () => {
         }
         return true;
       }),
-    [role]
+    [role],
   );
 
   return (

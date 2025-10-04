@@ -6,8 +6,8 @@ import type { NextPage } from "next";
 import { hardhat } from "viem/chains";
 import { useFetchBlocks } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
-import { notification } from "~~/utils/scaffold-eth";
 import { useGsapFadeReveal, useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
+import { notification } from "~~/utils/scaffold-eth";
 
 const BlockExplorer: NextPage = () => {
   const { blocks, transactionReceipts, currentPage, totalBlocks, setCurrentPage, error } = useFetchBlocks();
@@ -98,7 +98,11 @@ const BlockExplorer: NextPage = () => {
           <TransactionsTable blocks={blocks} transactionReceipts={transactionReceipts} />
         </div>
         <div className="block-section">
-          <PaginationButton currentPage={currentPage} totalItems={Number(totalBlocks)} setCurrentPage={setCurrentPage} />
+          <PaginationButton
+            currentPage={currentPage}
+            totalItems={Number(totalBlocks)}
+            setCurrentPage={setCurrentPage}
+          />
         </div>
       </div>
     </div>

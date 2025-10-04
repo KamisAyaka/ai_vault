@@ -1,15 +1,15 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import type { NextPage } from "next";
-import { useRef } from "react";
 import { useAccount } from "wagmi";
 import { CountUp } from "~~/components/ui/CountUp";
 import { VaultCard } from "~~/components/vault/VaultCard";
+import { useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 import { useVaultStats } from "~~/hooks/useVaultStats";
 import { useVaults } from "~~/hooks/useVaults";
 import { useTranslations } from "~~/services/i18n/I18nProvider";
-import { useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 
 const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
@@ -54,7 +54,6 @@ const Home: NextPage = () => {
 
   return (
     <div className="relative flex grow flex-col items-center">
-
       {/* Hero Section */}
       <div className="hero flex-1 flex items-center justify-center relative" ref={heroRef}>
         <div className="hero-content text-center">
@@ -122,19 +121,35 @@ const Home: NextPage = () => {
             <div className="space-y-2 text-sm text-[#fbe6dc]">
               <div className="stats-line flex items-center justify-between overflow-hidden">
                 <span className="whitespace-nowrap">{tMetrics("tvl", "Total Value Locked")}</span>
-                <CountUp className="font-semibold text-white whitespace-nowrap" value={stats.totalValueLockedUsd} format={formatCurrency} />
+                <CountUp
+                  className="font-semibold text-white whitespace-nowrap"
+                  value={stats.totalValueLockedUsd}
+                  format={formatCurrency}
+                />
               </div>
               <div className="stats-line flex items-center justify-between overflow-hidden">
                 <span className="whitespace-nowrap">{tMetrics("vaults", "Active Vaults")}</span>
-                <CountUp className="font-semibold text-white whitespace-nowrap" value={stats.activeVaults} format={formatCount} />
+                <CountUp
+                  className="font-semibold text-white whitespace-nowrap"
+                  value={stats.activeVaults}
+                  format={formatCount}
+                />
               </div>
               <div className="stats-line flex items-center justify-between overflow-hidden">
                 <span className="whitespace-nowrap">{tMetrics("users", "Total Users")}</span>
-                <CountUp className="font-semibold text-white whitespace-nowrap" value={stats.totalUsers} format={formatCount} />
+                <CountUp
+                  className="font-semibold text-white whitespace-nowrap"
+                  value={stats.totalUsers}
+                  format={formatCount}
+                />
               </div>
               <div className="stats-line flex items-center justify-between overflow-hidden">
                 <span className="whitespace-nowrap">{tMetrics("apy", "Average APY")}</span>
-                <CountUp className="font-semibold text-success whitespace-nowrap" value={stats.averageApy} format={formatPercentage} />
+                <CountUp
+                  className="font-semibold text-success whitespace-nowrap"
+                  value={stats.averageApy}
+                  format={formatPercentage}
+                />
               </div>
             </div>
           )}

@@ -5,6 +5,13 @@ query GetDeposits($first: Int = 10, $skip: Int = 0, $orderBy: Deposit_orderBy, $
       id
       address
       name
+      asset {
+        id
+        address
+        symbol
+        name
+        decimals
+      }
     }
     user {
       id

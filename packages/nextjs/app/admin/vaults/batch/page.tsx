@@ -78,9 +78,13 @@ const BatchVaultCreationPage = () => {
             <div>
               <h4 className="font-semibold mb-2">1️⃣ 手动添加方式</h4>
               <ul className="list-disc list-inside text-sm opacity-80 space-y-1">
-                <li>点击 {'"'}➕ 添加金库{'"'} 按钮添加新行</li>
+                <li>
+                  点击 {'"'}➕ 添加金库{'"'} 按钮添加新行
+                </li>
                 <li>填写每个金库的配置信息</li>
-                <li>点击 {'"'}🚀 批量创建{'"'} 执行创建</li>
+                <li>
+                  点击 {'"'}🚀 批量创建{'"'} 执行创建
+                </li>
               </ul>
             </div>
 
@@ -92,7 +96,9 @@ const BatchVaultCreationPage = () => {
                 <li>准备 CSV 格式数据（逗号分隔）</li>
                 <li>格式：name,assetAddress,assetSymbol,decimals,managementFeeBps</li>
                 <li>示例：USDC Vault,0x1234...,USDC,6,100</li>
-                <li>粘贴到文本框并点击 {'"'}📥 导入 CSV{'"'}</li>
+                <li>
+                  粘贴到文本框并点击 {'"'}📥 导入 CSV{'"'}
+                </li>
               </ul>
             </div>
 

@@ -51,6 +51,10 @@ dataSources:
       abis:
         - name: AIAgentVaultManager
           file: ./abis/localhost_AIAgentVaultManager.json
+        - name: VaultImplementation
+          file: ./abis/localhost_VaultImplementation.json
+        - name: IERC20Metadata
+          file: ./abis/IERC20Metadata.json
       eventHandlers:
         - event: VaultCreatedAndRegistered(indexed address,string)
           handler: handleVaultCreatedAndRegistered
@@ -79,6 +83,8 @@ dataSources:
           file: ./abis/localhost_VaultImplementation.json
         - name: IProtocolAdapter
           file: ./abis/IProtocolAdapter.json
+        - name: IERC20Metadata
+          file: ./abis/IERC20Metadata.json
       eventHandlers:
         - event: Deposit(uint256,indexed address,uint256)
           handler: handleDeposit
@@ -111,6 +117,8 @@ dataSources:
           file: ./abis/localhost_VaultSharesETH.json
         - name: IProtocolAdapter
           file: ./abis/IProtocolAdapter.json
+        - name: IERC20Metadata
+          file: ./abis/IERC20Metadata.json
       eventHandlers:
         - event: Deposit(uint256,indexed address,uint256)
           handler: handleDeposit
@@ -224,6 +232,8 @@ templates:
           file: ./abis/localhost_VaultImplementation.json
         - name: IProtocolAdapter
           file: ./abis/IProtocolAdapter.json
+        - name: IERC20Metadata
+          file: ./abis/IERC20Metadata.json
       eventHandlers:
         - event: Deposit(uint256,indexed address,uint256)
           handler: handleDeposit

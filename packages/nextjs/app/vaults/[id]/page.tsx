@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
@@ -16,10 +16,10 @@ import {
   WithdrawETHModal,
   WithdrawModal,
 } from "~~/components/vault";
-import { useVaultPerformance } from "~~/hooks/useVaultPerformance";
-import { useUserRole } from "~~/hooks/useUserRole";
-import { useVaults } from "~~/hooks/useVaults";
 import { useGsapFadeReveal, useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
+import { useUserRole } from "~~/hooks/useUserRole";
+import { useVaultPerformance } from "~~/hooks/useVaultPerformance";
+import { useVaults } from "~~/hooks/useVaults";
 
 const safeBigInt = (value?: string) => {
   try {
@@ -63,17 +63,11 @@ const VaultDetailPage = () => {
   const roleRef = useRef<HTMLDivElement | null>(null);
 
   const vault = useMemo(
-    () =>
-      vaults.find(
-        v => v.id.toLowerCase() === vaultParam || v.address.toLowerCase() === vaultParam,
-      ),
+    () => vaults.find(v => v.id.toLowerCase() === vaultParam || v.address.toLowerCase() === vaultParam),
     [vaults, vaultParam],
   );
 
-  const performance = useMemo(
-    () => performanceData.find(p => p.vault.id === vault?.id),
-    [performanceData, vault?.id],
-  );
+  const performance = useMemo(() => performanceData.find(p => p.vault.id === vault?.id), [performanceData, vault?.id]);
 
   const { permissions } = useUserRole(vault?.address, {
     managerAddress: vault?.manager?.owner ?? vault?.manager?.address ?? null,
@@ -110,9 +104,7 @@ const VaultDetailPage = () => {
 
   const uniqueHolders = useMemo(() => {
     const deposits = vault?.deposits ?? [];
-    const holders = new Set(
-      deposits.map(deposit => deposit.user?.address?.toLowerCase()).filter(Boolean) as string[],
-    );
+    const holders = new Set(deposits.map(deposit => deposit.user?.address?.toLowerCase()).filter(Boolean) as string[]);
     return holders.size;
   }, [vault?.deposits]);
 
@@ -183,9 +175,7 @@ const VaultDetailPage = () => {
       timestamp: Number(redeem.blockTimestamp) * 1000,
       hash: redeem.transactionHash,
     }));
-    return [...mappedDeposits, ...mappedRedeems]
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 20);
+    return [...mappedDeposits, ...mappedRedeems].sort((a, b) => b.timestamp - a.timestamp).slice(0, 20);
   }, [vault?.deposits, vault?.redeems]);
 
   if (loading) {
@@ -229,9 +219,7 @@ const VaultDetailPage = () => {
           </div>
           <h1 className="hero-heading text-4xl font-bold text-white">
             {vault.name}
-            <span
-              className={`badge ml-3 border-none bg-[#803100] ${vault.isActive ? "" : "bg-red-700"}`}
-            >
+            <span className={`badge ml-3 border-none bg-[#803100] ${vault.isActive ? "" : "bg-red-700"}`}>
               {vault.isActive ? "Active" : "Inactive"}
             </span>
           </h1>
@@ -240,10 +228,7 @@ const VaultDetailPage = () => {
           </div>
         </div>
         {!vault.isActive && permissions.canActivateVault && (
-          <button
-            onClick={() => setIsReactivationModalOpen(true)}
-            className="hero-cta btn btn-success"
-          >
+          <button onClick={() => setIsReactivationModalOpen(true)} className="hero-cta btn btn-success">
             Reactivate Vault
           </button>
         )}
@@ -322,19 +307,22 @@ const VaultDetailPage = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="opacity-70">Total Deposited</span>
-                      <span>{formatTokenAmount(userStats.deposited, assetDecimals)} {assetSymbol}</span>
+                      <span>
+                        {formatTokenAmount(userStats.deposited, assetDecimals)} {assetSymbol}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="opacity-70">Total Withdrawn</span>
-                      <span>{formatTokenAmount(userStats.redeemed, assetDecimals)} {assetSymbol}</span>
+                      <span>
+                        {formatTokenAmount(userStats.redeemed, assetDecimals)} {assetSymbol}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="opacity-70">Profit / Loss</span>
                       <span className={userStats.profit >= 0n ? "text-success" : "text-error"}>
                         {userStats.profit >= 0n ? "+" : ""}
-                        {formatTokenAmount(userStats.profit, assetDecimals)} {assetSymbol} ({
-                          formatPercent(userStats.profitPercent, 2)
-                        })
+                        {formatTokenAmount(userStats.profit, assetDecimals)} {assetSymbol} (
+                        {formatPercent(userStats.profitPercent, 2)})
                       </span>
                     </div>
                   </div>
@@ -375,30 +363,23 @@ const VaultDetailPage = () => {
               <div className="mt-4 grid gap-4 md:grid-cols-4">
                 <div>
                   <p className="opacity-70">Current APY</p>
-                  <p className="text-2xl font-semibold text-success">
-                    {formatPercent(performance?.currentAPY ?? 0)}
-                  </p>
+                  <p className="text-2xl font-semibold text-success">{formatPercent(performance?.currentAPY ?? 0)}</p>
                 </div>
                 <div>
                   <p className="opacity-70">30d APY</p>
-                  <p className="text-2xl font-semibold text-white">
-                    {formatPercent(performance?.thirtyDayAPY ?? 0)}
-                  </p>
+                  <p className="text-2xl font-semibold text-white">{formatPercent(performance?.thirtyDayAPY ?? 0)}</p>
                 </div>
                 <div>
                   <p className="opacity-70">90d APY</p>
-                  <p className="text-2xl font-semibold text-white">
-                    {formatPercent(performance?.ninetyDayAPY ?? 0)}
-                  </p>
+                  <p className="text-2xl font-semibold text-white">{formatPercent(performance?.ninetyDayAPY ?? 0)}</p>
                 </div>
                 <div>
                   <p className="opacity-70">All-Time Fees</p>
                   <p className="text-2xl font-semibold text-white">
-                    ${
-                      (performance?.totalFeesPaid ?? 0).toLocaleString(undefined, {
-                        maximumFractionDigits: 0,
-                      })
-                    }
+                    $
+                    {(performance?.totalFeesPaid ?? 0).toLocaleString(undefined, {
+                      maximumFractionDigits: 0,
+                    })}
                   </p>
                 </div>
               </div>
@@ -455,12 +436,9 @@ const VaultDetailPage = () => {
                 <div className="mt-4 space-y-3">
                   {vault.allocations.map(allocation => {
                     const percentage = (Number(allocation.allocation) / 1000) * 100;
-                    const allocationAmount = totalAssets * BigInt(allocation.allocation) / 1000n;
+                    const allocationAmount = (totalAssets * BigInt(allocation.allocation)) / 1000n;
                     return (
-                      <div
-                        key={allocation.id}
-                        className="rounded-lg border border-[#803100]/30 bg-black/30 p-4"
-                      >
+                      <div key={allocation.id} className="rounded-lg border border-[#803100]/30 bg-black/30 p-4">
                         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                           <div>
                             <p className="text-lg font-semibold text-white">{allocation.adapterType}</p>
@@ -488,7 +466,9 @@ const VaultDetailPage = () => {
             <div className="card-body">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <h2 className="card-title text-white">Recent Activity</h2>
-                <span className="badge border-none bg-[#803100]/70 text-white">Last {transactionRows.length} entries</span>
+                <span className="badge border-none bg-[#803100]/70 text-white">
+                  Last {transactionRows.length} entries
+                </span>
               </div>
               <div className="mt-4 overflow-x-auto">
                 <table className="table table-zebra">

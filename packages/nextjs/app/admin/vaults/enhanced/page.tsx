@@ -7,9 +7,9 @@ import { useAccount } from "wagmi";
 import { AdminVaultActions } from "~~/components/admin/AdminVaultActions";
 import { VaultCreationForm } from "~~/components/admin/VaultCreationForm";
 import { RoleDisplay } from "~~/components/auth/RoleDisplay";
+import { useGsapFadeReveal, useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 import { useVaults } from "~~/hooks/useVaults";
 import type { Vault } from "~~/types/vault";
-import { useGsapFadeReveal, useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 
 const EnhancedAdminVaultsPage = () => {
   const { address: connectedAddress } = useAccount();

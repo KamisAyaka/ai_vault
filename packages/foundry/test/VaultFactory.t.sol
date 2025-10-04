@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Test} from "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
-import {VaultFactory} from "../contracts/protocol/VaultFactory.sol";
-import {VaultImplementation} from "../contracts/protocol/VaultImplementation.sol";
-import {AIAgentVaultManager} from "../contracts/protocol/AIAgentVaultManager.sol";
-import {MockToken} from "./mock/MockToken.sol";
-import {MockAdapter} from "./mock/MockAdapter.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IVaultShares} from "../contracts/interfaces/IVaultShares.sol";
+import { Test } from "forge-std/Test.sol";
+import { console } from "forge-std/console.sol";
+import { VaultFactory } from "../contracts/protocol/VaultFactory.sol";
+import { VaultImplementation } from "../contracts/protocol/VaultImplementation.sol";
+import { AIAgentVaultManager } from "../contracts/protocol/AIAgentVaultManager.sol";
+import { MockToken } from "./mock/MockToken.sol";
+import { MockAdapter } from "./mock/MockAdapter.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IVaultShares } from "../contracts/interfaces/IVaultShares.sol";
 
 /**
  * @title VaultFactoryTest
@@ -33,10 +33,7 @@ contract VaultFactoryTest is Test {
         vaultManager = new AIAgentVaultManager();
 
         // 部署工厂合约
-        vaultFactory = new VaultFactory(
-            address(vaultImplementation),
-            address(vaultManager)
-        );
+        vaultFactory = new VaultFactory(address(vaultImplementation), address(vaultManager));
 
         // 部署测试代币
         mockToken = new MockToken("Test Token", "TEST");
@@ -122,12 +119,7 @@ contract VaultFactoryTest is Test {
         fees[2] = 300;
 
         // 批量创建金库
-        address[] memory vaults = vaultFactory.createVaultsBatch(
-            assets,
-            names,
-            symbols,
-            fees
-        );
+        address[] memory vaults = vaultFactory.createVaultsBatch(assets, names, symbols, fees);
 
         // 验证所有金库都已创建
         assertEq(vaults.length, 3);
@@ -159,12 +151,7 @@ contract VaultFactoryTest is Test {
 
     function testVaultInitialization() public {
         // 创建金库
-        address vault = vaultFactory.createVault(
-            mockToken,
-            "Test Vault",
-            "TV",
-            100
-        );
+        address vault = vaultFactory.createVault(mockToken, "Test Vault", "TV", 100);
 
         // 验证金库已正确初始化
         VaultImplementation vaultImpl = VaultImplementation(vault);

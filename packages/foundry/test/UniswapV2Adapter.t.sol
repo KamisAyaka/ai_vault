@@ -20,16 +20,9 @@ contract UniswapV2AdapterTest is Test {
 
     event TokenConfigUpdated(address indexed token);
     event UniswapInvested(
-        address indexed token,
-        uint256 tokenAmount,
-        uint256 counterPartyTokenAmount,
-        uint256 liquidity
+        address indexed token, uint256 tokenAmount, uint256 counterPartyTokenAmount, uint256 liquidity
     );
-    event UniswapDivested(
-        address indexed token,
-        uint256 tokenAmount,
-        uint256 counterPartyTokenAmount
-    );
+    event UniswapDivested(address indexed token, uint256 tokenAmount, uint256 counterPartyTokenAmount);
 
     function setUp() public {
         owner = address(this);
@@ -48,10 +41,7 @@ contract UniswapV2AdapterTest is Test {
         mockRouter = new MockUniswapV2Router(address(mockFactory)); // Use tokenB as WETH mock
 
         // Create pair
-        address pairAddress = mockFactory.createPair(
-            address(tokenA),
-            address(tokenB)
-        );
+        address pairAddress = mockFactory.createPair(address(tokenA), address(tokenB));
         pair = MockUniswapV2Pair(pairAddress);
 
         // Mint tokens to router for swapping
@@ -66,10 +56,7 @@ contract UniswapV2AdapterTest is Test {
         pair.mint(address(0x1)); // Mint to a dummy address to initialize reserves
 
         // Deploy adapter
-        adapter = new UniswapV2Adapter(
-            address(mockRouter),
-            address(mockFactory)
-        );
+        adapter = new UniswapV2Adapter(address(mockRouter), address(mockFactory));
 
         // Set token config
         vm.prank(owner);
@@ -92,9 +79,7 @@ contract UniswapV2AdapterTest is Test {
         );
 
         // Check that config was set correctly
-        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenB))
-        );
+        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenB)));
         assertEq(config.slippageTolerance, 200);
         assertEq(address(config.counterPartyToken), address(tokenA));
         assertEq(config.VaultAddress, vault);
@@ -102,58 +87,27 @@ contract UniswapV2AdapterTest is Test {
         // Test that non-owner cannot set token config
         vm.prank(address(0x456));
         vm.expectRevert();
-        adapter.setTokenConfig(
-            IERC20(address(tokenA)),
-            300,
-            IERC20(address(tokenB)),
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenA)), 300, IERC20(address(tokenB)), vault);
     }
 
     function testSetTokenConfigWithInvalidToken() public {
         // Test that setting config with zero address token reverts
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV2Adapter.UniswapAdapter__InvalidToken.selector
-            )
-        );
-        adapter.setTokenConfig(
-            IERC20(address(0)),
-            100,
-            IERC20(address(tokenB)),
-            vault
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.UniswapAdapter__InvalidToken.selector));
+        adapter.setTokenConfig(IERC20(address(0)), 100, IERC20(address(tokenB)), vault);
     }
 
     function testSetTokenConfigWithInvalidCounterPartyToken() public {
         // Test that setting config with zero address counter party token reverts
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV2Adapter
-                    .UniswapAdapter__InvalidCounterPartyToken
-                    .selector
-            )
-        );
-        adapter.setTokenConfig(
-            IERC20(address(tokenA)),
-            100,
-            IERC20(address(0)),
-            vault
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.UniswapAdapter__InvalidCounterPartyToken.selector));
+        adapter.setTokenConfig(IERC20(address(tokenA)), 100, IERC20(address(0)), vault);
     }
 
     function testSetTokenConfigWithInvalidSlippage() public {
         // Test that setting config with invalid slippage tolerance reverts
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV2Adapter
-                    .UniswapAdapter__InvalidSlippageTolerance
-                    .selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.UniswapAdapter__InvalidSlippageTolerance.selector));
         adapter.setTokenConfig(
             IERC20(address(tokenA)),
             10001, // Over 100% (over BASIS_POINTS_DIVISOR)
@@ -168,9 +122,7 @@ contract UniswapV2AdapterTest is Test {
         adapter.UpdateTokenSlippageTolerance(IERC20(address(tokenA)), 200);
 
         // Check that slippage tolerance was updated
-        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenA))
-        );
+        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenA)));
         assertEq(config.slippageTolerance, 200);
 
         // Test that non-owner cannot update slippage tolerance
@@ -182,24 +134,14 @@ contract UniswapV2AdapterTest is Test {
     function testUpdateTokenSlippageToleranceWithInvalidToken() public {
         // Test that updating slippage tolerance with zero address token reverts
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV2Adapter.UniswapAdapter__InvalidToken.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.UniswapAdapter__InvalidToken.selector));
         adapter.UpdateTokenSlippageTolerance(IERC20(address(0)), 200);
     }
 
     function testUpdateTokenSlippageToleranceWithInvalidSlippage() public {
         // Test that updating slippage tolerance with invalid value reverts
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV2Adapter
-                    .UniswapAdapter__InvalidSlippageTolerance
-                    .selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.UniswapAdapter__InvalidSlippageTolerance.selector));
         adapter.UpdateTokenSlippageTolerance(IERC20(address(tokenA)), 10001); // Over 100%
     }
 
@@ -217,48 +159,25 @@ contract UniswapV2AdapterTest is Test {
 
         // Update token config and reinvest
         vm.prank(owner);
-        adapter.updateTokenConfigAndReinvest(
-            IERC20(address(tokenA)),
-            IERC20(address(tokenB))
-        );
+        adapter.updateTokenConfigAndReinvest(IERC20(address(tokenA)), IERC20(address(tokenB)));
 
         // Check that config was updated
-        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenA))
-        );
+        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenA)));
         assertEq(address(config.counterPartyToken), address(tokenB));
     }
 
     function testUpdateTokenConfigAndReinvestWithInvalidToken() public {
         // Test that updating config with zero address token reverts
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV2Adapter.UniswapAdapter__InvalidToken.selector
-            )
-        );
-        adapter.updateTokenConfigAndReinvest(
-            IERC20(address(0)),
-            IERC20(address(tokenB))
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.UniswapAdapter__InvalidToken.selector));
+        adapter.updateTokenConfigAndReinvest(IERC20(address(0)), IERC20(address(tokenB)));
     }
 
-    function testUpdateTokenConfigAndReinvestWithInvalidCounterPartyToken()
-        public
-    {
+    function testUpdateTokenConfigAndReinvestWithInvalidCounterPartyToken() public {
         // Test that updating config with zero address counter party token reverts
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV2Adapter
-                    .UniswapAdapter__InvalidCounterPartyToken
-                    .selector
-            )
-        );
-        adapter.updateTokenConfigAndReinvest(
-            IERC20(address(tokenA)),
-            IERC20(address(0))
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.UniswapAdapter__InvalidCounterPartyToken.selector));
+        adapter.updateTokenConfigAndReinvest(IERC20(address(tokenA)), IERC20(address(0)));
     }
 
     function testUpdateTokenConfigAndReinvestWithNoVault() public {
@@ -273,10 +192,7 @@ contract UniswapV2AdapterTest is Test {
 
         // Should not revert and should return early
         vm.prank(owner);
-        adapter.updateTokenConfigAndReinvest(
-            IERC20(address(tokenB)),
-            IERC20(address(tokenA))
-        );
+        adapter.updateTokenConfigAndReinvest(IERC20(address(tokenB)), IERC20(address(tokenA)));
     }
 
     function testUpdateTokenConfigAndReinvestWithZeroLpBalance() public {
@@ -287,12 +203,7 @@ contract UniswapV2AdapterTest is Test {
         // Should revert when trying to set config for a token with no pair
         vm.prank(owner);
         vm.expectRevert("PAIR_NOT_EXISTS");
-        adapter.setTokenConfig(
-            IERC20(address(tokenC)),
-            100,
-            IERC20(address(tokenA)),
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenC)), 100, IERC20(address(tokenA)), vault);
     }
 
     function testInvest() public {
@@ -302,10 +213,7 @@ contract UniswapV2AdapterTest is Test {
 
         // Test that vault can invest
         vm.prank(vault);
-        uint256 investedAmount = adapter.invest(
-            IERC20(address(tokenA)),
-            100 * 10 ** 18
-        );
+        uint256 investedAmount = adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
 
         assertEq(investedAmount, 100 * 10 ** 18);
 
@@ -320,11 +228,7 @@ contract UniswapV2AdapterTest is Test {
     function testInvestFromNonVault() public {
         // Test that non-vault cannot invest
         vm.prank(address(0x456));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV2Adapter.OnlyVaultCanCallThisFunction.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.OnlyVaultCanCallThisFunction.selector));
         adapter.invest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
@@ -338,10 +242,7 @@ contract UniswapV2AdapterTest is Test {
 
         // Test that vault can divest
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            50 * 10 ** 18
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
 
         // Check that tokens were transferred back to vault
         assertGt(divestedAmount, 0);
@@ -361,10 +262,7 @@ contract UniswapV2AdapterTest is Test {
 
         // Test that vault can divest full amount
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            totalValue
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), totalValue);
 
         // Check that tokens were transferred back to vault
         assertGt(divestedAmount, 0);
@@ -377,10 +275,7 @@ contract UniswapV2AdapterTest is Test {
     function testDivestWithZeroLpBalance() public {
         // Test divesting when there are no LP tokens (should return 0)
         vm.prank(vault);
-        uint256 divestedAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            50 * 10 ** 18
-        );
+        uint256 divestedAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
 
         assertEq(divestedAmount, 0);
     }
@@ -388,11 +283,7 @@ contract UniswapV2AdapterTest is Test {
     function testDivestFromNonVault() public {
         // Test that non-vault cannot divest
         vm.prank(address(0x456));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                UniswapV2Adapter.OnlyVaultCanCallThisFunction.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(UniswapV2Adapter.OnlyVaultCanCallThisFunction.selector));
         adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
     }
 
@@ -424,12 +315,7 @@ contract UniswapV2AdapterTest is Test {
         // Set up token config for tokenC should fail because pair doesn't exist
         vm.prank(owner);
         vm.expectRevert("PAIR_NOT_EXISTS");
-        adapter.setTokenConfig(
-            IERC20(address(tokenC)),
-            100,
-            IERC20(address(tokenA)),
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenC)), 100, IERC20(address(tokenA)), vault);
     }
 
     function testGetTotalValueAssetIsToken1Original() public {
@@ -438,10 +324,7 @@ contract UniswapV2AdapterTest is Test {
         tokenC.mint(vault, 1000 * 10 ** 18);
 
         // Create pair where tokenC will be token1
-        address pairAddress = mockFactory.createPair(
-            address(tokenB),
-            address(tokenC)
-        );
+        address pairAddress = mockFactory.createPair(address(tokenB), address(tokenC));
         MockUniswapV2Pair pair2 = MockUniswapV2Pair(pairAddress);
 
         // Mint tokens to pair for initial liquidity
@@ -454,12 +337,7 @@ contract UniswapV2AdapterTest is Test {
 
         // Set token config
         vm.prank(owner);
-        adapter.setTokenConfig(
-            IERC20(address(tokenC)),
-            100,
-            IERC20(address(tokenB)),
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenC)), 100, IERC20(address(tokenB)), vault);
 
         // Invest some tokens
         vm.prank(vault);
@@ -491,15 +369,10 @@ contract UniswapV2AdapterTest is Test {
 
         // 更新代币配置并重新投资
         vm.prank(owner);
-        adapter.updateTokenConfigAndReinvest(
-            IERC20(address(tokenA)),
-            IERC20(address(tokenB))
-        );
+        adapter.updateTokenConfigAndReinvest(IERC20(address(tokenA)), IERC20(address(tokenB)));
 
         // 检查配置被更新
-        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenA))
-        );
+        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenA)));
         assertEq(address(config.counterPartyToken), address(tokenB));
     }
 
@@ -510,10 +383,7 @@ contract UniswapV2AdapterTest is Test {
         tokenC.mint(vault, 1000 * 10 ** 18);
 
         // 创建配对
-        address pairAddress = mockFactory.createPair(
-            address(tokenA),
-            address(tokenC)
-        );
+        address pairAddress = mockFactory.createPair(address(tokenA), address(tokenC));
         MockUniswapV2Pair pair3 = MockUniswapV2Pair(pairAddress);
 
         // 为配对提供初始流动性
@@ -525,24 +395,14 @@ contract UniswapV2AdapterTest is Test {
         pair3.mint(address(0x1));
 
         vm.prank(owner);
-        adapter.setTokenConfig(
-            IERC20(address(tokenC)),
-            100,
-            IERC20(address(tokenA)),
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenC)), 100, IERC20(address(tokenA)), vault);
 
         // 应该在没有LP余额时正常返回
         vm.prank(owner);
-        adapter.updateTokenConfigAndReinvest(
-            IERC20(address(tokenC)),
-            IERC20(address(tokenB))
-        );
+        adapter.updateTokenConfigAndReinvest(IERC20(address(tokenC)), IERC20(address(tokenB)));
 
         // 检查配置被更新
-        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(
-            IERC20(address(tokenC))
-        );
+        UniswapV2Adapter.TokenConfig memory config = adapter.getTokenConfig(IERC20(address(tokenC)));
         assertEq(address(config.counterPartyToken), address(tokenB));
     }
 
@@ -557,10 +417,7 @@ contract UniswapV2AdapterTest is Test {
 
         // 测试部分撤资
         vm.prank(vault);
-        uint256 partialDivestAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            50 * 10 ** 18
-        );
+        uint256 partialDivestAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
 
         assertGe(partialDivestAmount, 0);
         assertGt(tokenA.balanceOf(vault), 900 * 10 ** 18);
@@ -568,10 +425,7 @@ contract UniswapV2AdapterTest is Test {
         // 测试完全撤资
         uint256 remainingValue = adapter.getTotalValue(IERC20(address(tokenA)));
         vm.prank(vault);
-        uint256 fullDivestAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            remainingValue
-        );
+        uint256 fullDivestAmount = adapter.divest(IERC20(address(tokenA)), remainingValue);
 
         assertGe(fullDivestAmount, 0);
         assertEq(pair.balanceOf(address(adapter)), 0);
@@ -581,10 +435,7 @@ contract UniswapV2AdapterTest is Test {
     function testDivestZeroLpBalance() public {
         // 测试在没有LP代币时撤资
         vm.prank(vault);
-        uint256 divestAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            50 * 10 ** 18
-        );
+        uint256 divestAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
 
         assertEq(divestAmount, 0);
     }
@@ -628,10 +479,7 @@ contract UniswapV2AdapterTest is Test {
         tokenC.mint(vault, 1000 * 10 ** 18);
 
         // 创建配对，tokenC的地址会更高，所以tokenC是token1
-        address pairAddress = mockFactory.createPair(
-            address(tokenA),
-            address(tokenC)
-        );
+        address pairAddress = mockFactory.createPair(address(tokenA), address(tokenC));
         MockUniswapV2Pair pair2 = MockUniswapV2Pair(pairAddress);
 
         // 为配对提供初始流动性
@@ -644,12 +492,7 @@ contract UniswapV2AdapterTest is Test {
 
         // 设置代币配置
         vm.prank(owner);
-        adapter.setTokenConfig(
-            IERC20(address(tokenC)),
-            100,
-            IERC20(address(tokenA)),
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenC)), 100, IERC20(address(tokenA)), vault);
 
         // 投资一些代币
         vm.prank(vault);
@@ -670,12 +513,7 @@ contract UniswapV2AdapterTest is Test {
         // 设置代币配置应该失败，因为配对不存在
         vm.prank(owner);
         vm.expectRevert("PAIR_NOT_EXISTS");
-        adapter.setTokenConfig(
-            IERC20(address(tokenC)),
-            100,
-            IERC20(address(tokenA)),
-            vault
-        );
+        adapter.setTokenConfig(IERC20(address(tokenC)), 100, IERC20(address(tokenA)), vault);
     }
 
     // 新增测试用例：测试_divest函数的完全撤资情况
@@ -692,10 +530,7 @@ contract UniswapV2AdapterTest is Test {
 
         // 完全撤资
         vm.prank(vault);
-        uint256 divestAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            totalValue
-        );
+        uint256 divestAmount = adapter.divest(IERC20(address(tokenA)), totalValue);
 
         assertGt(divestAmount, 0);
         assertEq(pair.balanceOf(address(adapter)), 0);
@@ -712,18 +547,12 @@ contract UniswapV2AdapterTest is Test {
 
         // 部分撤资
         vm.prank(vault);
-        uint256 divestAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            50 * 10 ** 18
-        );
+        uint256 divestAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
 
         // 由于mock实现，可能返回0，这是正常的
         assertTrue(divestAmount >= 0, "Divest amount should be non-negative");
         // 检查LP代币余额是否大于0（部分撤资后应该还有剩余）
-        assertTrue(
-            pair.balanceOf(address(adapter)) >= 0,
-            "Should have LP tokens remaining"
-        );
+        assertTrue(pair.balanceOf(address(adapter)) >= 0, "Should have LP tokens remaining");
     }
 
     // 新增测试用例：测试_divest函数的配对代币兑换情况
@@ -737,10 +566,7 @@ contract UniswapV2AdapterTest is Test {
 
         // 撤资（这会触发配对代币的兑换）
         vm.prank(vault);
-        uint256 divestAmount = adapter.divest(
-            IERC20(address(tokenA)),
-            50 * 10 ** 18
-        );
+        uint256 divestAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
 
         assertGe(divestAmount, 0);
     }

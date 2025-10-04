@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { type Locale, defaultLocale, localeLabels, locales } from "~~/i18n/config";
 import enMessages from "~~/i18n/messages/en.json";
 import zhCnMessages from "~~/i18n/messages/zh-CN.json";
-import { defaultLocale, localeLabels, locales, type Locale } from "~~/i18n/config";
 
 type Messages = typeof enMessages;
 
@@ -28,12 +28,15 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 const STORAGE_KEY = "ai-vault.locale";
 
 const traverse = (dictionary: Record<string, any>, key: string) => {
-  return key.split(".").reduce((acc, segment) => {
-    if (acc && typeof acc === "object" && segment in acc) {
-      return acc[segment];
-    }
-    return undefined;
-  }, dictionary as unknown as Record<string, any>);
+  return key.split(".").reduce(
+    (acc, segment) => {
+      if (acc && typeof acc === "object" && segment in acc) {
+        return acc[segment];
+      }
+      return undefined;
+    },
+    dictionary as unknown as Record<string, any>,
+  );
 };
 
 export const I18nProvider = ({ children }: { children: React.ReactNode }) => {

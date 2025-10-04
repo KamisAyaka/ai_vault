@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { DepositETHModal } from "./DepositETHModal";
 import { DepositModal } from "./DepositModal";
 import { MintETHModal } from "./MintETHModal";
@@ -196,8 +196,7 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
               <div className="text-sm font-semibold mb-2">{tCard("labels.position")}</div>
               <div className="text-sm">
                 <div>
-                  {tCard("labels.shares")}:
-                  <span className="font-bold">{formattedShares}</span>
+                  {tCard("labels.shares")}:<span className="font-bold">{formattedShares}</span>
                 </div>
                 <div className="opacity-70 text-xs mt-1">
                   ≈ {formattedValue} {assetSymbol}
@@ -206,9 +205,7 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
             </div>
           )}
           {userAddress && formattedShares === "0" && (
-            <div className="bg-base-200 p-3 rounded-lg mb-4 text-sm opacity-70">
-              {tCard("messages.noPosition")}
-            </div>
+            <div className="bg-base-200 p-3 rounded-lg mb-4 text-sm opacity-70">{tCard("messages.noPosition")}</div>
           )}
 
           {/* Action buttons */}

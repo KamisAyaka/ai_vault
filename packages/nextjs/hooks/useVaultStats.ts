@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { formatUnits } from "viem";
-import type { Vault, VaultStats, VaultStatsBreakdown } from "~~/types/vault";
 import { useGlobalState } from "~~/services/store/store";
+import type { Vault, VaultStats, VaultStatsBreakdown } from "~~/types/vault";
 
 const STABLE_ASSETS = new Set(["USDC", "USDT", "DAI", "USDP", "TUSD"]);
 

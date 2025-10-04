@@ -1,11 +1,13 @@
-import { BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { BigInt, Bytes, Address } from "@graphprotocol/graph-ts";
 import {
   Deposit,
   Redeem,
   NoLongerActive,
   HoldingAllocationUpdated,
+  VaultImplementation,
 } from "../../generated/VaultImplementation/VaultImplementation";
 import { IProtocolAdapter } from "../../generated/VaultImplementation/IProtocolAdapter";
+import { IERC20Metadata } from "../../generated/VaultImplementation/IERC20Metadata";
 import {
   Vault,
   User,
@@ -14,7 +16,38 @@ import {
   Redeem as RedeemEntity,
   Allocation,
   UserVaultBalance,
+  Asset,
 } from "../../generated/schema";
+
+// 辅助函数：获取或创建Asset实体
+function getOrCreateAsset(
+  assetAddress: Address,
+  blockTimestamp: BigInt
+): string {
+  let assetId = assetAddress.toHexString();
+  let asset = Asset.load(assetId);
+
+  if (!asset) {
+    asset = new Asset(assetId);
+    asset.address = assetAddress;
+
+    // 从ERC20合约获取代币信息
+    let tokenContract = IERC20Metadata.bind(assetAddress);
+    asset.symbol = tokenContract.symbol();
+    asset.name = tokenContract.name();
+    asset.decimals = tokenContract.decimals();
+    asset.createdAt = blockTimestamp;
+    asset.save();
+  }
+
+  return assetId;
+}
+
+// 辅助函数：安全地获取asset地址
+function getAssetAddressFromVault(vaultAddress: Address): Address {
+  let vaultContract = VaultImplementation.bind(vaultAddress);
+  return Address.fromBytes(vaultContract.asset());
+}
 
 // 辅助函数：更新用户统计信息
 function updateUserStats(
@@ -144,15 +177,22 @@ export function handleDeposit(event: Deposit): void {
     // 如果金库不存在，说明可能是通过工厂创建的，需要先创建基本实体
     vault = new Vault(vaultId);
     vault.address = event.address;
-    vault.name = "";
-    vault.symbol = "";
-    vault.fee = BigInt.fromI32(0);
+
+    // 从Vault合约获取信息
+    let vaultContract = VaultImplementation.bind(event.address);
+    vault.name = vaultContract.name();
+    vault.symbol = vaultContract.symbol();
+    vault.fee = BigInt.fromI32(0); // 默认值，可以从合约获取
     vault.isActive = true;
     vault.totalAssets = BigInt.fromI32(0);
     vault.totalSupply = BigInt.fromI32(0);
-    vault.factory = "";
-    vault.manager = "";
-    vault.asset = "";
+    vault.factory = null;
+    vault.manager = null;
+
+    // 获取asset信息
+    let assetAddress = getAssetAddressFromVault(event.address);
+    vault.asset = getOrCreateAsset(assetAddress, event.block.timestamp);
+
     vault.createdAt = event.block.timestamp;
     vault.updatedAt = event.block.timestamp;
     vault.save();
@@ -275,15 +315,22 @@ export function handleHoldingAllocationUpdated(
   if (!vault) {
     vault = new Vault(vaultId);
     vault.address = event.address;
-    vault.name = "";
-    vault.symbol = "";
-    vault.fee = BigInt.fromI32(0);
+
+    // 从Vault合约获取信息
+    let vaultContract = VaultImplementation.bind(event.address);
+    vault.name = vaultContract.name();
+    vault.symbol = vaultContract.symbol();
+    vault.fee = BigInt.fromI32(0); // 默认值，可以从合约获取
     vault.isActive = true;
     vault.totalAssets = BigInt.fromI32(0);
     vault.totalSupply = BigInt.fromI32(0);
-    vault.factory = "";
-    vault.manager = "";
-    vault.asset = "";
+    vault.factory = null;
+    vault.manager = null;
+
+    // 获取asset信息
+    let assetAddress = getAssetAddressFromVault(event.address);
+    vault.asset = getOrCreateAsset(assetAddress, event.block.timestamp);
+
     vault.createdAt = event.block.timestamp;
     vault.updatedAt = event.block.timestamp;
     vault.save();

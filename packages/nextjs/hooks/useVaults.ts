@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { execute, GetVaultsDocument } from "~~/utils/graphclient";
 import type { Vault } from "~~/types/vault";
+import { GetVaultsDocument, execute } from "~~/utils/graphclient";
 
 type UseVaultsResult = {
   vaults: Vault[];

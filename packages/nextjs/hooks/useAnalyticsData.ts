@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { formatUnits } from "viem";
 import { useVaults } from "./useVaults";
+import { formatUnits } from "viem";
 import { useGlobalState } from "~~/services/store/store";
 import type { Vault } from "~~/types/vault";
 
@@ -129,7 +129,15 @@ export const useAnalyticsData = () => {
   const nativePrice = useGlobalState(state => state.nativeCurrency.price) || 0;
 
   const vaultSnapshots = useMemo(() => {
-    if (!vaults) return [] as Array<{ vault: Vault; valueUsd: number; netDepositsUsd: number; profitUsd: number; apy: number; daysActive: number }>;
+    if (!vaults)
+      return [] as Array<{
+        vault: Vault;
+        valueUsd: number;
+        netDepositsUsd: number;
+        profitUsd: number;
+        apy: number;
+        daysActive: number;
+      }>;
 
     return vaults.map(vault => {
       const decimals = vault.asset?.decimals ?? 18;
@@ -161,7 +169,10 @@ export const useAnalyticsData = () => {
     });
   }, [vaults, nativePrice]);
 
-  const totalValueLockedUsd = useMemo(() => vaultSnapshots.reduce((sum, snapshot) => sum + Math.max(snapshot.valueUsd, 0), 0), [vaultSnapshots]);
+  const totalValueLockedUsd = useMemo(
+    () => vaultSnapshots.reduce((sum, snapshot) => sum + Math.max(snapshot.valueUsd, 0), 0),
+    [vaultSnapshots],
+  );
 
   const flowEvents = useMemo(() => {
     if (!vaults) return [] as Array<{ timestamp: number; delta: number }>;
@@ -279,7 +290,8 @@ export const useAnalyticsData = () => {
       const decimals = vault.asset?.decimals ?? 18;
       const vaultValue = toNumber(toBigInt(vault.totalAssets), decimals) * price;
 
-      const allocated = vault.allocations?.reduce((sum, allocation) => sum + Number(allocation.allocation || "0"), 0) ?? 0;
+      const allocated =
+        vault.allocations?.reduce((sum, allocation) => sum + Number(allocation.allocation || "0"), 0) ?? 0;
 
       (vault.allocations || []).forEach(allocation => {
         const percentage = Number(allocation.allocation || "0") / 1000;
@@ -441,8 +453,9 @@ export const useAnalyticsData = () => {
       .map(snapshot => {
         const sevenDayShare = Math.min(7 / Math.max(snapshot.daysActive, 1), 1);
         const sevenDayRevenueUsd = Math.max(snapshot.profitUsd, 0) * sevenDayShare;
-        const userCount = new Set((snapshot.vault.deposits || []).map(deposit => deposit.user?.address?.toLowerCase() ?? ""))
-          .size;
+        const userCount = new Set(
+          (snapshot.vault.deposits || []).map(deposit => deposit.user?.address?.toLowerCase() ?? ""),
+        ).size;
 
         return {
           vault: snapshot.vault,
@@ -470,7 +483,7 @@ export const useAnalyticsData = () => {
     const totalVaults = vaults.length;
     const activeVaults = vaults.filter(vault => vault.isActive).length;
     const totalUsers = new Set(
-      vaults.flatMap(vault => vault.deposits?.map(deposit => deposit.user?.address?.toLowerCase() ?? ""))
+      vaults.flatMap(vault => vault.deposits?.map(deposit => deposit.user?.address?.toLowerCase() ?? "")),
     ).size;
 
     const apyValues = vaultSnapshots
@@ -478,9 +491,7 @@ export const useAnalyticsData = () => {
       .map(snapshot => snapshot.apy)
       .filter(value => Number.isFinite(value));
 
-    const averageApy = apyValues.length > 0
-      ? apyValues.reduce((sum, value) => sum + value, 0) / apyValues.length
-      : 0;
+    const averageApy = apyValues.length > 0 ? apyValues.reduce((sum, value) => sum + value, 0) / apyValues.length : 0;
 
     return {
       totalVaults,

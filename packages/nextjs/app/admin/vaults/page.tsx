@@ -6,9 +6,9 @@ import { AdminVaultActions } from "~~/components/admin/AdminVaultActions";
 import { VaultCreationForm } from "~~/components/admin/VaultCreationForm";
 import { VaultStatsOverview } from "~~/components/vault/StatsCard";
 import { VaultCard } from "~~/components/vault/VaultCard";
+import { useGsapFadeReveal, useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 import { useVaultStats } from "~~/hooks/useVaultStats";
 import { useVaults } from "~~/hooks/useVaults";
-import { useGsapFadeReveal, useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 
 const AdminVaultsPage = () => {
   const { address: connectedAddress } = useAccount();
@@ -62,7 +62,12 @@ const AdminVaultsPage = () => {
               fill="none"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span className="text-white">Error loading vaults: {error.message}</span>
           </div>
@@ -115,7 +120,10 @@ const AdminVaultsPage = () => {
           <div className="lg:col-span-2">
             <div className="mb-4 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-white">Existing Vaults</h2>
-              <button onClick={refetch} className="btn btn-sm bg-[#803100] hover:bg-[#803100]/80 border-none text-white">
+              <button
+                onClick={refetch}
+                className="btn btn-sm bg-[#803100] hover:bg-[#803100]/80 border-none text-white"
+              >
                 Refresh
               </button>
             </div>
