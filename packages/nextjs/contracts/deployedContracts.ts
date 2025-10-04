@@ -3196,7 +3196,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 15,
+      deployedOnBlock: 16,
     },
     AaveAdapter: {
       address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e",
@@ -3495,7 +3495,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 13,
+      deployedOnBlock: 14,
     },
     MockWETH9: {
       address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
@@ -3762,7 +3762,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 3,
+      deployedOnBlock: 2,
     },
     VaultSharesETH: {
       address: "0x4d8e02bbfcf205828a8352af4376b165e123d7b0",
@@ -5466,7 +5466,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 14,
+      deployedOnBlock: 15,
     },
     VaultShares: {
       address: "0x0d8694f47cdc22bb8c6d2668a38d07a439f378f9",
