@@ -1876,7 +1876,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 2,
+      deployedOnBlock: 3,
     },
     VaultFactory: {
       address: "0xed1db453c3156ff3155a97ad217b3087d5dc5f6e",
@@ -2225,7 +2225,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 3,
+      deployedOnBlock: 4,
     },
     MockAavePool: {
       address: "0xf7cd8fa9b94db2aa972023b379c7f72c65e4de9d",
@@ -3765,7 +3765,7 @@ const deployedContracts = {
       deployedOnBlock: 2,
     },
     VaultSharesETH: {
-      address: "0xf1078fd568ad76e49e6f88d1ff485402a086976b",
+      address: "0x4d8e02bbfcf205828a8352af4376b165e123d7b0",
       abi: [
         {
           type: "constructor",

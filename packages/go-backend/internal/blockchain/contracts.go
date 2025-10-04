@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"math/big"
 
+	"ai-vault-backend/internal/blockchain/adapters"
 	"ai-vault-backend/internal/config"
-	"ai-vault-backend/internal/database"
 	"ai-vault-backend/internal/logger"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,251 +18,153 @@ import (
 type ContractService struct {
 	client           *Client
 	cfg              config.BlockchainConfig
+	vaultManager     *VaultManager
 	vaultManagerAddr common.Address
-	wethAddr         common.Address
+
+	// Adapter helpers
+	Aave      *adapters.AaveAdapter
+	UniswapV2 *adapters.UniswapV2Adapter
+	UniswapV3 *adapters.UniswapV3Adapter
+}
+
+// AllocationRequest represents a single allocation from the API
+type AllocationRequest struct {
+	AdapterIndex uint64 `json:"adapter_index"` // Index in the global adapter list
+	Percentage   uint64 `json:"percentage"`    // Allocation percentage (0-10000 for 0-100%)
 }
 
 // NewContractService creates a new contract service
 func NewContractService(client *Client, cfg config.BlockchainConfig) (*ContractService, error) {
-	if cfg.VaultManagerAddress == "" || cfg.WETHAddress == "" {
-		return nil, fmt.Errorf("vault manager and WETH addresses must be configured")
+	if cfg.VaultManagerAddress == "" {
+		return nil, fmt.Errorf("vault manager address must be configured")
 	}
 
-	return &ContractService{
+	vaultManagerAddr := common.HexToAddress(cfg.VaultManagerAddress)
+
+	// Create contract binding
+	vaultManager, err := NewVaultManager(vaultManagerAddr, client.client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create vault manager binding: %w", err)
+	}
+
+	cs := &ContractService{
 		client:           client,
 		cfg:              cfg,
-		vaultManagerAddr: common.HexToAddress(cfg.VaultManagerAddress),
-		wethAddr:         common.HexToAddress(cfg.WETHAddress),
-	}, nil
+		vaultManager:     vaultManager,
+		vaultManagerAddr: vaultManagerAddr,
+	}
+
+	// Initialize adapter helpers
+	cs.Aave = adapters.NewAaveAdapter(cs.executeAdapterCall)
+	cs.UniswapV2 = adapters.NewUniswapV2Adapter(cs.executeAdapterCall)
+	cs.UniswapV3 = adapters.NewUniswapV3Adapter(cs.executeAdapterCall)
+
+	return cs, nil
 }
 
-// ExecuteStrategy executes an AI strategy on the vault manager
-func (cs *ContractService) ExecuteStrategy(ctx context.Context, strategy *database.Strategy, vault *database.Vault) (*database.Execution, error) {
+// UpdateVaultAllocations updates the allocations for a vault
+// This calls AIAgentVaultManager.updateHoldingAllocation(token, adapterIndices, allocationData)
+func (cs *ContractService) UpdateVaultAllocations(ctx context.Context, tokenAddress string, allocations []AllocationRequest) (string, error) {
 	logger.Log.WithFields(logrus.Fields{
-		"strategy_id": strategy.ID,
-		"vault_id":    vault.ID,
-	}).Info("Executing strategy")
+		"token_address": tokenAddress,
+		"allocations":   allocations,
+	}).Info("Updating vault allocations via VaultManager")
 
-	// Create execution record
-	execution := &database.Execution{
-		StrategyID: strategy.ID,
-		VaultID:    vault.ID,
-		Status:     "executing",
-	}
-
-	// Convert allocations to contract format
-	adapterIndices, allocationData := cs.prepareAllocationData(strategy.Allocations)
-
-	// Prepare transaction data for updateHoldingAllocation
-	data, err := cs.encodeUpdateHoldingAllocationData(adapterIndices, allocationData)
-	if err != nil {
-		execution.Status = "failed"
-		execution.Error = fmt.Sprintf("Failed to encode transaction data: %v", err)
-		return execution, err
-	}
-
-	// Send transaction
-	tx, err := cs.client.SendTransaction(ctx, cs.vaultManagerAddr, big.NewInt(0), data)
-	if err != nil {
-		execution.Status = "failed"
-		execution.Error = fmt.Sprintf("Failed to send transaction: %v", err)
-		return execution, err
-	}
-
-	execution.TxHash = tx.Hash().Hex()
-
-	// Wait for transaction confirmation
-	receipt, err := cs.client.WaitForTransaction(ctx, tx.Hash())
-	if err != nil {
-		execution.Status = "failed"
-		execution.Error = fmt.Sprintf("Failed to wait for transaction: %v", err)
-		return execution, err
-	}
-
-	// Update execution with receipt data
-	execution.GasUsed = receipt.GasUsed
-	execution.GasPrice = tx.GasPrice().String()
-	execution.Status = "completed"
-
-	logger.Log.WithFields(logrus.Fields{
-		"execution_id": execution.ID,
-		"tx_hash":      execution.TxHash,
-		"gas_used":     execution.GasUsed,
-	}).Info("Strategy executed successfully")
-
-	return execution, nil
-}
-
-// ExecutePartialStrategy executes a partial strategy update
-func (cs *ContractService) ExecutePartialStrategy(ctx context.Context, strategy *database.Strategy, vault *database.Vault,
-	divestIndices []int, divestAmounts []*big.Int, investIndices []int, investAmounts []*big.Int, investAllocations []int) (*database.Execution, error) {
-
-	logger.Log.WithFields(logrus.Fields{
-		"strategy_id": strategy.ID,
-		"vault_id":    vault.ID,
-	}).Info("Executing partial strategy")
-
-	execution := &database.Execution{
-		StrategyID: strategy.ID,
-		VaultID:    vault.ID,
-		Status:     "executing",
-	}
-
-	// Prepare transaction data for partialUpdateHoldingAllocation
-	data, err := cs.encodePartialUpdateHoldingAllocationData(
-		divestIndices, divestAmounts, investIndices, investAmounts, investAllocations)
-	if err != nil {
-		execution.Status = "failed"
-		execution.Error = fmt.Sprintf("Failed to encode transaction data: %v", err)
-		return execution, err
-	}
-
-	// Send transaction
-	tx, err := cs.client.SendTransaction(ctx, cs.vaultManagerAddr, big.NewInt(0), data)
-	if err != nil {
-		execution.Status = "failed"
-		execution.Error = fmt.Sprintf("Failed to send transaction: %v", err)
-		return execution, err
-	}
-
-	execution.TxHash = tx.Hash().Hex()
-
-	// Wait for transaction confirmation
-	receipt, err := cs.client.WaitForTransaction(ctx, tx.Hash())
-	if err != nil {
-		execution.Status = "failed"
-		execution.Error = fmt.Sprintf("Failed to wait for transaction: %v", err)
-		return execution, err
-	}
-
-	execution.GasUsed = receipt.GasUsed
-	execution.GasPrice = tx.GasPrice().String()
-	execution.Status = "completed"
-
-	return execution, nil
-}
-
-// WithdrawAllInvestments withdraws all investments from a vault
-func (cs *ContractService) WithdrawAllInvestments(ctx context.Context, vault *database.Vault) (*database.Execution, error) {
-	execution := &database.Execution{
-		VaultID: vault.ID,
-		Status:  "executing",
-	}
-
-	// Prepare transaction data for withdrawAllInvestments
-	data, err := cs.encodeWithdrawAllInvestmentsData()
-	if err != nil {
-		execution.Status = "failed"
-		execution.Error = fmt.Sprintf("Failed to encode transaction data: %v", err)
-		return execution, err
-	}
-
-	// Send transaction
-	tx, err := cs.client.SendTransaction(ctx, cs.vaultManagerAddr, big.NewInt(0), data)
-	if err != nil {
-		execution.Status = "failed"
-		execution.Error = fmt.Sprintf("Failed to send transaction: %v", err)
-		return execution, err
-	}
-
-	execution.TxHash = tx.Hash().Hex()
-
-	// Wait for transaction confirmation
-	receipt, err := cs.client.WaitForTransaction(ctx, tx.Hash())
-	if err != nil {
-		execution.Status = "failed"
-		execution.Error = fmt.Sprintf("Failed to wait for transaction: %v", err)
-		return execution, err
-	}
-
-	execution.GasUsed = receipt.GasUsed
-	execution.GasPrice = tx.GasPrice().String()
-	execution.Status = "completed"
-
-	return execution, nil
-}
-
-// prepareAllocationData converts database allocations to contract format
-func (cs *ContractService) prepareAllocationData(allocations []database.Allocation) ([]*big.Int, []*big.Int) {
+	// Convert to contract parameters
 	adapterIndices := make([]*big.Int, len(allocations))
 	allocationData := make([]*big.Int, len(allocations))
 
-	for i, allocation := range allocations {
-		adapterIndices[i] = big.NewInt(int64(allocation.AdapterIndex))
-		allocationData[i] = big.NewInt(int64(allocation.Percentage))
+	for i, alloc := range allocations {
+		adapterIndices[i] = new(big.Int).SetUint64(alloc.AdapterIndex)
+		allocationData[i] = new(big.Int).SetUint64(alloc.Percentage)
 	}
 
-	return adapterIndices, allocationData
+	// Get transactor options
+	auth, err := cs.client.GetTransactOpts(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get transactor options: %w", err)
+	}
+
+	// Call updateHoldingAllocation on VaultManager
+	tokenAddr := common.HexToAddress(tokenAddress)
+	tx, err := cs.vaultManager.UpdateHoldingAllocation(auth, tokenAddr, adapterIndices, allocationData)
+	if err != nil {
+		return "", fmt.Errorf("failed to call updateHoldingAllocation: %w", err)
+	}
+
+	logger.Log.WithFields(logrus.Fields{
+		"token_address": tokenAddress,
+		"tx_hash":       tx.Hash().Hex(),
+	}).Info("Vault allocations update transaction sent")
+
+	return tx.Hash().Hex(), nil
 }
 
-// encodeUpdateHoldingAllocationData encodes the updateHoldingAllocation function call
-func (cs *ContractService) encodeUpdateHoldingAllocationData(adapterIndices []*big.Int, allocationData []*big.Int) ([]byte, error) {
-	// Function selector for updateHoldingAllocation(IERC20,uint256[],uint256[])
-	functionSelector := []byte{0x8b, 0x7f, 0x8c, 0x5d}
+// WithdrawAllInvestments withdraws all investments from a vault
+// This calls AIAgentVaultManager.withdrawAllInvestments(token)
+func (cs *ContractService) WithdrawAllInvestments(ctx context.Context, tokenAddress string) (string, error) {
+	logger.Log.WithField("token_address", tokenAddress).Info("Withdrawing all investments via VaultManager")
 
-	// Encode parameters
-	// Note: This is a simplified encoding. In production, you'd want to use proper ABI encoding
-	// For now, we'll create a basic encoding structure
-	var data []byte
-	data = append(data, functionSelector...)
+	// Get transactor options
+	auth, err := cs.client.GetTransactOpts(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get transactor options: %w", err)
+	}
 
-	// Add WETH address (32 bytes)
-	data = append(data, common.LeftPadBytes(cs.wethAddr.Bytes(), 32)...)
+	// Call withdrawAllInvestments on VaultManager
+	tokenAddr := common.HexToAddress(tokenAddress)
+	tx, err := cs.vaultManager.WithdrawAllInvestments(auth, tokenAddr)
+	if err != nil {
+		return "", fmt.Errorf("failed to call withdrawAllInvestments: %w", err)
+	}
 
-	// Add array lengths and data
-	// This is a simplified approach - in production, use proper ABI encoding library
-	data = append(data, common.LeftPadBytes(big.NewInt(int64(len(adapterIndices))).Bytes(), 32)...)
+	logger.Log.WithFields(logrus.Fields{
+		"token_address": tokenAddress,
+		"tx_hash":       tx.Hash().Hex(),
+	}).Info("Withdraw all investments transaction sent")
 
-	return data, nil
+	return tx.Hash().Hex(), nil
 }
 
-// encodePartialUpdateHoldingAllocationData encodes the partialUpdateHoldingAllocation function call
-func (cs *ContractService) encodePartialUpdateHoldingAllocationData(
-	divestIndices []int, divestAmounts []*big.Int, investIndices []int, investAmounts []*big.Int, investAllocations []int) ([]byte, error) {
-
-	// Function selector for partialUpdateHoldingAllocation
-	functionSelector := []byte{0x1a, 0x2b, 0x3c, 0x4d} // Placeholder - replace with actual selector
-
-	var data []byte
-	data = append(data, functionSelector...)
-
-	// Add WETH address
-	data = append(data, common.LeftPadBytes(cs.wethAddr.Bytes(), 32)...)
-
-	// Add array data (simplified)
-	data = append(data, common.LeftPadBytes(big.NewInt(int64(len(divestIndices))).Bytes(), 32)...)
-
-	return data, nil
+// WaitForTransaction waits for a transaction to be mined and returns the receipt
+func (cs *ContractService) WaitForTransaction(ctx context.Context, txHash string) (*types.Receipt, error) {
+	hash := common.HexToHash(txHash)
+	return cs.client.WaitForTransaction(ctx, hash)
 }
 
-// encodeWithdrawAllInvestmentsData encodes the withdrawAllInvestments function call
-func (cs *ContractService) encodeWithdrawAllInvestmentsData() ([]byte, error) {
-	// Function selector for withdrawAllInvestments(IERC20)
-	functionSelector := []byte{0x2e, 0x1a, 0x7d, 0x4d} // Placeholder - replace with actual selector
+// executeAdapterCall is the internal method that calls VaultManager.execute()
+// This is used by adapter helpers to configure adapter-specific parameters
+func (cs *ContractService) executeAdapterCall(ctx context.Context, adapterIndex uint64, value uint64, data []byte) (string, error) {
+	logger.Log.WithFields(logrus.Fields{
+		"adapter_index": adapterIndex,
+		"value":         value,
+		"data_length":   len(data),
+	}).Info("Executing adapter call via VaultManager.execute()")
 
-	var data []byte
-	data = append(data, functionSelector...)
+	// Get transactor options
+	auth, err := cs.client.GetTransactOpts(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get transactor options: %w", err)
+	}
 
-	// Add WETH address
-	data = append(data, common.LeftPadBytes(cs.wethAddr.Bytes(), 32)...)
+	// Set value if sending ETH
+	auth.Value = new(big.Int).SetUint64(value)
 
-	return data, nil
-}
+	// Call VaultManager.execute(adapterIndex, value, data)
+	tx, err := cs.vaultManager.Execute(
+		auth,
+		new(big.Int).SetUint64(adapterIndex),
+		new(big.Int).SetUint64(value),
+		data,
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to execute adapter call: %w", err)
+	}
 
-// GetVaultInfo retrieves vault information from the blockchain
-func (cs *ContractService) GetVaultInfo(ctx context.Context, vaultAddress common.Address) (*VaultInfo, error) {
-	// This would involve calling view functions on the vault contract
-	// For now, return a placeholder structure
-	return &VaultInfo{
-		Address:     vaultAddress.Hex(),
-		TotalAssets: "0",
-		IsActive:    true,
-	}, nil
-}
+	logger.Log.WithFields(logrus.Fields{
+		"adapter_index": adapterIndex,
+		"tx_hash":       tx.Hash().Hex(),
+	}).Info("Adapter configuration transaction sent")
 
-// VaultInfo represents vault information from the blockchain
-type VaultInfo struct {
-	Address     string `json:"address"`
-	TotalAssets string `json:"total_assets"`
-	IsActive    bool   `json:"is_active"`
+	return tx.Hash().Hex(), nil
 }

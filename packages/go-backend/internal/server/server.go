@@ -13,21 +13,18 @@ import (
 	"ai-vault-backend/internal/services"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // Server represents the HTTP server
 type Server struct {
-	cfg   *config.Config
-	db    *gorm.DB
-	http  *http.Server
+	cfg  *config.Config
+	http *http.Server
 }
 
 // New creates a new server instance
-func New(cfg *config.Config, db *gorm.DB) *Server {
+func New(cfg *config.Config) *Server {
 	return &Server{
 		cfg: cfg,
-		db:  db,
 	}
 }
 
@@ -46,13 +43,13 @@ func (s *Server) Start() error {
 	}
 
 	// Initialize services
-	strategyService := services.NewStrategyService(s.db, contractService)
+	vaultService := services.NewVaultService(contractService)
 
 	// Initialize handlers
-	strategyHandler := handlers.NewStrategyHandler(strategyService)
+	vaultHandler := handlers.NewVaultHandler(vaultService)
 
 	// Setup routes
-	router := s.setupRoutes(strategyHandler)
+	router := s.setupRoutes(vaultHandler)
 
 	// Create HTTP server
 	s.http = &http.Server{
@@ -80,7 +77,7 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 // setupRoutes configures all API routes
-func (s *Server) setupRoutes(strategyHandler *handlers.StrategyHandler) *gin.Engine {
+func (s *Server) setupRoutes(vaultHandler *handlers.VaultHandler) *gin.Engine {
 	// Set Gin mode
 	if s.cfg.LogLevel == "debug" {
 		gin.SetMode(gin.DebugMode)
@@ -107,28 +104,25 @@ func (s *Server) setupRoutes(strategyHandler *handlers.StrategyHandler) *gin.Eng
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
-		// Strategy routes
-		strategies := v1.Group("/strategies")
-		{
-			strategies.POST("", strategyHandler.CreateStrategy)
-			strategies.GET("/:id", strategyHandler.GetStrategy)
-			strategies.GET("", strategyHandler.ListStrategies)
-			strategies.POST("/execute", strategyHandler.ExecuteStrategy)
-		}
+		// Vault allocation management
+		v1.POST("/allocations", vaultHandler.UpdateAllocations)
+		v1.POST("/withdraw", vaultHandler.WithdrawAllInvestments)
 
-		// Vault routes
-		vaults := v1.Group("/vaults")
+		// Adapter configuration
+		adapters := v1.Group("/adapters")
 		{
-			vaults.GET("/:id", strategyHandler.GetVault)
-			vaults.GET("", strategyHandler.ListVaults)
-			vaults.POST("/:id/withdraw-all", strategyHandler.WithdrawAllInvestments)
-		}
+			// Aave adapter
+			adapters.POST("/aave/configure", vaultHandler.ConfigureAaveAdapter)
 
-		// Execution routes
-		executions := v1.Group("/executions")
-		{
-			executions.GET("/:id", strategyHandler.GetExecution)
-			executions.GET("", strategyHandler.ListExecutions)
+			// UniswapV2 adapter
+			adapters.POST("/uniswapv2/configure", vaultHandler.ConfigureUniswapV2Adapter)
+			adapters.POST("/uniswapv2/slippage", vaultHandler.UpdateUniswapV2Slippage)
+			adapters.POST("/uniswapv2/update", vaultHandler.UpdateUniswapV2Config)
+
+			// UniswapV3 adapter
+			adapters.POST("/uniswapv3/configure", vaultHandler.ConfigureUniswapV3Adapter)
+			adapters.POST("/uniswapv3/slippage", vaultHandler.UpdateUniswapV3Slippage)
+			adapters.POST("/uniswapv3/update", vaultHandler.UpdateUniswapV3Config)
 		}
 	}
 

@@ -121,7 +121,7 @@ contract RealProtocolIntegrationTest is Test {
 
         realisticUniswapV3Router = new RealisticSwapRouter(poolAddress);
         realisticPositionManager = new RealisticNonfungiblePositionManager();
-        realisticQuoter = new RealisticQuoter(poolAddress);
+        realisticQuoter = new RealisticQuoter(poolAddress, address(realisticUniswapV3Factory));
 
         // 设置 position manager 的 factory 引用
         realisticPositionManager.setFactory(address(realisticUniswapV3Factory));

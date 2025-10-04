@@ -53,7 +53,7 @@ contract UniswapV3AdapterTest is Test {
         tokenB.transfer(poolAddress, 1000 * 10 ** 18);
 
         mockRouter = new RealisticSwapRouter(poolAddress);
-        mockQuoter = new RealisticQuoter(poolAddress);
+        mockQuoter = new RealisticQuoter(poolAddress, address(mockFactory));
 
         // 设置factory地址
         mockPositionManager.setFactory(address(mockFactory));
