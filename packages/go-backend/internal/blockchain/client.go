@@ -9,6 +9,7 @@ import (
 	"ai-vault-backend/internal/logger"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -52,6 +53,32 @@ func NewClient(cfg config.BlockchainConfig) (*Client, error) {
 // GetAddress returns the address of the configured private key
 func (c *Client) GetAddress() common.Address {
 	return crypto.PubkeyToAddress(c.privateKey.PublicKey)
+}
+
+// GetTransactOpts returns the transaction options for sending transactions
+func (c *Client) GetTransactOpts(ctx context.Context) (*bind.TransactOpts, error) {
+	nonce, err := c.client.PendingNonceAt(ctx, c.GetAddress())
+	if err != nil {
+		return nil, err
+	}
+
+	gasPrice, err := c.client.SuggestGasPrice(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(c.privateKey, c.chainID)
+	if err != nil {
+		return nil, err
+	}
+
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)
+	auth.GasLimit = uint64(0) // Will be estimated
+	auth.GasPrice = gasPrice
+	auth.Context = ctx
+
+	return auth, nil
 }
 
 // GetBalance returns the ETH balance of the configured address

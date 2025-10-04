@@ -222,6 +222,13 @@ contract DeployAIVault is ScaffoldETHDeploy {
         );
         console.log("UniswapV3Adapter deployed at:", address(uniswapV3Adapter));
         deployments.push(Deployment("UniswapV3Adapter", address(uniswapV3Adapter)));
+
+        // Transfer ownership of all adapters to VaultManager
+        // This is critical: VaultManager needs to own adapters to call their onlyOwner functions
+        aaveAdapter.transferOwnership(address(manager));
+        uniswapV2Adapter.transferOwnership(address(manager));
+        uniswapV3Adapter.transferOwnership(address(manager));
+        console.log("Adapter ownership transferred to VaultManager");
     }
 
     /**
@@ -311,7 +318,11 @@ contract DeployAIVault is ScaffoldETHDeploy {
     function _configureAaveForToken(MockToken token, address vault) internal {
         mockAavePool.createAToken(address(token));
         mockAavePool.setReserveNormalizedIncome(address(token), 1e27);
-        aaveAdapter.setTokenVault(IERC20(address(token)), vault);
+
+        // Call setTokenVault via VaultManager.execute()
+        // ABI encode: setTokenVault(IERC20 token, address vault)
+        bytes memory data = abi.encodeWithSignature("setTokenVault(address,address)", address(token), vault);
+        manager.execute(0, 0, data); // Aave adapter index = 0
     }
 
     /**
@@ -328,27 +339,35 @@ contract DeployAIVault is ScaffoldETHDeploy {
         // Add initial liquidity to pair
         _addInitialLiquidityToPair(pairAddress, token);
 
-        uniswapV2Adapter.setTokenConfig(
-            IERC20(address(token)),
+        // Call setTokenConfig via VaultManager.execute()
+        // ABI encode: setTokenConfig(IERC20 token, uint256 slippageTolerance, IERC20 counterPartyToken, address VaultAddress)
+        bytes memory data = abi.encodeWithSignature(
+            "setTokenConfig(address,uint256,address,address)",
+            address(token),
             5000, // 50% slippage - 非常宽松的滑点设置
-            IERC20(address(weth)),
+            address(weth),
             vault
         );
+        manager.execute(1, 0, data); // UniswapV2 adapter index = 1
     }
 
     /**
      * @notice Configure UniswapV3 adapter for a specific token
      */
     function _configureUniswapV3ForToken(MockToken token, address vault) internal {
-        uniswapV3Adapter.setTokenConfig(
-            IERC20(address(token)),
-            IERC20(address(weth)),
+        // Call setTokenConfig via VaultManager.execute()
+        // ABI encode: setTokenConfig(IERC20 token, IERC20 counterPartyToken, uint256 slippageTolerance, uint24 feeTier, int24 tickLower, int24 tickUpper, address VaultAddress)
+        bytes memory data = abi.encodeWithSignature(
+            "setTokenConfig(address,address,uint256,uint24,int24,int24,address)",
+            address(token),
+            address(weth),
             5000, // 50% slippage - 非常宽松的滑点设置
             3000, // 0.3% fee tier
             -600, // tick lower
             600, // tick upper
             vault
         );
+        manager.execute(2, 0, data); // UniswapV3 adapter index = 2
     }
 
     /**
