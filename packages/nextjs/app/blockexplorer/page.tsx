@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PaginationButton, SearchBar, TransactionsTable } from "./_components";
 import type { NextPage } from "next";
 import { hardhat } from "viem/chains";
 import { useFetchBlocks } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
+import { useGsapFadeReveal, useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
 import { notification } from "~~/utils/scaffold-eth";
 
 const BlockExplorer: NextPage = () => {
@@ -13,6 +14,12 @@ const BlockExplorer: NextPage = () => {
   const { targetNetwork } = useTargetNetwork();
   const [isLocalNetwork, setIsLocalNetwork] = useState(true);
   const [hasError, setHasError] = useState(false);
+
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+
+  useGsapHeroIntro(heroRef);
+  useGsapFadeReveal(contentRef, ".block-section", [blocks.length, transactionReceipts.length, currentPage]);
 
   useEffect(() => {
     if (targetNetwork.id !== hardhat.id) {
@@ -73,9 +80,31 @@ const BlockExplorer: NextPage = () => {
 
   return (
     <div className="container mx-auto my-10">
-      <SearchBar />
-      <TransactionsTable blocks={blocks} transactionReceipts={transactionReceipts} />
-      <PaginationButton currentPage={currentPage} totalItems={Number(totalBlocks)} setCurrentPage={setCurrentPage} />
+      <div className="mb-10 text-center" ref={heroRef}>
+        <h1 className="hero-heading text-4xl font-bold text-white">Local Block Explorer</h1>
+        <p className="hero-subheading mt-3 text-[#fbe6dc]">
+          Track block production, transactions, and contract activity on your Hardhat node.
+        </p>
+        <div className="hero-cta mt-4 flex justify-center">
+          <span className="badge badge-lg bg-[#803100] border-[#803100]/60 text-white">Hardhat Network</span>
+        </div>
+      </div>
+
+      <div ref={contentRef} className="space-y-8">
+        <div className="block-section">
+          <SearchBar />
+        </div>
+        <div className="block-section">
+          <TransactionsTable blocks={blocks} transactionReceipts={transactionReceipts} />
+        </div>
+        <div className="block-section">
+          <PaginationButton
+            currentPage={currentPage}
+            totalItems={Number(totalBlocks)}
+            setCurrentPage={setCurrentPage}
+          />
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,0 +1,444 @@
+{
+  "common": {
+    "actions": {
+      "viewAll": "View All →",
+      "explore": "Explore",
+      "loading": "Loading...",
+      "reset": "Reset",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "notices": {
+      "transactionSuccess": "Transaction completed successfully!"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "timeRanges": {
+      "7d": "7d",
+      "30d": "30d",
+      "90d": "90d",
+      "all": "All"
+    },
+    "tables": {
+      "rank": "Rank",
+      "vault": "Vault",
+      "tvl": "TVL",
+      "apy": "APY",
+      "revenue7d": "7d Revenue",
+      "users": "Users",
+      "status": "Status",
+      "type": "Type",
+      "amount": "Amount",
+      "shares": "Shares",
+      "valueUsd": "Value (USD)",
+      "time": "Time",
+      "transaction": "Transaction",
+      "total": "Total"
+    },
+    "activity": {
+      "deposit": "Deposit",
+      "withdraw": "Withdraw"
+    }
+  },
+  "menu": {
+    "home": "Home",
+    "vaults": "Vaults",
+    "analytics": "Analytics",
+    "portfolio": "Portfolio",
+    "admin": "Admin",
+    "strategies": "Strategies",
+    "adapters": "Adapters",
+    "batch": "Batch Create",
+    "subgraph": "Subgraph",
+    "debug": "Debug Contracts"
+  },
+  "header": {
+    "switcher": {
+      "label": "Language"
+    }
+  },
+  "home": {
+    "hero": {
+      "tagline": "AI Vault Protocol",
+      "title": "Automated DeFi Investment Vaults Powered by AI",
+      "subtitle": "Maximize your yields with AI-driven strategies that automatically allocate your assets across leading DeFi protocols including Aave, Uniswap V2, and Uniswap V3.",
+      "explore": "Explore Vaults",
+      "admin": "Admin Panel"
+    },
+    "metrics": {
+      "title": "Protocol Snapshot",
+      "loading": "Loading metrics...",
+      "tvl": "Total Value Locked",
+      "vaults": "Active Vaults",
+      "users": "Total Users",
+      "apy": "Average APY"
+    },
+    "features": {
+      "invest": {
+        "title": "Invest & Earn",
+        "description": "Explore vaults and start earning yields from multiple DeFi protocols automatically",
+        "action": "Go to Vaults →"
+      },
+      "analytics": {
+        "title": "Real-Time Analytics",
+        "description": "Track vault performance, user activity, and protocol allocations in real-time",
+        "action": "View Analytics →"
+      },
+      "manage": {
+        "title": "Manage Vaults",
+        "description": "Admin panel for vault creation, status management, and strategy configuration",
+        "action": "Admin Panel →"
+      }
+    },
+    "topVaults": {
+      "title": "Top Performing Vaults",
+      "action": "View All →"
+    },
+    "how": {
+      "title": "How It Works",
+      "steps": {
+        "connect": {
+          "title": "Connect Wallet",
+          "description": "Connect your wallet to start investing"
+        },
+        "choose": {
+          "title": "Choose Vault",
+          "description": "Select a vault based on asset and APY"
+        },
+        "deposit": {
+          "title": "Deposit Assets",
+          "description": "Deposit your tokens to start earning"
+        },
+        "earn": {
+          "title": "Earn Yields",
+          "description": "AI optimizes your returns automatically"
+        }
+      }
+    }
+  },
+  "vaults": {
+    "title": "AI Vault Protocol",
+    "subtitle": "Automated DeFi Investment Vaults Powered by AI",
+    "search": "Search vaults by name or address...",
+    "filters": {
+      "all": "All",
+      "usdc": "USDC",
+      "weth": "WETH",
+      "dai": "DAI"
+    },
+    "loading": "Loading vaults...",
+    "errors": {
+      "load": "Error loading vaults"
+    },
+    "empty": {
+      "title": "No Vaults Found",
+      "hintFiltered": "Try adjusting your search or filters",
+      "hintEmpty": "No vaults have been created yet"
+    }
+  },
+  "analytics": {
+    "loading": "Loading analytics...",
+    "error": "Failed to load analytics",
+    "title": "Analytics Dashboard",
+    "breadcrumbs": {
+      "home": "Home",
+      "analytics": "Analytics"
+    },
+    "timeRanges": {
+      "label": "Range"
+    },
+    "overview": {
+      "title": "Protocol Overview",
+      "tvl": "Total Value Locked",
+      "vaults": "Total Vaults",
+      "vaultsActive": "Active",
+      "users": "Total Users",
+      "apy": "Average APY",
+      "pending": "Calculating..."
+    },
+    "charts": {
+      "tvlTitle": "TVL Trend (7 days)",
+      "tvlLoading": "Loading TVL trend...",
+      "assetsTitle": "Asset Distribution",
+      "assetsLoading": "Loading asset distribution...",
+      "protocolTitle": "Protocol Distribution",
+      "protocolLoading": "Loading protocol distribution...",
+      "depositsTitle": "Deposit Trend (7 days)",
+      "withdrawalsTitle": "Withdrawal Trend (7 days)",
+      "totals": {
+        "deposits": "Total Deposits",
+        "withdrawals": "Total Withdrawals",
+        "count": "Count",
+        "average": "Average",
+        "current": "Current"
+      }
+    },
+    "ranking": {
+      "title": "Vault Performance Ranking"
+    },
+    "activity": {
+      "title": "Recent Activity (24h)",
+      "loading": "Loading recent activity..."
+    }
+  },
+  "portfolio": {
+    "connectNotice": "Please connect your wallet to view the portfolio.",
+    "loading": "Loading portfolio...",
+    "error": "Failed to load portfolio",
+    "title": "My Portfolio",
+    "breadcrumbs": {
+      "home": "Home",
+      "portfolio": "Portfolio"
+    },
+    "stats": {
+      "totalValue": "Portfolio Value",
+      "totalPnL": "Total P/L",
+      "totalFees": "Cumulative Fees",
+      "vaultCount": "Invested Vaults",
+      "deposits": "Total Deposits",
+      "withdrawals": "Total Withdrawals"
+    },
+    "revenue": {
+      "title": "Revenue Trend",
+      "period": {
+        "7d": "7 days",
+        "30d": "30 days",
+        "90d": "90 days",
+        "all": "All"
+      },
+      "loading": "Loading revenue trend..."
+    },
+    "positions": {
+      "title": "Holdings",
+      "empty": {
+        "title": "No Holdings",
+        "description": "You have not invested in any vaults yet.",
+        "cta": "Go to Vaults →"
+      },
+      "table": {
+        "value": "Position Value",
+        "pnl": "P/L",
+        "shares": "Shares",
+        "days": "Days Held",
+        "action": "View Details"
+      }
+    },
+    "fees": {
+      "title": "Fee Breakdown",
+      "management": "Management Fee",
+      "performance": "Performance Fee",
+      "daysHeld": "Days Held",
+      "total": "Total"
+    },
+    "transactions": {
+      "title": "Transaction History"
+    }
+  },
+  "vaultCard": {
+    "labels": {
+      "tvl": "TVL",
+      "apy": "APY",
+      "netYield": "Net Yield",
+      "fees": "Fees",
+      "managementFee": "Management Fee",
+      "performanceFee": "Performance Fee",
+      "totalFees": "Total Fees Paid",
+      "strategies": "Investment Strategies",
+      "position": "Your Position",
+      "shares": "Shares",
+      "currentValue": "Current Value",
+      "totalDeposited": "Total Deposited",
+      "totalWithdrawn": "Total Withdrawn",
+      "profitLoss": "Profit / Loss"
+    },
+    "messages": {
+      "noPosition": "You don't have any position in this vault yet.",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "deposit": "Deposit",
+      "mint": "Mint Shares",
+      "withdraw": "Withdraw",
+      "details": "Details",
+      "view": "View Details"
+    }
+  },
+  "admin": {
+    "adaptersPage": {
+      "title": "Adapter Management",
+      "breadcrumb": {
+        "home": "Home",
+        "admin": "Admin",
+        "current": "Adapter Management"
+      },
+      "badge": "Protocol Admin",
+      "descriptionTitle": "Adapter Management Guide",
+      "descriptionBody": "Manage all DeFi protocol adapters here. Add new adapters to expand strategy options, and remove those that are no longer used. Each adapter represents an integration with a specific DeFi protocol."
+    },
+    "adapterManager": {
+      "sections": {
+        "add": "Add New Adapter",
+        "registered": "Registered Adapters",
+        "config": "Adapter Configuration",
+        "aave": "Aave V3 Adapter",
+        "uniswapV2": "Uniswap V2 Adapter",
+        "uniswapV3": "Uniswap V3 Adapter"
+      },
+      "labels": {
+        "name": "Name",
+        "address": "Adapter Address",
+        "status": "Status",
+        "select": "Select Adapter",
+        "token": "Asset Token Address",
+        "counterparty": "Counterparty Token Address",
+        "slippage": "Slippage Tolerance (bps)",
+        "vault": "Vault Address",
+        "feeTier": "Fee Tier (e.g. 500)",
+        "tickLower": "Tick Lower",
+        "tickUpper": "Tick Upper"
+      },
+      "buttons": {
+        "add": "Add Adapter",
+        "adding": "Adding...",
+        "updateAave": "Update Aave Config",
+        "updateUniswapV2": "Update Uniswap V2 Config",
+        "updateUniswapV3": "Update Uniswap V3 Config",
+        "updating": "Submitting..."
+      },
+      "table": {
+        "empty": "No adapters added yet",
+        "approved": "Active",
+        "pending": "Pending",
+        "loading": "Loading..."
+      },
+      "notifications": {
+        "addressRequired": "Please enter an adapter address.",
+        "addressInvalid": "Please enter a valid Ethereum address.",
+        "addSuccess": "Adapter added successfully!",
+        "addFailed": "Failed to add adapter.",
+        "tokenVaultInvalid": "Please provide valid token and vault addresses.",
+        "aaveUpdated": "Aave adapter configuration updated.",
+        "configFailed": "Configuration failed.",
+        "addressesInvalid": "Please provide valid addresses.",
+        "slippageRequired": "Please provide slippage tolerance (bps).",
+        "slippageInvalid": "Slippage tolerance must be a non-negative number.",
+        "numberInvalid": "Please provide valid numeric values.",
+        "uniswapV2Updated": "Uniswap V2 adapter configuration updated.",
+        "uniswapV3Updated": "Uniswap V3 adapter configuration updated."
+      }
+    },
+    "strategiesPage": {
+      "loading": "Loading strategy manager...",
+      "error": "Failed to load strategies",
+      "title": "Investment Strategy Management",
+      "badge": "AI Agent Mode",
+      "breadcrumbs": {
+        "home": "Home",
+        "admin": "Admin",
+        "current": "Strategy Management"
+      },
+      "stats": {
+        "managedAssets": "Total Managed Assets",
+        "activeStrategies": "Active Strategies",
+        "averageApy": "Average APY"
+      },
+      "selector": {
+        "title": "Vault Selector",
+        "searchPlaceholder": "Search vaults...",
+        "listLabel": "Vault List",
+        "empty": "Select a vault on the left to view its strategy."
+      },
+      "current": {
+        "title": "Current Allocation Strategy",
+        "empty": "No allocation strategy configured.",
+        "table": {
+          "adapter": "Adapter",
+          "allocation": "Allocation",
+          "amount": "Allocated Amount",
+          "apy": "APY"
+        }
+      },
+      "actions": {
+        "edit": "Edit Allocation Strategy",
+        "withdrawAll": "Withdraw All Investments",
+        "apply": "Apply Strategy Update",
+        "applying": "Updating..."
+      },
+      "edit": {
+        "title": "Edit Allocation Strategy",
+        "noAdapters": "No registered adapters detected. Please add adapters in the adapter manager first.",
+        "labels": {
+          "adapter": "Adapter",
+          "allocation": "Allocation (%)"
+        },
+        "summary": {
+          "total": "Total Allocation:"
+        }
+      },
+      "partial": {
+        "title": "Partial Strategy Adjustment",
+        "description": "Increase or decrease allocations for specific adapters; remaining adapters will rebalance automatically.",
+        "divestHeading": "Divest Targets",
+        "investHeading": "Investment Targets",
+        "labels": {
+          "adapter": "Select Adapter",
+          "divestAmount": "Divest Amount",
+          "investAmount": "Investment Amount",
+          "targetAllocation": "Target Allocation (%)"
+        },
+        "placeholders": {
+          "selectAdapter": "Choose an adapter"
+        },
+        "buttons": {
+          "reset": "Reset",
+          "submit": "Execute Partial Adjustment",
+          "submitting": "Executing..."
+        }
+      },
+      "history": {
+        "title": "Adjustment History",
+        "table": {
+          "time": "Time",
+          "type": "Type",
+          "detail": "Details",
+          "executor": "Executor"
+        },
+        "badges": {
+          "full": "Full Update",
+          "partial": "Partial Adjustment"
+        }
+      }
+    },
+    "strategies": {
+      "notifications": {
+        "vaultRequired": "Please select a vault first.",
+        "totalMustBeHundred": "Total allocation must equal 100%.",
+        "assetUnavailable": "Unable to retrieve the vault asset address.",
+        "noAdapters": "No registered adapters were found in the contract.",
+        "adapterUnavailable": "Adapter not registered or unavailable",
+        "updateSuccess": "Strategy updated successfully!",
+        "updateFailed": "Strategy update failed.",
+        "withdrawSuccess": "All investments withdrawn!",
+        "withdrawFailed": "Failed to withdraw all investments.",
+        "targetRequired": "Please select at least one divest or investment target.",
+        "divestAmountRequired": "Divest amount must be greater than zero.",
+        "divestAdapterMissing": "Divest adapter not found.",
+        "divestAmountInvalid": "Invalid divest amount.",
+        "investAmountRequired": "Investment amount must be greater than zero.",
+        "investAdapterMissing": "Investment adapter not found.",
+        "investAmountInvalid": "Invalid investment amount.",
+        "adjustmentInfoRequired": "Please provide valid adjustment information.",
+        "partialSuccess": "Partial strategy adjustment succeeded!",
+        "partialFailed": "Partial strategy adjustment failed."
+      },
+      "confirmations": {
+        "withdrawAll": "Withdraw all investments from \"{vault}\"?\n\nThis action may take some time."
+      },
+      "history": {
+        "empty": "Select a vault to view strategy adjustments."
+      }
+    }
+  }
+}

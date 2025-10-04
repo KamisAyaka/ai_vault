@@ -18,6 +18,13 @@ query GetUserVaultBalances($userAddress: String!, $first: Int = 10, $skip: Int =
       isActive
       totalAssets
       totalSupply
+      asset {
+        id
+        address
+        symbol
+        name
+        decimals
+      }
     }
     totalDeposited
     totalRedeemed

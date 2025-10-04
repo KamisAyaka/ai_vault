@@ -1,0 +1,26 @@
+query GetRedeems($first: Int = 10, $skip: Int = 0, $orderBy: Redeem_orderBy, $orderDirection: OrderDirection) {
+  redeems(first: $first, skip: $skip, orderBy: $orderBy, orderDirection: $orderDirection) {
+    id
+    vault {
+      id
+      address
+      name
+      asset {
+        id
+        address
+        symbol
+        name
+        decimals
+      }
+    }
+    user {
+      id
+      address
+    }
+    assets
+    shares
+    blockNumber
+    blockTimestamp
+    transactionHash
+  }
+}

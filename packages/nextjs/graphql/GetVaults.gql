@@ -3,6 +3,8 @@ query GetVaults($first: Int = 10, $skip: Int = 0, $orderBy: Vault_orderBy, $orde
     id
     address
     name
+    symbol
+    fee
     isActive
     totalAssets
     totalSupply
@@ -10,6 +12,13 @@ query GetVaults($first: Int = 10, $skip: Int = 0, $orderBy: Vault_orderBy, $orde
       id
       address
       owner
+    }
+    asset {
+      id
+      address
+      symbol
+      name
+      decimals
     }
     createdAt
     updatedAt

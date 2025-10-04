@@ -1497,7 +1497,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 4,
+      deployedOnBlock: 3,
     },
     AIAgentVaultManager: {
       address: "0xe1da8919f262ee86f9be05059c9280142cf23f48",
@@ -1876,7 +1876,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 3,
+      deployedOnBlock: 2,
     },
     VaultFactory: {
       address: "0xed1db453c3156ff3155a97ad217b3087d5dc5f6e",
@@ -2225,7 +2225,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 5,
+      deployedOnBlock: 3,
     },
     MockAavePool: {
       address: "0xf7cd8fa9b94db2aa972023b379c7f72c65e4de9d",
@@ -2581,7 +2581,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 6,
+      deployedOnBlock: 5,
     },
     UniswapV3Adapter: {
       address: "0xdfd787c807dea8d7e53311b779bc0c6a4704d286",
@@ -3196,7 +3196,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 17,
+      deployedOnBlock: 16,
     },
     AaveAdapter: {
       address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e",
@@ -3495,7 +3495,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 16,
+      deployedOnBlock: 14,
     },
     MockWETH9: {
       address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
@@ -3762,10 +3762,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 3,
+      deployedOnBlock: 2,
     },
     VaultSharesETH: {
-      address: "0x4d8e02bbfcf205828a8352af4376b165e123d7b0",
+      address: "0xf1078fd568ad76e49e6f88d1ff485402a086976b",
       abi: [
         {
           type: "constructor",
@@ -4981,7 +4981,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 21,
+      deployedOnBlock: 18,
     },
     UniswapV2Adapter: {
       address: "0xdbd296711ec8ef9aacb623ee3f1c0922dce0d7b2",
@@ -5466,7 +5466,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 16,
+      deployedOnBlock: 15,
     },
     VaultShares: {
       address: "0x0d8694f47cdc22bb8c6d2668a38d07a439f378f9",

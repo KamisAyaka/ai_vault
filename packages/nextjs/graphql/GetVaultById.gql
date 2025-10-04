@@ -3,6 +3,8 @@ query GetVaultById($id: ID!) {
     id
     address
     name
+    symbol
+    fee
     isActive
     totalAssets
     totalSupply
@@ -10,6 +12,13 @@ query GetVaultById($id: ID!) {
       id
       address
       owner
+    }
+    asset {
+      id
+      address
+      symbol
+      name
+      decimals
     }
     createdAt
     updatedAt
