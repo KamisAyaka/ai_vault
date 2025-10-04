@@ -5337,6 +5337,7 @@ __metadata:
     eslint-config-prettier: ~10.1.1
     eslint-plugin-prettier: ~5.2.4
     graphql: ~16.8.1
+    gsap: ^3.12.5
     kubo-rpc-client: ~5.0.2
     next: ~15.2.3
     next-nprogress-bar: ~2.3.13
@@ -11550,6 +11551,13 @@ __metadata:
   version: 16.8.2
   resolution: "graphql@npm:16.8.2"
   checksum: 1a5ba8087b3ffb60627ab4b71565e77049f621da49144985d3b1e35a9c70bf846476a7b5912342eda72d70bd71f9427a3d73712b4250e0175d458b8011c9deba
+  languageName: node
+  linkType: hard
+
+"gsap@npm:^3.12.5":
+  version: 3.13.0
+  resolution: "gsap@npm:3.13.0"
+  checksum: 40884726718b5bed8cdd6faa621b3eaec64541b6fc163a0af810d3626d750e5d010f7300f4b106327d4474623a9fd5f915a48081d7744eec38c57a1fce20fb62
   languageName: node
   linkType: hard
 
