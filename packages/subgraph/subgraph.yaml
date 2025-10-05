@@ -1,18 +1,21 @@
-specVersion: 0.0.4
+specVersion: 1.3.0
+indexerHints:
+  prune: auto
 description: AI Vault Protocol Subgraph
 repository: https://github.com/scaffold-eth/se-2/packages/subgraph/
 schema:
   file: ./src/schema.graphql
 dataSources:
-  - kind: ethereum/contract
+  - kind: ethereum
     name: VaultFactory
-    network: localhost
+    network: sepolia
     source:
       abi: VaultFactory
-      address: "0xed1db453c3156ff3155a97ad217b3087d5dc5f6e"
+      address: "0x9B20939E88D9072e2f08f44Cde24DF0E78dFFaAE"
+      startBlock: 9347376
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - VaultFactory
@@ -31,15 +34,16 @@ dataSources:
             address,string,string,uint256)
           handler: handleVaultCreated
       file: ./src/mappings/VaultFactory.ts
-  - kind: ethereum/contract
+  - kind: ethereum
     name: AIAgentVaultManager
-    network: localhost
+    network: sepolia
     source:
       abi: AIAgentVaultManager
-      address: "0xe1da8919f262ee86f9be05059c9280142cf23f48"
+      address: "0x6E997C66181AE215C6a3E5423cE4aa6fFB4CFff2"
+      startBlock: 9347376
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - VaultManager
@@ -61,15 +65,16 @@ dataSources:
         - event: AdapterAddedToList(indexed address,string)
           handler: handleAdapterAddedToList
       file: ./src/mappings/AIAgentVaultManager.ts
-  - kind: ethereum/contract
+  - kind: ethereum
     name: VaultImplementation
-    network: localhost
+    network: sepolia
     source:
       abi: VaultImplementation
-      address: "0x0c8e79f3534b00d9a3d4a856b665bf4ebc22f2ba"
+      address: "0x32Cac3f333b5cED4846DeD2C4efA17350741B8B1"
+      startBlock: 9347376
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - Vault
@@ -95,15 +100,16 @@ dataSources:
         - event: HoldingAllocationUpdated((address,uint256)[])
           handler: handleHoldingAllocationUpdated
       file: ./src/mappings/VaultImplementation.ts
-  - kind: ethereum/contract
+  - kind: ethereum
     name: VaultSharesETH
-    network: localhost
+    network: sepolia
     source:
       abi: VaultSharesETH
-      address: "0x4d8e02bbfcf205828a8352af4376b165e123d7b0"
+      address: "0x3e6c65b902385921Ead89369569f71e571FA1e49"
+      startBlock: 9347376
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - Vault
@@ -129,15 +135,16 @@ dataSources:
         - event: HoldingAllocationUpdated((address,uint256)[])
           handler: handleHoldingAllocationUpdated
       file: ./src/mappings/VaultSharesETH.ts
-  - kind: ethereum/contract
+  - kind: ethereum
     name: AaveAdapter
-    network: localhost
+    network: sepolia
     source:
       abi: AaveAdapter
-      address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e"
+      address: "0x6005EC07f4e4F61be7526695445f3274B360CE30"
+      startBlock: 9347376
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - AaveAdapter
@@ -153,15 +160,16 @@ dataSources:
         - event: Divested(indexed address,uint256,uint256)
           handler: handleDivested
       file: ./src/mappings/AaveAdapter.ts
-  - kind: ethereum/contract
+  - kind: ethereum
     name: UniswapV2Adapter
-    network: localhost
+    network: sepolia
     source:
       abi: UniswapV2Adapter
-      address: "0xdbd296711ec8ef9aacb623ee3f1c0922dce0d7b2"
+      address: "0x386A472650E95229ff59b7b196F0fC2FB93B735E"
+      startBlock: 9347376
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - UniswapV2Adapter
@@ -181,15 +189,16 @@ dataSources:
         - event: UniswapDivested(indexed address,uint256,uint256,uint256)
           handler: handleUniswapDivested
       file: ./src/mappings/UniswapV2Adapter.ts
-  - kind: ethereum/contract
+  - kind: ethereum
     name: UniswapV3Adapter
-    network: localhost
+    network: sepolia
     source:
       abi: UniswapV3Adapter
-      address: "0xdfd787c807dea8d7e53311b779bc0c6a4704d286"
+      address: "0x1206dfd237894aE33a16D16e84ec4C245BEb1800"
+      startBlock: 9347376
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - UniswapV3Adapter
@@ -211,14 +220,14 @@ dataSources:
           handler: handleUniswapV3Divested
       file: ./src/mappings/UniswapV3Adapter.ts
 templates:
-  - kind: ethereum/contract
+  - kind: ethereum
     name: VaultInstance
-    network: localhost
+    network: sepolia
     source:
       abi: VaultImplementation
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - Vault

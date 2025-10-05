@@ -91,6 +91,17 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
     }
 
     /**
+     * @notice 重新激活金库
+     * @notice 只有所有者可以重新激活已停用的金库
+     */
+    function setActive() external onlyOwner {
+        if (s_isActive) {
+            revert("Vault is already active");
+        }
+        s_isActive = true;
+    }
+
+    /**
      * @notice 更新完整的适配器和分配比例列表
      */
     function updateHoldingAllocation(Allocation[] calldata allocations) public override(IVaultShares) onlyOwner {
@@ -282,16 +293,19 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
 
         assets = previewRedeem(shares);
 
-        // 根据投资策略撤回所需资金
-        _divestFunds(assets);
-
-        // 检查撤资后的WETH余额，处理滑点损失
+        // 检查金库中的可用余额
         uint256 wethBalance = IERC20(asset()).balanceOf(address(this));
 
-        // 如果实际余额不足，使用实际余额（处理滑点损失）
+        // 如果余额不足，从投资中撤资
         if (wethBalance < assets) {
-            assets = wethBalance;
+            uint256 needed = assets - wethBalance;
+            _divestFunds(needed);
+            // 重新检查余额
+            wethBalance = IERC20(asset()).balanceOf(address(this));
         }
+
+        // 使用实际可用的资产数量
+        uint256 assetsToWithdraw = wethBalance < assets ? wethBalance : assets;
 
         // 检查权限并销毁用户的份额
         if (msg.sender != ownerAddr) {
@@ -303,18 +317,18 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         s_ethConversionEnabled = false;
 
         // 将 WETH 转换为 ETH 并发送给接收者
-        IWETH9(i_WETH).withdraw(assets);
+        IWETH9(i_WETH).withdraw(assetsToWithdraw);
 
         // 重新启用 ETH 自动转换
         s_ethConversionEnabled = true;
 
-        (bool success,) = receiver.call{ value: assets }("");
+        (bool success,) = receiver.call{ value: assetsToWithdraw }("");
         if (!success) {
             revert VaultSharesETH__ETHTransferFailed();
         }
 
         // 发出赎回事件
-        emit Redeem(assets, receiver, shares);
+        emit Redeem(assetsToWithdraw, receiver, shares);
     }
 
     /**
@@ -332,16 +346,19 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
             revert ERC4626ExceededMaxWithdraw(ownerAddr, assets, maxAssets);
         }
 
-        // 根据投资策略撤回所需资金
-        _divestFunds(assets);
-
-        // 检查撤资后的WETH余额，处理滑点损失
+        // 检查金库中的可用余额
         uint256 wethBalance = IERC20(asset()).balanceOf(address(this));
 
-        // 如果实际余额不足，使用实际余额（处理滑点损失）
+        // 如果余额不足，从投资中撤资
         if (wethBalance < assets) {
-            assets = wethBalance;
+            uint256 needed = assets - wethBalance;
+            _divestFunds(needed);
+            // 重新检查余额
+            wethBalance = IERC20(asset()).balanceOf(address(this));
         }
+
+        // 使用实际可用的资产数量
+        uint256 assetsToWithdraw = wethBalance < assets ? wethBalance : assets;
 
         // 检查权限并销毁用户的份额
         if (msg.sender != ownerAddr) {
@@ -353,7 +370,7 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         s_ethConversionEnabled = false;
 
         // 将 WETH 转换为 ETH 并发送给接收者
-        IWETH9(i_WETH).withdraw(assets);
+        IWETH9(i_WETH).withdraw(assetsToWithdraw);
 
         // 重新启用 ETH 自动转换
         s_ethConversionEnabled = true;
@@ -364,13 +381,13 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
         }
 
         // 向接收者发送ETH
-        (bool success,) = receiver.call{ value: assets }("");
+        (bool success,) = receiver.call{ value: assetsToWithdraw }("");
         if (!success) {
             revert VaultSharesETH__ETHTransferFailed();
         }
 
         // 发出提取事件
-        emit Redeem(assets, receiver, shares);
+        emit Redeem(assetsToWithdraw, receiver, shares);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -409,13 +426,14 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
      * @notice 根据当前配置的投资策略撤回资金
      * @param assets 需要撤回的资产数量
      */
-    function _divestFunds(uint256 assets) internal {
+    function _divestFunds(uint256 assets) internal returns (uint256) {
         uint256 allocationsLength = s_allocations.length;
         // 如果没有配置投资策略，则不进行撤资
         if (allocationsLength == 0) {
-            return;
+            return 0;
         }
 
+        uint256 totalDivested = 0;
         // 根据分配比例从各个适配器中撤资
         for (uint256 i = 0; i < allocationsLength; i++) {
             // 计算应从该适配器撤资的资产数量
@@ -424,9 +442,11 @@ contract VaultSharesETH is ERC4626, IVaultShares, ReentrancyGuard, Ownable {
             // 如果撤资金额大于0，则调用适配器进行撤资
             if (amountToDivest > 0) {
                 IProtocolAdapter adapter = s_allocations[i].adapter;
-                adapter.divest(IERC20(asset()), amountToDivest);
+                uint256 actualDivested = adapter.divest(IERC20(asset()), amountToDivest);
+                totalDivested += actualDivested;
             }
         }
+        return totalDivested;
     }
 
     /*//////////////////////////////////////////////////////////////

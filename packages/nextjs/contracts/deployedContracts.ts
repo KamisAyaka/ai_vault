@@ -844,6 +844,13 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "setActive",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "setNotActive",
           inputs: [],
           outputs: [],
@@ -1497,7 +1504,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 3,
+      deployedOnBlock: 7,
     },
     AIAgentVaultManager: {
       address: "0xe1da8919f262ee86f9be05059c9280142cf23f48",
@@ -1876,7 +1883,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 3,
+      deployedOnBlock: 6,
     },
     VaultFactory: {
       address: "0xed1db453c3156ff3155a97ad217b3087d5dc5f6e",
@@ -2225,7 +2232,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 4,
+      deployedOnBlock: 8,
     },
     MockAavePool: {
       address: "0xf7cd8fa9b94db2aa972023b379c7f72c65e4de9d",
@@ -2581,625 +2588,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 5,
-    },
-    UniswapV3Adapter: {
-      address: "0xdfd787c807dea8d7e53311b779bc0c6a4704d286",
-      abi: [
-        {
-          type: "constructor",
-          inputs: [
-            {
-              name: "uniswapV3Router",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "positionManager",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "factory",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "quoter",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "UpdateTokenConfig",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-            {
-              name: "counterPartyToken",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-            {
-              name: "feeTier",
-              type: "uint24",
-              internalType: "uint24",
-            },
-            {
-              name: "tickLower",
-              type: "int24",
-              internalType: "int24",
-            },
-            {
-              name: "tickUpper",
-              type: "int24",
-              internalType: "int24",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "UpdateTokenSlippageTolerance",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-            {
-              name: "slippageTolerance",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "divest",
-          inputs: [
-            {
-              name: "asset",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "getName",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          stateMutability: "pure",
-        },
-        {
-          type: "function",
-          name: "getTokenConfig",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "tuple",
-              internalType: "struct UniswapV3Adapter.TokenConfig",
-              components: [
-                {
-                  name: "tokenId",
-                  type: "uint256",
-                  internalType: "uint256",
-                },
-                {
-                  name: "slippageTolerance",
-                  type: "uint256",
-                  internalType: "uint256",
-                },
-                {
-                  name: "counterPartyToken",
-                  type: "address",
-                  internalType: "contract IERC20",
-                },
-                {
-                  name: "feeTier",
-                  type: "uint24",
-                  internalType: "uint24",
-                },
-                {
-                  name: "tickLower",
-                  type: "int24",
-                  internalType: "int24",
-                },
-                {
-                  name: "tickUpper",
-                  type: "int24",
-                  internalType: "int24",
-                },
-                {
-                  name: "pool",
-                  type: "address",
-                  internalType: "contract IMinimalUniswapV3Pool",
-                },
-                {
-                  name: "VaultAddress",
-                  type: "address",
-                  internalType: "address",
-                },
-              ],
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "getTotalValue",
-          inputs: [
-            {
-              name: "asset",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "invest",
-          inputs: [
-            {
-              name: "asset",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "owner",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "renounceOwnership",
-          inputs: [],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "s_tokenConfigs",
-          inputs: [
-            {
-              name: "",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-          ],
-          outputs: [
-            {
-              name: "tokenId",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "slippageTolerance",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "counterPartyToken",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-            {
-              name: "feeTier",
-              type: "uint24",
-              internalType: "uint24",
-            },
-            {
-              name: "tickLower",
-              type: "int24",
-              internalType: "int24",
-            },
-            {
-              name: "tickUpper",
-              type: "int24",
-              internalType: "int24",
-            },
-            {
-              name: "pool",
-              type: "address",
-              internalType: "contract IMinimalUniswapV3Pool",
-            },
-            {
-              name: "VaultAddress",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "setTokenConfig",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-            {
-              name: "counterPartyToken",
-              type: "address",
-              internalType: "contract IERC20",
-            },
-            {
-              name: "slippageTolerance",
-              type: "uint256",
-              internalType: "uint256",
-            },
-            {
-              name: "feeTier",
-              type: "uint24",
-              internalType: "uint24",
-            },
-            {
-              name: "tickLower",
-              type: "int24",
-              internalType: "int24",
-            },
-            {
-              name: "tickUpper",
-              type: "int24",
-              internalType: "int24",
-            },
-            {
-              name: "VaultAddress",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "transferOwnership",
-          inputs: [
-            {
-              name: "newOwner",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "event",
-          name: "OwnershipTransferred",
-          inputs: [
-            {
-              name: "previousOwner",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "newOwner",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "TokenConfigReinvested",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              indexed: true,
-              internalType: "contract IERC20",
-            },
-            {
-              name: "newCounterPartyToken",
-              type: "address",
-              indexed: true,
-              internalType: "contract IERC20",
-            },
-            {
-              name: "feeTier",
-              type: "uint24",
-              indexed: false,
-              internalType: "uint24",
-            },
-            {
-              name: "tickLower",
-              type: "int24",
-              indexed: false,
-              internalType: "int24",
-            },
-            {
-              name: "tickUpper",
-              type: "int24",
-              indexed: false,
-              internalType: "int24",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "TokenConfigSet",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              indexed: true,
-              internalType: "contract IERC20",
-            },
-            {
-              name: "slippageTolerance",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-            {
-              name: "counterPartyToken",
-              type: "address",
-              indexed: true,
-              internalType: "contract IERC20",
-            },
-            {
-              name: "feeTier",
-              type: "uint24",
-              indexed: false,
-              internalType: "uint24",
-            },
-            {
-              name: "tickLower",
-              type: "int24",
-              indexed: false,
-              internalType: "int24",
-            },
-            {
-              name: "tickUpper",
-              type: "int24",
-              indexed: false,
-              internalType: "int24",
-            },
-            {
-              name: "vault",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "TokenConfigUpdated",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              indexed: true,
-              internalType: "contract IERC20",
-            },
-            {
-              name: "slippageTolerance",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "UniswapV3Divested",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              indexed: true,
-              internalType: "contract IERC20",
-            },
-            {
-              name: "tokenAmount",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-            {
-              name: "counterPartyTokenAmount",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-            {
-              name: "liquidity",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "UniswapV3Invested",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              indexed: true,
-              internalType: "contract IERC20",
-            },
-            {
-              name: "tokenAmount",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-            {
-              name: "counterPartyTokenAmount",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-            {
-              name: "liquidity",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "error",
-          name: "OnlyVaultCanCallThisFunction",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "OwnableInvalidOwner",
-          inputs: [
-            {
-              name: "owner",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "OwnableUnauthorizedAccount",
-          inputs: [
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "SafeCastOverflowedUintDowncast",
-          inputs: [
-            {
-              name: "bits",
-              type: "uint8",
-              internalType: "uint8",
-            },
-            {
-              name: "value",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "SafeERC20FailedOperation",
-          inputs: [
-            {
-              name: "token",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-        },
-        {
-          type: "error",
-          name: "UniswapV3Adapter__InvalidCounterPartyToken",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "UniswapV3Adapter__InvalidSlippageTolerance",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "UniswapV3Adapter__InvalidToken",
-          inputs: [],
-        },
-        {
-          type: "error",
-          name: "UniswapV3Adapter__NoLiquidityPosition",
-          inputs: [],
-        },
-      ],
-      inheritedFunctions: {},
-      deployedOnBlock: 16,
+      deployedOnBlock: 9,
     },
     AaveAdapter: {
-      address: "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e",
+      address: "0xc525e1bed21174d5615252a16ee2b283b894a318",
       abi: [
         {
           type: "constructor",
@@ -3495,277 +2887,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 14,
-    },
-    MockWETH9: {
-      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
-      abi: [
-        {
-          type: "function",
-          name: "allowance",
-          inputs: [
-            {
-              name: "owner",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "spender",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "approve",
-          inputs: [
-            {
-              name: "spender",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "balanceOf",
-          inputs: [
-            {
-              name: "account",
-              type: "address",
-              internalType: "address",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "decimals",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "uint8",
-              internalType: "uint8",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "deposit",
-          inputs: [],
-          outputs: [],
-          stateMutability: "payable",
-        },
-        {
-          type: "function",
-          name: "mint",
-          inputs: [
-            {
-              name: "to",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "name",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "symbol",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "totalSupply",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "transfer",
-          inputs: [
-            {
-              name: "to",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "transferFrom",
-          inputs: [
-            {
-              name: "from",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "to",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [
-            {
-              name: "",
-              type: "bool",
-              internalType: "bool",
-            },
-          ],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "function",
-          name: "withdraw",
-          inputs: [
-            {
-              name: "amount",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          outputs: [],
-          stateMutability: "nonpayable",
-        },
-        {
-          type: "event",
-          name: "Approval",
-          inputs: [
-            {
-              name: "owner",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "spender",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "value",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-        {
-          type: "event",
-          name: "Transfer",
-          inputs: [
-            {
-              name: "from",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "to",
-              type: "address",
-              indexed: true,
-              internalType: "address",
-            },
-            {
-              name: "value",
-              type: "uint256",
-              indexed: false,
-              internalType: "uint256",
-            },
-          ],
-          anonymous: false,
-        },
-      ],
-      inheritedFunctions: {},
-      deployedOnBlock: 2,
+      deployedOnBlock: 39,
     },
     VaultSharesETH: {
-      address: "0x4d8e02bbfcf205828a8352af4376b165e123d7b0",
+      address: "0x67f65b834aaac92c15c2eba9ff7e81f2d33a1cfd",
       abi: [
         {
           type: "constructor",
@@ -4311,6 +3436,13 @@ const deployedContracts = {
         {
           type: "function",
           name: "renounceOwnership",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "setActive",
           inputs: [],
           outputs: [],
           stateMutability: "nonpayable",
@@ -4981,10 +4113,277 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 18,
+      deployedOnBlock: 49,
+    },
+    MockWETH9: {
+      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
+      abi: [
+        {
+          type: "function",
+          name: "allowance",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "spender",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "approve",
+          inputs: [
+            {
+              name: "spender",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "balanceOf",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "decimals",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint8",
+              internalType: "uint8",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "deposit",
+          inputs: [],
+          outputs: [],
+          stateMutability: "payable",
+        },
+        {
+          type: "function",
+          name: "mint",
+          inputs: [
+            {
+              name: "to",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "name",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "symbol",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "totalSupply",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "transfer",
+          inputs: [
+            {
+              name: "to",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "transferFrom",
+          inputs: [
+            {
+              name: "from",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "to",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "withdraw",
+          inputs: [
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "Approval",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "spender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "Transfer",
+          inputs: [
+            {
+              name: "from",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "to",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 3,
     },
     UniswapV2Adapter: {
-      address: "0xdbd296711ec8ef9aacb623ee3f1c0922dce0d7b2",
+      address: "0xe8ecf644d9a3432dab3a0725308f265990eedca9",
       abi: [
         {
           type: "constructor",
@@ -5466,42 +4865,1010 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 15,
+      deployedOnBlock: 40,
     },
-    VaultShares: {
-      address: "0x0d8694f47cdc22bb8c6d2668a38d07a439f378f9",
+    UniswapV3Adapter: {
+      address: "0x3a1d75769758705cab1385377d4d88b8193a5f37",
       abi: [
         {
           type: "constructor",
           inputs: [
             {
-              name: "constructorData",
+              name: "uniswapV3Router",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "positionManager",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "factory",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "quoter",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "UpdateTokenConfig",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              internalType: "int24",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "UpdateTokenSlippageTolerance",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "divest",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "getName",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "pure",
+        },
+        {
+          type: "function",
+          name: "getTokenConfig",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
               type: "tuple",
-              internalType: "struct IVaultShares.ConstructorData",
+              internalType: "struct UniswapV3Adapter.TokenConfig",
               components: [
                 {
-                  name: "asset",
-                  type: "address",
-                  internalType: "contract IERC20",
-                },
-                {
-                  name: "Fee",
+                  name: "tokenId",
                   type: "uint256",
                   internalType: "uint256",
                 },
                 {
-                  name: "vaultName",
-                  type: "string",
-                  internalType: "string",
+                  name: "slippageTolerance",
+                  type: "uint256",
+                  internalType: "uint256",
                 },
                 {
-                  name: "vaultSymbol",
-                  type: "string",
-                  internalType: "string",
+                  name: "counterPartyToken",
+                  type: "address",
+                  internalType: "contract IERC20",
+                },
+                {
+                  name: "feeTier",
+                  type: "uint24",
+                  internalType: "uint24",
+                },
+                {
+                  name: "tickLower",
+                  type: "int24",
+                  internalType: "int24",
+                },
+                {
+                  name: "tickUpper",
+                  type: "int24",
+                  internalType: "int24",
+                },
+                {
+                  name: "pool",
+                  type: "address",
+                  internalType: "contract IMinimalUniswapV3Pool",
+                },
+                {
+                  name: "VaultAddress",
+                  type: "address",
+                  internalType: "address",
                 },
               ],
             },
           ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getTotalValue",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "invest",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "renounceOwnership",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "s_tokenConfigs",
+          inputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "tokenId",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "pool",
+              type: "address",
+              internalType: "contract IMinimalUniswapV3Pool",
+            },
+            {
+              name: "VaultAddress",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "setTokenConfig",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "VaultAddress",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "transferOwnership",
+          inputs: [
+            {
+              name: "newOwner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "OwnershipTransferred",
+          inputs: [
+            {
+              name: "previousOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenConfigReinvested",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "newCounterPartyToken",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              indexed: false,
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              indexed: false,
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              indexed: false,
+              internalType: "int24",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenConfigSet",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              indexed: false,
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              indexed: false,
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              indexed: false,
+              internalType: "int24",
+            },
+            {
+              name: "vault",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenConfigUpdated",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "UniswapV3Divested",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "tokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyTokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "liquidity",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "UniswapV3Invested",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "tokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyTokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "liquidity",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "OnlyVaultCanCallThisFunction",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "OwnableInvalidOwner",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "SafeCastOverflowedUintDowncast",
+          inputs: [
+            {
+              name: "bits",
+              type: "uint8",
+              internalType: "uint8",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "SafeERC20FailedOperation",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "UniswapV3Adapter__InvalidCounterPartyToken",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "UniswapV3Adapter__InvalidSlippageTolerance",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "UniswapV3Adapter__InvalidToken",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "UniswapV3Adapter__NoLiquidityPosition",
+          inputs: [],
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 41,
+    },
+  },
+  11155111: {
+    AIAgentVaultManager: {
+      address: "0x6e997c66181ae215c6a3e5423ce4aa6ffb4cfff2",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "addAdapter",
+          inputs: [
+            {
+              name: "adapter",
+              type: "address",
+              internalType: "contract IProtocolAdapter",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "addVault",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "vaultAddress",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "execute",
+          inputs: [
+            {
+              name: "adapterIndex",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "data",
+              type: "bytes",
+              internalType: "bytes",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "executeBatch",
+          inputs: [
+            {
+              name: "adapterIndices",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "values",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "data",
+              type: "bytes[]",
+              internalType: "bytes[]",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "getAllAdapters",
+          inputs: [],
+          outputs: [
+            {
+              name: "adapters",
+              type: "address[]",
+              internalType: "contract IProtocolAdapter[]",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "isAdapterApproved",
+          inputs: [
+            {
+              name: "adapter",
+              type: "address",
+              internalType: "contract IProtocolAdapter",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "partialUpdateHoldingAllocation",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "divestAdapterIndices",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "divestAmounts",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "investAdapterIndices",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "investAmounts",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "investAllocations",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "renounceOwnership",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "setVaultNotActive",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "transferOwnership",
+          inputs: [
+            {
+              name: "newOwner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "updateHoldingAllocation",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "adapterIndices",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "allocationData",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "withdrawAllInvestments",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "AdapterAddedToList",
+          inputs: [
+            {
+              name: "adapter",
+              type: "address",
+              indexed: true,
+              internalType: "contract IProtocolAdapter",
+            },
+            {
+              name: "adapterName",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "OwnershipTransferred",
+          inputs: [
+            {
+              name: "previousOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "VaultCreatedAndRegistered",
+          inputs: [
+            {
+              name: "vault",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "vaultName",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "AIAgentVaultManager__AdapterAlreadyApproved",
+          inputs: [
+            {
+              name: "adapter",
+              type: "address",
+              internalType: "contract IProtocolAdapter",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "AIAgentVaultManager__AdapterCallFailed",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "AIAgentVaultManager__AdapterNotApproved",
+          inputs: [
+            {
+              name: "adapter",
+              type: "address",
+              internalType: "contract IProtocolAdapter",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "AIAgentVaultManager__BatchLengthMismatch",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "AIAgentVaultManager__InvalidAdapterIndex",
+          inputs: [
+            {
+              name: "index",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "AIAgentVaultManager__InvalidAllocation",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "AIAgentVaultManager__VaultNotRegistered",
+          inputs: [
+            {
+              name: "vault",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableInvalidOwner",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 9347376,
+    },
+    VaultImplementation: {
+      address: "0x32cac3f333b5ced4846ded2c4efa17350741b8b1",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [],
           stateMutability: "nonpayable",
         },
         {
@@ -5671,6 +6038,46 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "initialize",
+          inputs: [
+            {
+              name: "constructorData",
+              type: "tuple",
+              internalType: "struct IVaultShares.ConstructorData",
+              components: [
+                {
+                  name: "asset",
+                  type: "address",
+                  internalType: "contract IERC20",
+                },
+                {
+                  name: "Fee",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "vaultName",
+                  type: "string",
+                  internalType: "string",
+                },
+                {
+                  name: "vaultSymbol",
+                  type: "string",
+                  internalType: "string",
+                },
+              ],
+            },
+            {
+              name: "vaultManager",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
         },
         {
           type: "function",
@@ -5945,6 +6352,13 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "setActive",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "setNotActive",
           inputs: [],
           outputs: [],
@@ -6114,6 +6528,2998 @@ const deployedContracts = {
           name: "withdrawAllInvestments",
           inputs: [],
           outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "Approval",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "spender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "Deposit",
+          inputs: [
+            {
+              name: "assets",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "userShares",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "Deposit",
+          inputs: [
+            {
+              name: "sender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "owner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "assets",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "shares",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "HoldingAllocationUpdated",
+          inputs: [
+            {
+              name: "allocations",
+              type: "tuple[]",
+              indexed: false,
+              internalType: "struct IVaultShares.Allocation[]",
+              components: [
+                {
+                  name: "adapter",
+                  type: "address",
+                  internalType: "contract IProtocolAdapter",
+                },
+                {
+                  name: "allocation",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+              ],
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "Initialized",
+          inputs: [
+            {
+              name: "version",
+              type: "uint64",
+              indexed: false,
+              internalType: "uint64",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "NoLongerActive",
+          inputs: [],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "OwnershipTransferred",
+          inputs: [
+            {
+              name: "previousOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "Redeem",
+          inputs: [
+            {
+              name: "assets",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "shares",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "Transfer",
+          inputs: [
+            {
+              name: "from",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "to",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "Withdraw",
+          inputs: [
+            {
+              name: "sender",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "owner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "assets",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "shares",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "ERC20InsufficientAllowance",
+          inputs: [
+            {
+              name: "spender",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "allowance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "needed",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ERC20InsufficientBalance",
+          inputs: [
+            {
+              name: "sender",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "balance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "needed",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ERC20InvalidApprover",
+          inputs: [
+            {
+              name: "approver",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ERC20InvalidReceiver",
+          inputs: [
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ERC20InvalidSender",
+          inputs: [
+            {
+              name: "sender",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ERC20InvalidSpender",
+          inputs: [
+            {
+              name: "spender",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ERC4626ExceededMaxDeposit",
+          inputs: [
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "assets",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "max",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ERC4626ExceededMaxMint",
+          inputs: [
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "max",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ERC4626ExceededMaxRedeem",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "max",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ERC4626ExceededMaxWithdraw",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "assets",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "max",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "InvalidInitialization",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "NotInitializing",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "OwnableInvalidOwner",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "ReentrancyGuardReentrantCall",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "SafeERC20FailedOperation",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "VaultImplementation__AlreadyInitialized",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "VaultImplementation__DepositMoreThanMax",
+          inputs: [
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "max",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "VaultImplementation__InvalidAllocation",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "VaultImplementation__VaultNotActive",
+          inputs: [],
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 9347376,
+    },
+    VaultFactory: {
+      address: "0x9b20939e88d9072e2f08f44cde24df0e78dffaae",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [
+            {
+              name: "_vaultImplementation",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "_vaultManager",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "createVault",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "vaultName",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "vaultSymbol",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "fee",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "vault",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "createVaultsBatch",
+          inputs: [
+            {
+              name: "assets",
+              type: "address[]",
+              internalType: "contract IERC20[]",
+            },
+            {
+              name: "vaultNames",
+              type: "string[]",
+              internalType: "string[]",
+            },
+            {
+              name: "vaultSymbols",
+              type: "string[]",
+              internalType: "string[]",
+            },
+            {
+              name: "fees",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+          ],
+          outputs: [
+            {
+              name: "vaults_",
+              type: "address[]",
+              internalType: "address[]",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "getVault",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "hasVault",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "renounceOwnership",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "transferOwnership",
+          inputs: [
+            {
+              name: "newOwner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "vaultImplementation",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "vaultManager",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "vaults",
+          inputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "event",
+          name: "OwnershipTransferred",
+          inputs: [
+            {
+              name: "previousOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "VaultCreated",
+          inputs: [
+            {
+              name: "vault",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "asset",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "creator",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "vaultName",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+            {
+              name: "vaultSymbol",
+              type: "string",
+              indexed: false,
+              internalType: "string",
+            },
+            {
+              name: "fee",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "FailedDeployment",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "InsufficientBalance",
+          inputs: [
+            {
+              name: "balance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "needed",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableInvalidOwner",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "VaultFactory__InvalidFee",
+          inputs: [
+            {
+              name: "fee",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "VaultFactory__InvalidImplementation",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "VaultFactory__InvalidVaultName",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "VaultFactory__InvalidVaultSymbol",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "VaultFactory__VaultAlreadyExists",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 9347376,
+    },
+    AaveAdapter: {
+      address: "0x6005ec07f4e4f61be7526695445f3274b360ce30",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [
+            {
+              name: "aavePool",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "divest",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "amountOfAssetReturned",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "getName",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "pure",
+        },
+        {
+          type: "function",
+          name: "getTotalValue",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "i_aavePool",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract IPool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "invest",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "renounceOwnership",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "setTokenVault",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "vault",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "transferOwnership",
+          inputs: [
+            {
+              name: "newOwner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "Divested",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "requestedAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "actualAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "Invested",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "aTokenBalance",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "OwnershipTransferred",
+          inputs: [
+            {
+              name: "previousOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenVaultSet",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "vault",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "AaveAdapter__VaultNotValid",
+          inputs: [
+            {
+              name: "vault",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OnlyVaultCanCallThisFunction",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "OwnableInvalidOwner",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "SafeERC20FailedOperation",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 9347376,
+    },
+    UniswapV2Adapter: {
+      address: "0x386a472650e95229ff59b7b196f0fc2fb93b735e",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [
+            {
+              name: "uniswapRouter",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "uniswapFactory",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "UpdateTokenSlippageTolerance",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "divest",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "getName",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "pure",
+        },
+        {
+          type: "function",
+          name: "getTokenConfig",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "tuple",
+              internalType: "struct UniswapV2Adapter.TokenConfig",
+              components: [
+                {
+                  name: "slippageTolerance",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "counterPartyToken",
+                  type: "address",
+                  internalType: "contract IERC20",
+                },
+                {
+                  name: "VaultAddress",
+                  type: "address",
+                  internalType: "address",
+                },
+                {
+                  name: "pair",
+                  type: "address",
+                  internalType: "contract IUniswapV2Pair",
+                },
+              ],
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getTotalValue",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "initializeFactory",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "invest",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "renounceOwnership",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "s_tokenConfigs",
+          inputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "VaultAddress",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "pair",
+              type: "address",
+              internalType: "contract IUniswapV2Pair",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "setTokenConfig",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "VaultAddress",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "transferOwnership",
+          inputs: [
+            {
+              name: "newOwner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "updateTokenConfigAndReinvest",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "OwnershipTransferred",
+          inputs: [
+            {
+              name: "previousOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenConfigReinvested",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "newCounterPartyToken",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenConfigSet",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "vault",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenConfigUpdated",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "UniswapDivested",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "tokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyTokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "liquidity",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "UniswapInvested",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "tokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyTokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "liquidity",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "OnlyVaultCanCallThisFunction",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "OwnableInvalidOwner",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "SafeERC20FailedOperation",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "UniswapAdapter__InvalidCounterPartyToken",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "UniswapAdapter__InvalidSlippageTolerance",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "UniswapAdapter__InvalidToken",
+          inputs: [],
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 9347376,
+    },
+    UniswapV3Adapter: {
+      address: "0x1206dfd237894ae33a16d16e84ec4c245beb1800",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [
+            {
+              name: "uniswapV3Router",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "positionManager",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "factory",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "quoter",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "UpdateTokenConfig",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              internalType: "int24",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "UpdateTokenSlippageTolerance",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "divest",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "getName",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "pure",
+        },
+        {
+          type: "function",
+          name: "getTokenConfig",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "tuple",
+              internalType: "struct UniswapV3Adapter.TokenConfig",
+              components: [
+                {
+                  name: "tokenId",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "slippageTolerance",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "counterPartyToken",
+                  type: "address",
+                  internalType: "contract IERC20",
+                },
+                {
+                  name: "feeTier",
+                  type: "uint24",
+                  internalType: "uint24",
+                },
+                {
+                  name: "tickLower",
+                  type: "int24",
+                  internalType: "int24",
+                },
+                {
+                  name: "tickUpper",
+                  type: "int24",
+                  internalType: "int24",
+                },
+                {
+                  name: "pool",
+                  type: "address",
+                  internalType: "contract IMinimalUniswapV3Pool",
+                },
+                {
+                  name: "VaultAddress",
+                  type: "address",
+                  internalType: "address",
+                },
+              ],
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getTotalValue",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "invest",
+          inputs: [
+            {
+              name: "asset",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "renounceOwnership",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "s_tokenConfigs",
+          inputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+          ],
+          outputs: [
+            {
+              name: "tokenId",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "pool",
+              type: "address",
+              internalType: "contract IMinimalUniswapV3Pool",
+            },
+            {
+              name: "VaultAddress",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "setTokenConfig",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              internalType: "int24",
+            },
+            {
+              name: "VaultAddress",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "transferOwnership",
+          inputs: [
+            {
+              name: "newOwner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "event",
+          name: "OwnershipTransferred",
+          inputs: [
+            {
+              name: "previousOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+            {
+              name: "newOwner",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenConfigReinvested",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "newCounterPartyToken",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              indexed: false,
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              indexed: false,
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              indexed: false,
+              internalType: "int24",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenConfigSet",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyToken",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "feeTier",
+              type: "uint24",
+              indexed: false,
+              internalType: "uint24",
+            },
+            {
+              name: "tickLower",
+              type: "int24",
+              indexed: false,
+              internalType: "int24",
+            },
+            {
+              name: "tickUpper",
+              type: "int24",
+              indexed: false,
+              internalType: "int24",
+            },
+            {
+              name: "vault",
+              type: "address",
+              indexed: true,
+              internalType: "address",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "TokenConfigUpdated",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "slippageTolerance",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "UniswapV3Divested",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "tokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyTokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "liquidity",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "UniswapV3Invested",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              indexed: true,
+              internalType: "contract IERC20",
+            },
+            {
+              name: "tokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "counterPartyTokenAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "liquidity",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "error",
+          name: "OnlyVaultCanCallThisFunction",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "OwnableInvalidOwner",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "OwnableUnauthorizedAccount",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "SafeCastOverflowedUintDowncast",
+          inputs: [
+            {
+              name: "bits",
+              type: "uint8",
+              internalType: "uint8",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "SafeERC20FailedOperation",
+          inputs: [
+            {
+              name: "token",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
+        {
+          type: "error",
+          name: "UniswapV3Adapter__InvalidCounterPartyToken",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "UniswapV3Adapter__InvalidSlippageTolerance",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "UniswapV3Adapter__InvalidToken",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "UniswapV3Adapter__NoLiquidityPosition",
+          inputs: [],
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 9347376,
+    },
+    VaultSharesETH: {
+      address: "0x3e6c65b902385921ead89369569f71e571fa1e49",
+      abi: [
+        {
+          type: "constructor",
+          inputs: [
+            {
+              name: "constructorData",
+              type: "tuple",
+              internalType: "struct IVaultShares.ConstructorData",
+              components: [
+                {
+                  name: "asset",
+                  type: "address",
+                  internalType: "contract IERC20",
+                },
+                {
+                  name: "Fee",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "vaultName",
+                  type: "string",
+                  internalType: "string",
+                },
+                {
+                  name: "vaultSymbol",
+                  type: "string",
+                  internalType: "string",
+                },
+              ],
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "receive",
+          stateMutability: "payable",
+        },
+        {
+          type: "function",
+          name: "allowance",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "spender",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "approve",
+          inputs: [
+            {
+              name: "spender",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "asset",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "balanceOf",
+          inputs: [
+            {
+              name: "account",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "convertToAssets",
+          inputs: [
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "convertToShares",
+          inputs: [
+            {
+              name: "assets",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "decimals",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint8",
+              internalType: "uint8",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "deposit",
+          inputs: [
+            {
+              name: "assets",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "depositETH",
+          inputs: [
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "payable",
+        },
+        {
+          type: "function",
+          name: "getIsActive",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "maxDeposit",
+          inputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "maxMint",
+          inputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "maxRedeem",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "maxWithdraw",
+          inputs: [
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "mint",
+          inputs: [
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "mintETH",
+          inputs: [
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "payable",
+        },
+        {
+          type: "function",
+          name: "name",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "partialUpdateHoldingAllocation",
+          inputs: [
+            {
+              name: "divestAdapterIndices",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "divestAmounts",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "investAdapterIndices",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "investAmounts",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+            {
+              name: "investAllocations",
+              type: "uint256[]",
+              internalType: "uint256[]",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "previewDeposit",
+          inputs: [
+            {
+              name: "assets",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "previewMint",
+          inputs: [
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "previewRedeem",
+          inputs: [
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "previewWithdraw",
+          inputs: [
+            {
+              name: "assets",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "redeem",
+          inputs: [
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "redeemETH",
+          inputs: [
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "ownerAddr",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "assets",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "renounceOwnership",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "setActive",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "setNotActive",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "symbol",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "string",
+              internalType: "string",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "totalAssets",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "totalSupply",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "transfer",
+          inputs: [
+            {
+              name: "to",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "transferFrom",
+          inputs: [
+            {
+              name: "from",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "to",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "value",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "transferOwnership",
+          inputs: [
+            {
+              name: "newOwner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "updateHoldingAllocation",
+          inputs: [
+            {
+              name: "allocations",
+              type: "tuple[]",
+              internalType: "struct IVaultShares.Allocation[]",
+              components: [
+                {
+                  name: "adapter",
+                  type: "address",
+                  internalType: "contract IProtocolAdapter",
+                },
+                {
+                  name: "allocation",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+              ],
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "withdraw",
+          inputs: [
+            {
+              name: "assets",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "owner",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "withdrawAllInvestments",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "withdrawETH",
+          inputs: [
+            {
+              name: "assets",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "receiver",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "ownerAddr",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "shares",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
           stateMutability: "nonpayable",
         },
         {
@@ -6544,7 +9950,7 @@ const deployedContracts = {
         },
         {
           type: "error",
-          name: "VaultShares__DepositMoreThanMax",
+          name: "VaultSharesETH__DepositMoreThanMax",
           inputs: [
             {
               name: "amount",
@@ -6560,17 +9966,27 @@ const deployedContracts = {
         },
         {
           type: "error",
-          name: "VaultShares__InvalidAllocation",
+          name: "VaultSharesETH__ETHTransferFailed",
           inputs: [],
         },
         {
           type: "error",
-          name: "VaultShares__VaultNotActive",
+          name: "VaultSharesETH__InsufficientETHSent",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "VaultSharesETH__MustSendETH",
+          inputs: [],
+        },
+        {
+          type: "error",
+          name: "VaultSharesETH__VaultNotActive",
           inputs: [],
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 49,
+      deployedOnBlock: 9347376,
     },
   },
 } as const;

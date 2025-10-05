@@ -510,8 +510,8 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
     {
         uint256 tokenId = config.tokenId;
         if (tokenId == 0) {
-            // 如果没有流动性头寸，抛出错误
-            revert UniswapV3Adapter__NoLiquidityPosition();
+            // 如果没有流动性头寸，直接返回0（适配器已经空了）
+            return 0;
         }
 
         // 局部变量用于事件发射
@@ -558,11 +558,11 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         // 将配对资产兑换回基础资产
         uint256 counterPartyTokenBalance = config.counterPartyToken.balanceOf(address(this));
         if (counterPartyTokenBalance > 0) {
-            _swapToken(
+            uint256 swapAmount = _swapToken(
                 config.counterPartyToken, asset, config.feeTier, counterPartyTokenBalance, config.slippageTolerance
             );
             // 更新实际撤资的代币数量（包括兑换后的）
-            actualTokenAmount = asset.balanceOf(address(this));
+            actualTokenAmount += swapAmount;
         }
 
         // 发射事件，包含所有4个参数（actualTokenAmount是交换后的最终值）

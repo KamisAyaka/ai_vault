@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
-import { useAccount } from "wagmi";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useAccount, useWriteContract } from "wagmi";
+import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -24,6 +24,13 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
   const { address: connectedAddress } = useAccount();
 
   const assetDecimals = 18; // ETH always uses 18 decimals
+
+  const { data: vaultContractInfo } = useDeployedContractInfo({
+    contractName: "VaultSharesETH",
+  });
+
+  const { writeContractAsync } = useWriteContract();
+  const writeTx = useTransactor();
 
   // 计算用户持仓
   const userPosition = useMemo(() => {
@@ -75,11 +82,6 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
 
     return { shares: userShares, value: currentValue, profit };
   }, [connectedAddress, vault]);
-
-  // 取款合约
-  const { writeContractAsync: withdrawAsync } = useScaffoldWriteContract({
-    contractName: "VaultImplementation",
-  });
 
   // 计算需要赎回的份额或将获得的资产
   const estimation = useMemo(() => {
@@ -178,50 +180,55 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
   const handleWithdraw = async () => {
     if (!connectedAddress || !amount) return;
 
+    if (!vaultContractInfo?.abi) {
+      notification.error("Vault contract ABI not available");
+      return;
+    }
+
     setIsWithdrawing(true);
     try {
       if (mode === "assets") {
         // 按资产数量取款 - 使用 withdrawETH
         const assetAmount = parseUnits(amount, assetDecimals);
 
-        await withdrawAsync(
-          {
+        const makeWriteWithParams = () =>
+          writeContractAsync({
             address: vault.address as `0x${string}`,
+            abi: vaultContractInfo.abi,
             functionName: "withdrawETH",
             args: [assetAmount, connectedAddress, connectedAddress],
-            value: 0n, // No ETH sent for withdrawal
+          });
+
+        await writeTx(makeWriteWithParams, {
+          onBlockConfirmation: receipt => {
+            console.debug("Withdraw ETH confirmed", receipt);
+            notification.success(`成功取款 ${amount} ETH!`);
+            setAmount("");
+            onSuccess?.();
+            onClose();
           },
-          {
-            onBlockConfirmation: receipt => {
-              console.debug("Withdraw ETH confirmed", receipt);
-              notification.success(`成功取款 ${amount} ETH!`);
-              setAmount("");
-              onSuccess?.();
-              onClose();
-            },
-          },
-        );
+        });
       } else {
         // 按份额赎回 - 使用 redeemETH
         const shareAmount = parseUnits(amount, assetDecimals);
 
-        await withdrawAsync(
-          {
+        const makeWriteWithParams = () =>
+          writeContractAsync({
             address: vault.address as `0x${string}`,
+            abi: vaultContractInfo.abi,
             functionName: "redeemETH",
             args: [shareAmount, connectedAddress, connectedAddress],
-            value: 0n, // No ETH sent for redemption
+          });
+
+        await writeTx(makeWriteWithParams, {
+          onBlockConfirmation: receipt => {
+            console.debug("Redeem ETH confirmed", receipt);
+            notification.success(`成功赎回 ${amount} vETH!`);
+            setAmount("");
+            onSuccess?.();
+            onClose();
           },
-          {
-            onBlockConfirmation: receipt => {
-              console.debug("Redeem ETH confirmed", receipt);
-              notification.success(`成功赎回 ${amount} vETH!`);
-              setAmount("");
-              onSuccess?.();
-              onClose();
-            },
-          },
-        );
+        });
       }
     } catch (error: any) {
       console.error("Withdraw/Redeem ETH failed:", error);

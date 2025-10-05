@@ -143,10 +143,10 @@ contract SimulateTrading is Script {
         wethTokenAddress = 0xb19b36b1456E65E3A6D514D3F715f204BD59f431; // MockWETH9
         usdcVaultAddress = 0x70b3Fc57004649cC6Ff54D39AB7F45b01D292AA1; // VaultImplementation (USDC)
         usdtVaultAddress = 0xdF1967891c3329e107259CA530574Fa1036B17c3; // VaultImplementation (USDT)
-        ethVaultAddress = 0xF1078fD568Ad76E49E6F88D1fF485402a086976b; // VaultSharesETH
-        aaveAdapterAddress = 0xf56AA3aCedDf88Ab12E494d0B96DA3C09a5d264e; // AaveAdapter
-        uniswapV2AdapterAddress = 0xdBD296711eC8eF9Aacb623ee3F1C0922dce0D7b2; // UniswapV2Adapter
-        uniswapV3AdapterAddress = 0xDFD787c807DEA8d7e53311b779BC0c6a4704D286; // UniswapV3Adapter
+        ethVaultAddress = 0x67f65B834aaAc92C15c2EBa9FF7E81f2d33a1cFD; // VaultSharesETH
+        aaveAdapterAddress = 0xc525e1beD21174d5615252a16eE2b283B894A318; // AaveAdapter
+        uniswapV2AdapterAddress = 0xE8ecF644D9a3432Dab3A0725308f265990eEDca9; // UniswapV2Adapter
+        uniswapV3AdapterAddress = 0x3A1D75769758705caB1385377d4D88b8193A5f37; // UniswapV3Adapter
     }
 
     /**

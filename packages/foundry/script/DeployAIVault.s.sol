@@ -87,6 +87,9 @@ contract DeployAIVault is ScaffoldETHDeploy {
         // 8. Output deployment info
         _logDeploymentInfo();
 
+        // 9. Transfer ownership to admin
+        _transferOwnershipToAdmin();
+
         console.log("=== AI Vault System Deployment Completed ===");
     }
 
@@ -126,6 +129,10 @@ contract DeployAIVault is ScaffoldETHDeploy {
         manager = new AIAgentVaultManager(); // 不再需要 WETH 参数
         console.log("Manager deployed at:", address(manager));
 
+        // Note: Ownership transfer should be done after deployment completes
+        // Use TransferOwnership.s.sol script to transfer ownership to admin
+        console.log("Manager owner:", manager.owner());
+
         // Record deployment
         deployments.push(Deployment("AIAgentVaultManager", address(manager)));
     }
@@ -157,8 +164,11 @@ contract DeployAIVault is ScaffoldETHDeploy {
         mockAavePool = new MockAavePool();
         console.log("MockAavePool deployed at:", address(mockAavePool));
 
-        // Mint USDC to MockAavePool for divestment
-        usdc.mint(address(mockAavePool), 1000000 * 10 ** 18);
+        // Mint tokens to MockAavePool for divestment - need all token types
+        usdc.mint(address(mockAavePool), 10000000 * 10 ** 18);
+        usdt.mint(address(mockAavePool), 10000000 * 10 ** 18);
+        weth.mint(address(mockAavePool), 10000000 * 10 ** 18);
+        console.log("MockAavePool funded with USDC, USDT, and WETH");
 
         // UniswapV2 Mock
         mockUniswapV2Factory = new MockUniswapV2Factory();
@@ -189,8 +199,16 @@ contract DeployAIVault is ScaffoldETHDeploy {
         realisticPositionManager.setFactory(address(realisticUniswapV3Factory));
 
         // Mint tokens to RealisticNonfungiblePositionManager for divestment
-        usdc.mint(address(realisticPositionManager), 1000000 * 10 ** 18);
-        weth.mint(address(realisticPositionManager), 1000000 * 10 ** 18);
+        usdc.mint(address(realisticPositionManager), 10000000 * 10 ** 18);
+        usdt.mint(address(realisticPositionManager), 10000000 * 10 ** 18);
+        weth.mint(address(realisticPositionManager), 10000000 * 10 ** 18);
+        console.log("RealisticPositionManager funded with USDC, USDT, and WETH");
+
+        // Add initial liquidity to USDC/WETH pool
+        _addInitialLiquidityToUniswapV3Pool(usdcPoolAddress, usdc, weth);
+
+        // Add initial liquidity to USDT/WETH pool
+        _addInitialLiquidityToUniswapV3Pool(usdtPoolAddress, usdt, weth);
 
         console.log("RealisticSwapRouter deployed at:", address(realisticUniswapV3Router));
         console.log("RealisticPositionManager deployed at:", address(realisticPositionManager));
@@ -291,10 +309,11 @@ contract DeployAIVault is ScaffoldETHDeploy {
         manager.addAdapter(IProtocolAdapter(address(uniswapV3Adapter)));
         console.log("All adapters added to manager");
 
-        // 2. Configure Aave adapter for stablecoins
+        // 2. Configure Aave adapter for all tokens
         _configureAaveForToken(usdc, usdcVault);
         _configureAaveForToken(usdt, usdtVault);
-        console.log("Aave adapter configured for stablecoins");
+        _configureAaveForToken(weth, ethVault);
+        console.log("Aave adapter configured for all tokens");
 
         // 3. Configure UniswapV2 adapter for tokens
         _configureUniswapV2ForToken(usdc, usdcVault);
@@ -304,18 +323,20 @@ contract DeployAIVault is ScaffoldETHDeploy {
         // 4. Configure UniswapV3 adapter for tokens
         _configureUniswapV3ForToken(usdc, usdcVault);
         _configureUniswapV3ForToken(usdt, usdtVault);
+        _configureUniswapV3ForETH(weth, ethVault);
         console.log("UniswapV3 adapter configured for tokens");
 
         // 5. Set initial asset allocation for vaults
         _setAssetAllocation(usdc, usdcVault);
         _setAssetAllocation(usdt, usdtVault);
+        _setAssetAllocationForETH(weth, ethVault);
         console.log("Asset allocation set for vaults");
     }
 
     /**
      * @notice Configure Aave adapter for a specific token
      */
-    function _configureAaveForToken(MockToken token, address vault) internal {
+    function _configureAaveForToken(IERC20 token, address vault) internal {
         mockAavePool.createAToken(address(token));
         mockAavePool.setReserveNormalizedIncome(address(token), 1e27);
 
@@ -371,6 +392,25 @@ contract DeployAIVault is ScaffoldETHDeploy {
     }
 
     /**
+     * @notice Configure UniswapV3 adapter for ETH vault
+     */
+    function _configureUniswapV3ForETH(MockWETH9 token, address vault) internal {
+        // Call setTokenConfig via VaultManager.execute()
+        // ABI encode: setTokenConfig(IERC20 token, IERC20 counterPartyToken, uint256 slippageTolerance, uint24 feeTier, int24 tickLower, int24 tickUpper, address VaultAddress)
+        bytes memory data = abi.encodeWithSignature(
+            "setTokenConfig(address,address,uint256,uint24,int24,int24,address)",
+            address(token),
+            address(usdc), // ETH 使用 USDC 作为交易对
+            5000, // 50% slippage - 非常宽松的滑点设置
+            3000, // 0.3% fee tier
+            -600, // tick lower
+            600, // tick upper
+            vault
+        );
+        manager.execute(2, 0, data); // UniswapV3 adapter index = 2
+    }
+
+    /**
      * @notice Set asset allocation for a specific token
      */
     function _setAssetAllocation(MockToken token, address) internal {
@@ -388,11 +428,27 @@ contract DeployAIVault is ScaffoldETHDeploy {
     }
 
     /**
+     * @notice Set asset allocation for ETH vault (Aave + UniswapV3)
+     */
+    function _setAssetAllocationForETH(MockWETH9 token, address) internal {
+        uint256[] memory adapterIndices = new uint256[](2);
+        adapterIndices[0] = 0; // Aave
+        adapterIndices[1] = 2; // UniswapV3
+
+        uint256[] memory allocationData = new uint256[](2);
+        allocationData[0] = 500; // 50% to Aave
+        allocationData[1] = 500; // 50% to UniswapV3
+
+        manager.updateHoldingAllocation(token, adapterIndices, allocationData);
+    }
+
+    /**
      * @notice Add initial liquidity to UniswapV2 pair
      */
     function _addInitialLiquidityToPair(address pairAddress, MockToken token) internal {
         // Mint tokens to deployer for adding liquidity
-        uint256 liquidityAmount = 100000 * 10 ** 18; // 100000 tokens
+        // Increased to 10M to support larger vault deposits
+        uint256 liquidityAmount = 10000000 * 10 ** 18; // 10M tokens
         token.mint(deployer, liquidityAmount);
         weth.mint(deployer, liquidityAmount);
 
@@ -440,39 +496,67 @@ contract DeployAIVault is ScaffoldETHDeploy {
     }
 
     /**
-     * @notice Get deployed contract addresses (for other scripts to call)
+     * @notice Add initial liquidity to UniswapV3 pool
      */
-    function getDeployedAddresses()
-        external
-        view
-        returns (
-            address _vaultFactory,
-            address _vaultImplementation,
-            address _manager,
-            address _usdc,
-            address _usdt,
-            address _weth,
-            address _usdcVault,
-            address _usdtVault,
-            address _ethVault,
-            address _aaveAdapter,
-            address _uniswapV2Adapter,
-            address _uniswapV3Adapter
-        )
-    {
-        return (
-            address(vaultFactory),
-            address(vaultImplementation),
-            address(manager),
-            address(usdc),
-            address(usdt),
-            address(weth),
-            usdcVault,
-            usdtVault,
-            ethVault,
-            address(aaveAdapter),
-            address(uniswapV2Adapter),
-            address(uniswapV3Adapter)
-        );
+    function _addInitialLiquidityToUniswapV3Pool(address poolAddress, IERC20 token0, IERC20 token1) internal {
+        console.log("Adding liquidity to pool:", poolAddress);
+
+        // Mint tokens to deployer for adding liquidity
+        // Increased to 10M to support larger vault deposits
+        uint256 liquidityAmount = 10000000 * 10 ** 18;
+
+        // Use low-level call for tokens that may be MockToken or MockWETH9
+        (bool success0,) =
+            address(token0).call(abi.encodeWithSignature("mint(address,uint256)", deployer, liquidityAmount));
+        require(success0, "Token0 mint failed");
+        console.log("Token0 minted:", liquidityAmount);
+
+        (bool success1,) =
+            address(token1).call(abi.encodeWithSignature("mint(address,uint256)", deployer, liquidityAmount));
+        require(success1, "Token1 mint failed");
+        console.log("Token1 minted:", liquidityAmount);
+
+        // Approve position manager to spend tokens
+        token0.approve(address(realisticPositionManager), liquidityAmount);
+        token1.approve(address(realisticPositionManager), liquidityAmount);
+        console.log("Tokens approved for position manager");
+
+        // Create mint params using the struct from RealisticNonfungiblePositionManager
+        RealisticNonfungiblePositionManager.MintParams memory params = RealisticNonfungiblePositionManager.MintParams({
+            token0: address(token0),
+            token1: address(token1),
+            fee: 3000,
+            tickLower: -887200, // Near full range (valid tick spacing for fee tier 3000)
+            tickUpper: 887200, // Near full range
+            amount0Desired: liquidityAmount,
+            amount1Desired: liquidityAmount,
+            amount0Min: 0,
+            amount1Min: 0,
+            recipient: deployer,
+            deadline: block.timestamp + 1000
+        });
+
+        // Add liquidity to pool
+        (uint256 tokenId, uint128 liquidity,,) = realisticPositionManager.mint(params);
+        console.log("Liquidity added - TokenId:", tokenId, "Liquidity:", liquidity);
+    }
+
+    /**
+     * @notice Transfer VaultManager ownership to admin
+     */
+    function _transferOwnershipToAdmin() internal {
+        console.log("\n--- Transferring Ownership to Admin ---");
+
+        address admin = 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65;
+
+        console.log("Current manager owner:", manager.owner());
+        console.log("Transferring to admin:", admin);
+
+        manager.transferOwnership(admin);
+
+        console.log("Ownership transferred successfully!");
+        console.log("New manager owner:", manager.owner());
+        console.log("\nIMPORTANT: Update backend .env with admin private key:");
+        console.log("PRIVATE_KEY=47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a");
     }
 }

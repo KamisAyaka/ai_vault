@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { erc20Abi, formatUnits, isAddress, parseUnits } from "viem";
 import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -51,10 +51,12 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
 
   const { writeContractAsync: writeTokenAsync } = useWriteContract();
 
-  // 存款合约
-  const { writeContractAsync: depositAsync } = useScaffoldWriteContract({
+  const { data: vaultContractInfo } = useDeployedContractInfo({
     contractName: "VaultImplementation",
   });
+
+  const { writeContractAsync } = useWriteContract();
+  const writeTx = useTransactor();
 
   const safeBigInt = (value?: string) => {
     try {
@@ -159,28 +161,34 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
   const handleDeposit = async () => {
     if (!connectedAddress || !amount) return;
 
+    if (!vaultContractInfo?.abi) {
+      notification.error("Vault contract ABI not available");
+      return;
+    }
+
     setIsDepositing(true);
     try {
       const amountBigInt = parseUnits(amount, assetDecimals);
 
-      await depositAsync(
-        {
+      const makeWriteWithParams = () =>
+        writeContractAsync({
           address: vault.address as `0x${string}`,
+          abi: vaultContractInfo.abi,
           functionName: "deposit",
           args: [amountBigInt, connectedAddress],
+        });
+
+      await writeTx(makeWriteWithParams, {
+        onBlockConfirmation: receipt => {
+          console.debug("Deposit confirmed", receipt);
+          notification.success(`成功存入 ${amount} ${assetSymbol}!`);
+          setAmount("");
+          refetchUserBalance();
+          refetchAllowance();
+          onSuccess?.();
+          onClose();
         },
-        {
-          onBlockConfirmation: receipt => {
-            console.debug("Deposit confirmed", receipt);
-            notification.success(`成功存入 ${amount} ${assetSymbol}!`);
-            setAmount("");
-            refetchUserBalance();
-            refetchAllowance();
-            onSuccess?.();
-            onClose();
-          },
-        },
-      );
+      });
     } catch (error: any) {
       console.error("Deposit failed:", error);
       notification.error(error?.message || "存款失败");

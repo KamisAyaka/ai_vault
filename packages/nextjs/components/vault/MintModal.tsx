@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { erc20Abi, formatUnits, isAddress, parseUnits } from "viem";
 import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -51,10 +51,12 @@ export const MintModal = ({ vault, isOpen, onClose, onSuccess }: MintModalProps)
 
   const { writeContractAsync: writeTokenAsync } = useWriteContract();
 
-  // Mint 合约
-  const { writeContractAsync: mintAsync } = useScaffoldWriteContract({
+  const { data: vaultContractInfo } = useDeployedContractInfo({
     contractName: "VaultImplementation",
   });
+
+  const { writeContractAsync } = useWriteContract();
+  const writeTx = useTransactor();
 
   const safeBigInt = (value?: string) => {
     try {
@@ -178,28 +180,34 @@ export const MintModal = ({ vault, isOpen, onClose, onSuccess }: MintModalProps)
   const handleMint = async () => {
     if (!connectedAddress || !shares) return;
 
+    if (!vaultContractInfo?.abi) {
+      notification.error("Vault contract ABI not available");
+      return;
+    }
+
     setIsMinting(true);
     try {
       const sharesBigInt = parseUnits(shares, assetDecimals);
 
-      await mintAsync(
-        {
+      const makeWriteWithParams = () =>
+        writeContractAsync({
           address: vault.address as `0x${string}`,
+          abi: vaultContractInfo.abi,
           functionName: "mint",
           args: [sharesBigInt, connectedAddress],
+        });
+
+      await writeTx(makeWriteWithParams, {
+        onBlockConfirmation: receipt => {
+          console.debug("Mint confirmed", receipt);
+          notification.success(`成功铸造 ${shares} v${assetSymbol}!`);
+          setShares("");
+          refetchUserBalance();
+          refetchAllowance();
+          onSuccess?.();
+          onClose();
         },
-        {
-          onBlockConfirmation: receipt => {
-            console.debug("Mint confirmed", receipt);
-            notification.success(`成功铸造 ${shares} v${assetSymbol}!`);
-            setShares("");
-            refetchUserBalance();
-            refetchAllowance();
-            onSuccess?.();
-            onClose();
-          },
-        },
-      );
+      });
     } catch (error: any) {
       console.error("Mint failed:", error);
       notification.error(error?.message || "铸造失败");

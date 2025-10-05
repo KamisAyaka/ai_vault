@@ -30,7 +30,7 @@ type ContractService struct {
 // AllocationRequest represents a single allocation from the API
 type AllocationRequest struct {
 	AdapterIndex uint64 `json:"adapter_index"` // Index in the global adapter list
-	Percentage   uint64 `json:"percentage"`    // Allocation percentage (0-10000 for 0-100%)
+	Percentage   uint64 `json:"percentage"`    // Allocation percentage (0-1000 for 0-100%, where 1000 = 100%)
 }
 
 // NewContractService creates a new contract service
@@ -76,6 +76,7 @@ func (cs *ContractService) UpdateVaultAllocations(ctx context.Context, tokenAddr
 
 	for i, alloc := range allocations {
 		adapterIndices[i] = new(big.Int).SetUint64(alloc.AdapterIndex)
+		// Percentage is already in contract precision (0-1000 where 1000 = 100%)
 		allocationData[i] = new(big.Int).SetUint64(alloc.Percentage)
 	}
 

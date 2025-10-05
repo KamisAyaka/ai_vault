@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
 
-export const VaultCreationForm = () => {
+interface VaultCreationFormProps {
+  onVaultCreated?: () => void;
+}
+
+export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) => {
   const [asset, setAsset] = useState("");
   const [vaultName, setVaultName] = useState("");
   const [vaultSymbol, setVaultSymbol] = useState("");
@@ -18,13 +22,13 @@ export const VaultCreationForm = () => {
   const { data: existingVault } = useScaffoldReadContract({
     contractName: "VaultFactory",
     functionName: "getVault",
-    args: asset ? [asset] : undefined,
+    args: [asset || "0x0000000000000000000000000000000000000000"],
   });
 
   const { data: hasVault } = useScaffoldReadContract({
     contractName: "VaultFactory",
     functionName: "hasVault",
-    args: asset ? [asset] : undefined,
+    args: [asset || "0x0000000000000000000000000000000000000000"],
   });
 
   const handleCheckVault = async () => {
@@ -65,6 +69,9 @@ export const VaultCreationForm = () => {
       setVaultName("");
       setVaultSymbol("");
       setFee("100");
+
+      // Call the callback if provided
+      onVaultCreated?.();
     } catch (error: any) {
       console.error("Failed to create vault:", error);
       notification.error(error?.message || "Failed to create vault");
@@ -103,7 +110,7 @@ export const VaultCreationForm = () => {
                 {checkingVault ? "Checking..." : "Check"}
               </button>
             </div>
-            {hasVault && existingVault && (
+            {asset && hasVault && existingVault && (
               <label className="label">
                 <span className="label-text-alt text-warning">
                   ⚠️ Vault already exists at: {existingVault.toString().slice(0, 10)}...

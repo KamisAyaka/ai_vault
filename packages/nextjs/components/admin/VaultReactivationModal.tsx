@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
-import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useAccount, useWriteContract } from "wagmi";
+import deployedContracts from "~~/contracts/deployedContracts";
+import { useTargetNetwork, useTransactor } from "~~/hooks/scaffold-eth";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -15,22 +16,16 @@ type VaultReactivationModalProps = {
 
 export const VaultReactivationModal = ({ vault, isOpen, onClose, onSuccess }: VaultReactivationModalProps) => {
   const { address: connectedAddress } = useAccount();
+  const { targetNetwork } = useTargetNetwork();
   const [isActivating, setIsActivating] = useState(false);
   const [checksComplete, setChecksComplete] = useState(false);
 
-  // 检查是否为管理员
-  const { data: vaultManager } = useScaffoldReadContract({
-    contractName: "VaultImplementation",
-    functionName: "manager",
-    args: [],
-    address: vault.address as `0x${string}`,
-  });
+  const { writeContractAsync } = useWriteContract();
+  const writeTx = useTransactor();
 
-  const { writeContractAsync: setActiveAsync } = useScaffoldWriteContract({
-    contractName: "VaultImplementation",
-  });
-
-  const isManager = connectedAddress?.toLowerCase() === vaultManager?.toLowerCase();
+  // 从环境变量读取管理员地址
+  const vaultManager = process.env.NEXT_PUBLIC_VAULT_MANAGER_ADDRESS?.toLowerCase();
+  const isManager = connectedAddress?.toLowerCase() === vaultManager;
 
   // 执行激活前检查
   const handlePreActivationCheck = () => {
@@ -64,21 +59,22 @@ export const VaultReactivationModal = ({ vault, isOpen, onClose, onSuccess }: Va
     setIsActivating(true);
 
     try {
-      await setActiveAsync(
-        {
+      const makeWriteWithParams = () =>
+        writeContractAsync({
           address: vault.address as `0x${string}`,
+          abi: (deployedContracts as any)[targetNetwork.id]?.VaultImplementation?.abi,
           functionName: "setActive",
           args: [],
+        });
+
+      await writeTx(makeWriteWithParams, {
+        onBlockConfirmation: receipt => {
+          console.debug("Vault reactivated", receipt);
+          notification.success(`金库 ${vault.name} 已成功重新激活！`);
+          onSuccess?.();
+          onClose();
         },
-        {
-          onBlockConfirmation: receipt => {
-            console.debug("Vault reactivated", receipt);
-            notification.success(`金库 ${vault.name} 已成功重新激活！`);
-            onSuccess?.();
-            onClose();
-          },
-        },
-      );
+      });
     } catch (error: any) {
       console.error("Vault reactivation failed:", error);
       notification.error(error?.message || "重新激活失败");

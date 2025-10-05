@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { formatEther, parseEther } from "viem";
-import { useAccount, useBalance } from "wagmi";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useAccount, useBalance, useWriteContract } from "wagmi";
+import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
 import { useGlobalState } from "~~/services/store/store";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
@@ -22,14 +22,16 @@ export const DepositETHModal = ({ vault, isOpen, onClose, onSuccess }: DepositET
   const { address: connectedAddress } = useAccount();
   const nativePrice = useGlobalState(state => state.nativeCurrency.price) || 0;
 
+  const { data: vaultContractInfo } = useDeployedContractInfo({
+    contractName: "VaultSharesETH",
+  });
+
+  const { writeContractAsync } = useWriteContract();
+  const writeTx = useTransactor();
+
   // 获取用户 ETH 余额
   const { data: ethBalance } = useBalance({
     address: connectedAddress,
-  });
-
-  // 存款合约 - 使用 VaultSharesETH
-  const { writeContractAsync: depositETHAsync } = useScaffoldWriteContract({
-    contractName: "VaultSharesETH",
   });
 
   const safeBigInt = (value?: string) => {
@@ -101,27 +103,33 @@ export const DepositETHModal = ({ vault, isOpen, onClose, onSuccess }: DepositET
   const handleDeposit = async () => {
     if (!connectedAddress || !amount) return;
 
+    if (!vaultContractInfo?.abi) {
+      notification.error("Vault contract ABI not available");
+      return;
+    }
+
     setIsDepositing(true);
     try {
       const amountBigInt = parseEther(amount);
 
-      await depositETHAsync(
-        {
+      const makeWriteWithParams = () =>
+        writeContractAsync({
           address: vault.address as `0x${string}`,
+          abi: vaultContractInfo.abi,
           functionName: "depositETH",
           args: [connectedAddress],
           value: amountBigInt,
+        });
+
+      await writeTx(makeWriteWithParams, {
+        onBlockConfirmation: receipt => {
+          console.debug("ETH Deposit confirmed", receipt);
+          notification.success(`成功存入 ${amount} ETH!`);
+          setAmount("");
+          onSuccess?.();
+          onClose();
         },
-        {
-          onBlockConfirmation: receipt => {
-            console.debug("ETH Deposit confirmed", receipt);
-            notification.success(`成功存入 ${amount} ETH!`);
-            setAmount("");
-            onSuccess?.();
-            onClose();
-          },
-        },
-      );
+      });
     } catch (error: any) {
       console.error("ETH Deposit failed:", error);
       notification.error(error?.message || "存款失败");

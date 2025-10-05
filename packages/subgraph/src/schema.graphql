@@ -11,7 +11,7 @@ type VaultFactory @entity(immutable: true) {
   vaults: [Vault!]! @derivedFrom(field: "factory")
 }
 
-type VaultManager @entity(immutable: true) {
+type VaultManager @entity(immutable: false) {
   id: ID! # 管理器地址
   address: Bytes!
   owner: Bytes!

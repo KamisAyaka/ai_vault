@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { isAddress } from "viem";
-import { useAccount } from "wagmi";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useAccount, useWriteContract } from "wagmi";
+import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -21,10 +21,12 @@ export const AdminVaultActions = ({ vault, onSuccess }: AdminVaultActionsProps) 
   const normalizedManager = managerAddress.toLowerCase();
   const isManager = connectedAddress && managerAddress ? connectedAddress.toLowerCase() === normalizedManager : false;
 
-  const { writeContractAsync: writeVaultAction } = useScaffoldWriteContract({
+  const { data: vaultContractInfo } = useDeployedContractInfo({
     contractName: "VaultImplementation",
-    disableSimulate: true,
   });
+
+  const { writeContractAsync } = useWriteContract();
+  const writeTx = useTransactor();
 
   const formattedManager = useMemo(() => {
     if (!managerAddress || !isAddress(managerAddress as `0x${string}`)) return "Unavailable";
@@ -54,23 +56,27 @@ export const AdminVaultActions = ({ vault, onSuccess }: AdminVaultActionsProps) 
       return;
     }
 
+    if (!vaultContractInfo?.abi) {
+      notification.error("Vault contract ABI not available");
+      return;
+    }
+
     setIsToggling(true);
 
     try {
-      await writeVaultAction(
-        {
+      const makeWriteWithParams = () =>
+        writeContractAsync({
           address: vault.address as `0x${string}`,
+          abi: vaultContractInfo.abi,
           functionName: "setNotActive",
-        },
-        {
-          onBlockConfirmation: receipt => {
-            console.debug("setNotActive confirmed", receipt);
-          },
-        },
-      );
+        });
 
-      notification.success(`Vault "${vault.name}" deactivated.`);
-      onSuccess?.();
+      await writeTx(makeWriteWithParams, {
+        onBlockConfirmation: () => {
+          notification.success(`Vault "${vault.name}" deactivated.`);
+          onSuccess?.();
+        },
+      });
     } catch (error: any) {
       console.error("Failed to deactivate vault:", error);
       notification.error(error?.message || "Failed to deactivate vault");

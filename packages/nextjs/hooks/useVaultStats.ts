@@ -62,6 +62,7 @@ export const useVaultStats = (vaults: Vault[]): VaultStats => {
           symbol,
           amount: totalAssets,
           decimals,
+          usdValue: 0, // Will be calculated later
         });
       }
     });

@@ -253,10 +253,10 @@ contract UniswapV3AdapterTest is Test {
     }
 
     function testDivestNoLiquidityPosition() public {
-        // 尝试在没有投资的情况下撤资
+        // 尝试在没有投资的情况下撤资，现在应该返回0而不是revert
         vm.prank(vault);
-        vm.expectRevert(UniswapV3Adapter.UniswapV3Adapter__NoLiquidityPosition.selector);
-        adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
+        uint256 actualAmount = adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
+        assertEq(actualAmount, 0, "Should return 0 when no liquidity position");
     }
 
     function testGetTotalValueWithInvalidPosition() public {
@@ -378,10 +378,10 @@ contract UniswapV3AdapterTest is Test {
         vm.prank(vault);
         adapter.divest(IERC20(address(tokenA)), type(uint256).max);
 
-        // 现在尝试再次撤资，应该抛出错误因为已经没有流动性位置
+        // 现在尝试再次撤资，应该返回0因为tokenId已经为0
         vm.prank(vault);
-        vm.expectRevert(UniswapV3Adapter.UniswapV3Adapter__NoLiquidityPosition.selector);
-        adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
+        uint256 actualAmount = adapter.divest(IERC20(address(tokenA)), 50 * 10 ** 18);
+        assertEq(actualAmount, 0, "Should return 0 when tokenId is 0");
     }
 
     function testDivestWithLargeAmount() public {
@@ -742,9 +742,10 @@ contract UniswapV3AdapterTest is Test {
 
     // 测试撤资错误情况
     function testDivestWithNoLiquidityPosition() public {
+        // 测试在没有流动性头寸时撤资，现在应该返回0而不是revert
         vm.prank(vault);
-        vm.expectRevert(abi.encodeWithSelector(UniswapV3Adapter.UniswapV3Adapter__NoLiquidityPosition.selector));
-        adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
+        uint256 actualAmount = adapter.divest(IERC20(address(tokenA)), 100 * 10 ** 18);
+        assertEq(actualAmount, 0, "Should return 0 when no liquidity position");
     }
 
     // 测试价值计算的不同分支

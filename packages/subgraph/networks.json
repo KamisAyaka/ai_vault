@@ -19,22 +19,54 @@
       "address": "0xf7cd8fa9b94db2aa972023b379c7f72c65e4de9d"
     },
     "AaveAdapter": {
-      "address": "0xf56aa3aceddf88ab12e494d0b96da3c09a5d264e"
+      "address": "0xc525e1bed21174d5615252a16ee2b283b894a318"
     },
     "UniswapV2Adapter": {
-      "address": "0xdbd296711ec8ef9aacb623ee3f1c0922dce0d7b2"
+      "address": "0xe8ecf644d9a3432dab3a0725308f265990eedca9"
     },
     "UniswapV3Adapter": {
-      "address": "0xdfd787c807dea8d7e53311b779bc0c6a4704d286"
+      "address": "0x3a1d75769758705cab1385377d4d88b8193a5f37"
     },
     "VaultShares": {
       "address": "0x0d8694f47cdc22bb8c6d2668a38d07a439f378f9"
     },
     "VaultSharesETH": {
-      "address": "0x4d8e02bbfcf205828a8352af4376b165e123d7b0"
+      "address": "0x67f65b834aaac92c15c2eba9ff7e81f2d33a1cfd"
     },
     "MockWETH9": {
       "address": "0xb19b36b1456e65e3a6d514d3f715f204bd59f431"
+    }
+  },
+  "sepolia": {
+    "VaultFactory": {
+      "address": "0x9B20939E88D9072e2f08f44Cde24DF0E78dFFaAE"
+    },
+    "VaultImplementation": {
+      "address": "0x32Cac3f333b5cED4846DeD2C4efA17350741B8B1"
+    },
+    "AIAgentVaultManager": {
+      "address": "0x6E997C66181AE215C6a3E5423cE4aa6fFB4CFff2"
+    },
+    "AaveAdapter": {
+      "address": "0x6005EC07f4e4F61be7526695445f3274B360CE30"
+    },
+    "UniswapV2Adapter": {
+      "address": "0x386A472650E95229ff59b7b196F0fC2FB93B735E"
+    },
+    "UniswapV3Adapter": {
+      "address": "0x1206dfd237894aE33a16D16e84ec4C245BEb1800"
+    },
+    "VaultSharesETH": {
+      "address": "0x3e6c65b902385921Ead89369569f71e571FA1e49"
+    },
+    "USDCVault": {
+      "address": "0x84194be626235f5E541c4b0DF6565ed2B2dEC6f7"
+    },
+    "USDTVault": {
+      "address": "0x945d3f7Fe2f1ED2Ab01fbB8677e405B56D83Aa5d"
+    },
+    "WBTCVault": {
+      "address": "0xA7C55bf8618A02d5BC5e5e24C5223664CCaC9881"
     }
   }
 }

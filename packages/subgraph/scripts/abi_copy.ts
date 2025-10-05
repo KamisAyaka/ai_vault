@@ -84,25 +84,38 @@ async function main() {
 
   // Parse the JSON string
   const deployedContracts = parseAndCorrectJSON(jsonString);
+
+  // Process localhost contracts (31337)
   const localContracts = deployedContracts[31337];
-
-  if (!localContracts) {
-    console.error("No contracts found for the local network.");
-    return;
-  }
-
-  for (const contractName in localContracts) {
-    const contractObject = localContracts[contractName];
-    if (!contractObject) {
-      console.error(
-        `Contract ${contractName} does not have an ABI or address. Skipping.`
-      );
-      continue;
+  if (localContracts) {
+    for (const contractName in localContracts) {
+      const contractObject = localContracts[contractName];
+      if (!contractObject) {
+        console.error(
+          `Contract ${contractName} does not have an ABI or address. Skipping.`
+        );
+        continue;
+      }
+      publishContract(contractName, contractObject, "localhost");
     }
-    publishContract(contractName, contractObject, "localhost");
+    console.log("✅  Published localhost contracts to the subgraph package.");
   }
 
-  console.log("✅  Published contracts to the subgraph package.");
+  // Process Sepolia contracts (11155111)
+  const sepoliaContracts = deployedContracts[11155111];
+  if (sepoliaContracts) {
+    for (const contractName in sepoliaContracts) {
+      const contractObject = sepoliaContracts[contractName];
+      if (!contractObject) {
+        console.error(
+          `Contract ${contractName} does not have an ABI or address. Skipping.`
+        );
+        continue;
+      }
+      publishContract(contractName, contractObject, "sepolia");
+    }
+    console.log("✅  Published Sepolia contracts to the subgraph package.");
+  }
 }
 main()
   .then(() => process.exit(0))

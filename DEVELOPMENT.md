@@ -172,7 +172,7 @@ forge script script/SimulateTrading.s.sol --broadcast --rpc-url http://localhost
 在测试网上运行：
 
 ```bash
-forge script script/SimulateTrading.s.sol --broadcast --rpc-url <RPC_URL>
+forge script script/SimulateTrading.s.sol --broadcast --rpc-url http://localhost:8545
 ```
 
 **脚本执行流程：**

@@ -549,6 +549,13 @@
   },
   {
     "type": "function",
+    "name": "setActive",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setNotActive",
     "inputs": [],
     "outputs": [],
