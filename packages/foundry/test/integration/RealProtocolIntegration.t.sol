@@ -140,10 +140,7 @@ contract RealProtocolIntegrationTest is Test {
 
         // 部署 UniswapV3 适配器
         uniswapV3Adapter = new UniswapV3Adapter(
-            address(realisticUniswapV3Router),
-            address(realisticPositionManager),
-            address(realisticUniswapV3Factory),
-            address(realisticQuoter)
+            address(realisticUniswapV3Router), address(realisticPositionManager), address(realisticUniswapV3Factory)
         );
     }
 

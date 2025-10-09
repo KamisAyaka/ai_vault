@@ -3,54 +3,16 @@
     "type": "constructor",
     "inputs": [
       {
-        "name": "uniswapV3Router",
+        "name": "uniswapRouter",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "positionManager",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "factory",
+        "name": "uniswapFactory",
         "type": "address",
         "internalType": "address"
       }
     ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "UpdateTokenConfig",
-    "inputs": [
-      {
-        "name": "token",
-        "type": "address",
-        "internalType": "contract IERC20"
-      },
-      {
-        "name": "counterPartyToken",
-        "type": "address",
-        "internalType": "contract IERC20"
-      },
-      {
-        "name": "feeTier",
-        "type": "uint24",
-        "internalType": "uint24"
-      },
-      {
-        "name": "tickLower",
-        "type": "int24",
-        "internalType": "int24"
-      },
-      {
-        "name": "tickUpper",
-        "type": "int24",
-        "internalType": "int24"
-      }
-    ],
-    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -122,13 +84,8 @@
       {
         "name": "",
         "type": "tuple",
-        "internalType": "struct UniswapV3Adapter.TokenConfig",
+        "internalType": "struct UniswapV2Adapter.TokenConfig",
         "components": [
-          {
-            "name": "tokenId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
           {
             "name": "slippageTolerance",
             "type": "uint256",
@@ -140,29 +97,14 @@
             "internalType": "contract IERC20"
           },
           {
-            "name": "feeTier",
-            "type": "uint24",
-            "internalType": "uint24"
-          },
-          {
-            "name": "tickLower",
-            "type": "int24",
-            "internalType": "int24"
-          },
-          {
-            "name": "tickUpper",
-            "type": "int24",
-            "internalType": "int24"
-          },
-          {
-            "name": "pool",
-            "type": "address",
-            "internalType": "contract IMinimalUniswapV3Pool"
-          },
-          {
             "name": "VaultAddress",
             "type": "address",
             "internalType": "address"
+          },
+          {
+            "name": "pair",
+            "type": "address",
+            "internalType": "contract IUniswapV2Pair"
           }
         ]
       }
@@ -187,6 +129,13 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initializeFactory",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -244,11 +193,6 @@
     ],
     "outputs": [
       {
-        "name": "tokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
         "name": "slippageTolerance",
         "type": "uint256",
         "internalType": "uint256"
@@ -259,29 +203,14 @@
         "internalType": "contract IERC20"
       },
       {
-        "name": "feeTier",
-        "type": "uint24",
-        "internalType": "uint24"
-      },
-      {
-        "name": "tickLower",
-        "type": "int24",
-        "internalType": "int24"
-      },
-      {
-        "name": "tickUpper",
-        "type": "int24",
-        "internalType": "int24"
-      },
-      {
-        "name": "pool",
-        "type": "address",
-        "internalType": "contract IMinimalUniswapV3Pool"
-      },
-      {
         "name": "VaultAddress",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "pair",
+        "type": "address",
+        "internalType": "contract IUniswapV2Pair"
       }
     ],
     "stateMutability": "view"
@@ -296,29 +225,14 @@
         "internalType": "contract IERC20"
       },
       {
-        "name": "counterPartyToken",
-        "type": "address",
-        "internalType": "contract IERC20"
-      },
-      {
         "name": "slippageTolerance",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "feeTier",
-        "type": "uint24",
-        "internalType": "uint24"
-      },
-      {
-        "name": "tickLower",
-        "type": "int24",
-        "internalType": "int24"
-      },
-      {
-        "name": "tickUpper",
-        "type": "int24",
-        "internalType": "int24"
+        "name": "counterPartyToken",
+        "type": "address",
+        "internalType": "contract IERC20"
       },
       {
         "name": "VaultAddress",
@@ -337,6 +251,24 @@
         "name": "newOwner",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateTokenConfigAndReinvest",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "counterPartyToken",
+        "type": "address",
+        "internalType": "contract IERC20"
       }
     ],
     "outputs": [],
@@ -376,24 +308,6 @@
         "type": "address",
         "indexed": true,
         "internalType": "contract IERC20"
-      },
-      {
-        "name": "feeTier",
-        "type": "uint24",
-        "indexed": false,
-        "internalType": "uint24"
-      },
-      {
-        "name": "tickLower",
-        "type": "int24",
-        "indexed": false,
-        "internalType": "int24"
-      },
-      {
-        "name": "tickUpper",
-        "type": "int24",
-        "indexed": false,
-        "internalType": "int24"
       }
     ],
     "anonymous": false
@@ -419,24 +333,6 @@
         "type": "address",
         "indexed": true,
         "internalType": "contract IERC20"
-      },
-      {
-        "name": "feeTier",
-        "type": "uint24",
-        "indexed": false,
-        "internalType": "uint24"
-      },
-      {
-        "name": "tickLower",
-        "type": "int24",
-        "indexed": false,
-        "internalType": "int24"
-      },
-      {
-        "name": "tickUpper",
-        "type": "int24",
-        "indexed": false,
-        "internalType": "int24"
       },
       {
         "name": "vault",
@@ -468,7 +364,7 @@
   },
   {
     "type": "event",
-    "name": "UniswapV3Divested",
+    "name": "UniswapDivested",
     "inputs": [
       {
         "name": "token",
@@ -499,7 +395,7 @@
   },
   {
     "type": "event",
-    "name": "UniswapV3Invested",
+    "name": "UniswapInvested",
     "inputs": [
       {
         "name": "token",
@@ -557,22 +453,6 @@
   },
   {
     "type": "error",
-    "name": "SafeCastOverflowedUintDowncast",
-    "inputs": [
-      {
-        "name": "bits",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "value",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
     "name": "SafeERC20FailedOperation",
     "inputs": [
       {
@@ -584,22 +464,17 @@
   },
   {
     "type": "error",
-    "name": "UniswapV3Adapter__InvalidCounterPartyToken",
+    "name": "UniswapAdapter__InvalidCounterPartyToken",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "UniswapV3Adapter__InvalidSlippageTolerance",
+    "name": "UniswapAdapter__InvalidSlippageTolerance",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "UniswapV3Adapter__InvalidToken",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "UniswapV3Adapter__NoLiquidityPosition",
+    "name": "UniswapAdapter__InvalidToken",
     "inputs": []
   }
 ]

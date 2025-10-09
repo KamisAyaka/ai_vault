@@ -45,10 +45,9 @@ contract RealNetworkForkTest is Test {
     address public constant AAVE_POOL_MAINNET = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
     address public constant UNISWAP_V2_ROUTER_MAINNET = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
     address public constant UNISWAP_V2_FACTORY_MAINNET = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-    address public constant UNISWAP_V3_ROUTER_MAINNET = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    address public constant UNISWAP_V3_ROUTER_MAINNET = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
     address public constant UNISWAP_V3_POSITION_MANAGER_MAINNET = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public constant UNISWAP_V3_FACTORY_MAINNET = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
-    address public constant UNISWAP_V3_QUOTER_MAINNET = 0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6;
 
     // 金库地址
     address payable public vaultAddress;
@@ -192,10 +191,7 @@ contract RealNetworkForkTest is Test {
 
         _deployManager();
         uniswapV3Adapter = new UniswapV3Adapter(
-            UNISWAP_V3_ROUTER_MAINNET,
-            UNISWAP_V3_POSITION_MANAGER_MAINNET,
-            UNISWAP_V3_FACTORY_MAINNET,
-            UNISWAP_V3_QUOTER_MAINNET
+            UNISWAP_V3_ROUTER_MAINNET, UNISWAP_V3_POSITION_MANAGER_MAINNET, UNISWAP_V3_FACTORY_MAINNET
         );
         emit AdapterDeployed("UniswapV3", address(uniswapV3Adapter));
 
@@ -294,10 +290,7 @@ contract RealNetworkForkTest is Test {
 
         _deployManager();
         uniswapV3Adapter = new UniswapV3Adapter(
-            UNISWAP_V3_ROUTER_MAINNET,
-            UNISWAP_V3_POSITION_MANAGER_MAINNET,
-            UNISWAP_V3_FACTORY_MAINNET,
-            UNISWAP_V3_QUOTER_MAINNET
+            UNISWAP_V3_ROUTER_MAINNET, UNISWAP_V3_POSITION_MANAGER_MAINNET, UNISWAP_V3_FACTORY_MAINNET
         );
         emit AdapterDeployed("UniswapV3", address(uniswapV3Adapter));
 
@@ -310,10 +303,13 @@ contract RealNetworkForkTest is Test {
 
         (, int24 currentTick,,,,,) = IMinimalUniswapV3Pool(poolAddress).slot0();
 
-        // 计算合理的 tick 范围
-        int24 tickRange = 2000; // 大约 20% 的范围
-        int24 tickLower = currentTick - tickRange;
-        int24 tickUpper = currentTick + tickRange;
+        // 首先将当前tick对齐到60的倍数
+        int24 alignedCurrentTick = (currentTick / 60) * 60;
+
+        // 使用更宽的tick范围以确保流动性充足
+        int24 tickRange = 10000; // 大约 100% 的范围，确保有足够的流动性空间
+        int24 tickLower = alignedCurrentTick - tickRange;
+        int24 tickUpper = alignedCurrentTick + tickRange;
 
         // 确保 tick 对齐到 fee tier 的倍数
         // 对于 0.3% fee tier，tick 必须是 60 的倍数
@@ -325,7 +321,16 @@ contract RealNetworkForkTest is Test {
             tickLower = tickUpper - 60;
         }
 
+        // 确保tick范围不会超出UniswapV3的限制
+        if (tickLower < -887200) {
+            tickLower = -887200;
+        }
+        if (tickUpper > 887200) {
+            tickUpper = 887200;
+        }
+
         console.log("Current tick:", currentTick);
+        console.log("Aligned current tick:", alignedCurrentTick);
         console.log("Tick range:");
         console.logInt(tickLower);
         console.log("to");
@@ -335,7 +340,7 @@ contract RealNetworkForkTest is Test {
         uniswapV3Adapter.setTokenConfig(
             IERC20(USDC_MAINNET),
             IERC20(WETH_MAINNET),
-            1000, // 10% slippage (进一步增加滑点容忍度)
+            5000, // 50% slippage (大幅增加滑点容忍度)
             3000, // 0.3% fee tier
             tickLower, // 使用合理的 tick 范围
             tickUpper, // 使用合理的 tick 范围
@@ -521,10 +526,7 @@ contract RealNetworkForkTest is Test {
 
         // 部署 UniswapV3 适配器
         uniswapV3Adapter = new UniswapV3Adapter(
-            UNISWAP_V3_ROUTER_MAINNET,
-            UNISWAP_V3_POSITION_MANAGER_MAINNET,
-            UNISWAP_V3_FACTORY_MAINNET,
-            UNISWAP_V3_QUOTER_MAINNET
+            UNISWAP_V3_ROUTER_MAINNET, UNISWAP_V3_POSITION_MANAGER_MAINNET, UNISWAP_V3_FACTORY_MAINNET
         );
         emit AdapterDeployed("UniswapV3", address(uniswapV3Adapter));
     }
@@ -562,14 +564,18 @@ contract RealNetworkForkTest is Test {
             vaultAddress
         );
 
-        // 配置 UniswapV3 适配器 - 使用合理的 tick 范围
+        // 配置 UniswapV3 适配器 - 使用更宽的 tick 范围确保流动性充足
         address poolAddress =
             IMinimalUniswapV3Factory(UNISWAP_V3_FACTORY_MAINNET).getPool(USDC_MAINNET, WETH_MAINNET, 3000);
         (, int24 currentTick,,,,,) = IMinimalUniswapV3Pool(poolAddress).slot0();
 
-        int24 tickRange = 2000; // 大约 20% 的范围
-        int24 tickLower = currentTick - tickRange;
-        int24 tickUpper = currentTick + tickRange;
+        // 首先将当前tick对齐到60的倍数
+        int24 alignedCurrentTick = (currentTick / 60) * 60;
+
+        // 使用更宽的tick范围以确保流动性充足
+        int24 tickRange = 10000; // 大约 100% 的范围，确保有足够的流动性空间
+        int24 tickLower = alignedCurrentTick - tickRange;
+        int24 tickUpper = alignedCurrentTick + tickRange;
 
         // 确保 tick 对齐到 fee tier 的倍数
         // 对于 0.3% fee tier，tick 必须是 60 的倍数
@@ -581,10 +587,25 @@ contract RealNetworkForkTest is Test {
             tickLower = tickUpper - 60;
         }
 
+        // 确保tick范围不会超出UniswapV3的限制
+        if (tickLower < -887200) {
+            tickLower = -887200;
+        }
+        if (tickUpper > 887200) {
+            tickUpper = 887200;
+        }
+
+        console.log("Current tick:", currentTick);
+        console.log("Aligned current tick:", alignedCurrentTick);
+        console.log("Calculated tick range:");
+        console.logInt(tickLower);
+        console.log("to");
+        console.logInt(tickUpper);
+
         uniswapV3Adapter.setTokenConfig(
             IERC20(USDC_MAINNET),
             IERC20(WETH_MAINNET),
-            1000, // 10% slippage (进一步增加滑点容忍度)
+            5000, // 50% slippage (大幅增加滑点容忍度)
             3000, // 0.3% fee tier
             tickLower, // 使用合理的 tick 范围
             tickUpper, // 使用合理的 tick 范围

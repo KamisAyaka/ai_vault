@@ -8,11 +8,10 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // Uniswap V3 相关接口导入
-import { ISwapRouter } from "../../vendor/UniswapV3/periphery/interfaces/ISwapRouter.sol";
+import { IV3SwapRouter } from "../../vendor/UniswapV3/periphery/interfaces/IV3SwapRouter.sol";
 import { IMinimalPositionManager } from "../../vendor/UniswapV3/periphery/interfaces/IMinimalPositionManager.sol";
 import { IMinimalUniswapV3Pool } from "../../vendor/UniswapV3/core/IMinimalUniswapV3Pool.sol";
 import { IMinimalUniswapV3Factory } from "../../vendor/UniswapV3/core/IMinimalUniswapV3Factory.sol";
-import { IQuoter } from "../../vendor/UniswapV3/periphery/interfaces/IQuoter.sol";
 import { TickMathMinimal } from "../../vendor/UniswapV3/core/libraries/TickMathMinimal.sol";
 import { FixedPoint96 } from "../../vendor/UniswapV3/core/libraries/FixedPoint96.sol";
 import { FullMath } from "../../vendor/UniswapV3/core/libraries/FullMath.sol";
@@ -32,16 +31,13 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
                             状态变量
     //////////////////////////////////////////////////////////////*/
     // Uniswap V3 Router 地址
-    ISwapRouter internal immutable i_uniswapRouter;
+    IV3SwapRouter internal immutable i_uniswapRouter;
 
     // Uniswap V3 NonfungiblePositionManager 地址
     IMinimalPositionManager internal immutable i_positionManager;
 
     // Uniswap V3 Factory 地址
     IMinimalUniswapV3Factory internal immutable i_factory;
-
-    // Uniswap V3 Quoter 地址
-    IQuoter internal immutable i_quoter;
 
     // 代币地址到配置的映射
     mapping(IERC20 => TokenConfig) public s_tokenConfigs;
@@ -95,13 +91,10 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
     /*//////////////////////////////////////////////////////////////
                                构造函数
     //////////////////////////////////////////////////////////////*/
-    constructor(address uniswapV3Router, address positionManager, address factory, address quoter)
-        Ownable(msg.sender)
-    {
-        i_uniswapRouter = ISwapRouter(uniswapV3Router);
+    constructor(address uniswapV3Router, address positionManager, address factory) Ownable(msg.sender) {
+        i_uniswapRouter = IV3SwapRouter(uniswapV3Router);
         i_positionManager = IMinimalPositionManager(positionManager);
         i_factory = IMinimalUniswapV3Factory(factory);
-        i_quoter = IQuoter(quoter);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -291,20 +284,27 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         internal
         returns (uint256 amountOut)
     {
-        // 预估交换输出量
-        uint256 estimatedAmountOut =
-            i_quoter.quoteExactInputSingle(address(tokenIn), address(tokenOut), fee, amountIn, 0);
+        // 从池子获取当前价格来估算汇率
+        address poolAddress = i_factory.getPool(address(tokenIn), address(tokenOut), fee);
+        require(poolAddress != address(0), "Pool does not exist");
 
-        // 基于滑点容忍度计算最小输出量
+        // 使用Uniswap V3的正确价格计算方法
+        IMinimalUniswapV3Pool pool = IMinimalUniswapV3Pool(poolAddress);
+        (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
+
+        // 使用通用的价格转换函数
+        bool isToken0ToToken1 = address(tokenIn) < address(tokenOut);
+        uint256 estimatedAmountOut = UniswapV3Math.calculatePriceConversion(amountIn, sqrtPriceX96, isToken0ToToken1);
+
+        // 应用滑点保护
         uint256 amountOutMinimum =
             (estimatedAmountOut * (BASIS_POINTS_DIVISOR - slippageTolerance)) / BASIS_POINTS_DIVISOR;
 
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+        IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter.ExactInputSingleParams({
             tokenIn: address(tokenIn),
             tokenOut: address(tokenOut),
             fee: fee,
             recipient: address(this), // 发送到适配器合约
-            deadline: block.timestamp + DEADLINE_INTERVAL,
             amountIn: amountIn,
             amountOutMinimum: amountOutMinimum,
             sqrtPriceLimitX96: 0
@@ -369,28 +369,19 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         uint256 balance0 = IERC20(token0Addr).balanceOf(address(this));
         uint256 balance1 = IERC20(token1Addr).balanceOf(address(this));
 
-        if (balance0 == 0 && balance1 > 0) {
-            // 只有token1，需要交换一部分获得token0
-            // V3的关键：交换量取决于价格区间内的代币比例，而不是简单的50%
-            uint256 amountToSwap = UniswapV3Math.calculateV3OptimalSwapAmount(
-                balance1,
-                sqrtPriceX96,
-                sqrtRatioAX96,
-                sqrtRatioBX96,
-                true // isToken1ToSwap
+        int256 amountToSwap =
+            UniswapV3Math.calculateV3OptimalSwapAmount(balance0, balance1, sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96);
+
+        if (amountToSwap > 0) {
+            // 正数：用token0换token1
+            _swapToken(
+                IERC20(token0Addr), IERC20(token1Addr), config.feeTier, uint256(amountToSwap), config.slippageTolerance
             );
-            _swapToken(IERC20(token1Addr), IERC20(token0Addr), config.feeTier, amountToSwap, config.slippageTolerance);
-        } else if (balance1 == 0 && balance0 > 0) {
-            // 只有token0，需要交换一部分获得token1
-            // V3的关键：交换量取决于价格区间内的代币比例，而不是简单的50%
-            uint256 amountToSwap = UniswapV3Math.calculateV3OptimalSwapAmount(
-                balance0,
-                sqrtPriceX96,
-                sqrtRatioAX96,
-                sqrtRatioBX96,
-                false // isToken1ToSwap
+        } else {
+            // 负数：用token1换token0
+            _swapToken(
+                IERC20(token1Addr), IERC20(token0Addr), config.feeTier, uint256(-amountToSwap), config.slippageTolerance
             );
-            _swapToken(IERC20(token0Addr), IERC20(token1Addr), config.feeTier, amountToSwap, config.slippageTolerance);
         }
 
         // 更新余额
@@ -457,10 +448,7 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
     ) internal view returns (uint128 liquidityToRemove, bool isFullDivestment) {
         if (currentLiquidity == 0) {
             return (0, false);
-        }
-
-        // 完全撤资的情况
-        if (tokenAmount == type(uint256).max) {
+        } else if (tokenAmount == type(uint256).max) {
             return (currentLiquidity, true);
         }
 
@@ -478,18 +466,10 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         // 简化边界情况处理
         if (liquidityToRemove == 0) {
             // 如果计算出的流动性为0，可能是因为价格区间太小或价格在边界
-            // 在这种情况下，如果请求的金额很大，就进行完全撤资
-            if (tokenAmount >= 100e18) {
-                liquidityToRemove = currentLiquidity;
-                isFullDivestment = true;
-            }
-        } else if (liquidityToRemove >= currentLiquidity) {
-            // 确保不超过当前流动性
-            liquidityToRemove = currentLiquidity;
-            isFullDivestment = true;
+            // 对于小额撤资，至少移除5%的流动性
+            liquidityToRemove = (currentLiquidity * 5) / 100;
         } else if (liquidityToRemove >= (currentLiquidity * 95) / 100) {
             // 如果请求的流动性大于等于当前流动性的95%，则完全撤资
-            // 这样可以避免由于精度问题导致的部分撤资被误判为完全撤资
             liquidityToRemove = currentLiquidity;
             isFullDivestment = true;
         }
@@ -541,7 +521,7 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
 
             _removeLiquidityAndCollectTokens(config, tokenId, liquidityToRemove);
 
-            // 计算实际撤资的代币数量（交换前）
+            // 计算实际撤资的代币数量
             actualTokenAmount = asset.balanceOf(address(this)) - balanceBefore;
             counterPartyTokenAmount = config.counterPartyToken.balanceOf(address(this)) - counterPartyBalanceBefore;
             liquidity = liquidityToRemove;
@@ -556,10 +536,9 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
         }
 
         // 将配对资产兑换回基础资产
-        uint256 counterPartyTokenBalance = config.counterPartyToken.balanceOf(address(this));
-        if (counterPartyTokenBalance > 0) {
+        if (counterPartyTokenAmount > 0) {
             uint256 swapAmount = _swapToken(
-                config.counterPartyToken, asset, config.feeTier, counterPartyTokenBalance, config.slippageTolerance
+                config.counterPartyToken, asset, config.feeTier, counterPartyTokenAmount, config.slippageTolerance
             );
             // 更新实际撤资的代币数量（包括兑换后的）
             actualTokenAmount += swapAmount;
@@ -686,10 +665,10 @@ contract UniswapV3Adapter is IProtocolAdapter, Ownable {
 
             if (address(asset) == token0) {
                 // asset是token0，需要将token1转换为token0的价值
-                return UniswapV3Math.calculateTokenValue(totalAmount0, totalAmount1, sqrtPriceX96, false);
+                return totalAmount0 + UniswapV3Math.calculatePriceConversion(totalAmount1, sqrtPriceX96, false);
             } else {
                 // asset是token1，需要将token0转换为token1的价值
-                return UniswapV3Math.calculateTokenValue(totalAmount0, totalAmount1, sqrtPriceX96, true);
+                return totalAmount1 + UniswapV3Math.calculatePriceConversion(totalAmount0, sqrtPriceX96, true);
             }
         } catch {
             return 0;

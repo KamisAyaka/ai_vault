@@ -429,15 +429,12 @@ contract RealisticSwapRouter {
         address tokenOut;
         uint24 fee;
         address recipient;
-        uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
         uint160 sqrtPriceLimitX96;
     }
 
     function exactInputSingle(ExactInputSingleParams calldata params) external returns (uint256 amountOut) {
-        require(block.timestamp <= params.deadline, "expired");
-
         IERC20(params.tokenIn).transferFrom(msg.sender, address(this), params.amountIn);
         IERC20(params.tokenIn).approve(address(pool), params.amountIn);
 
@@ -458,30 +455,46 @@ contract RealisticQuoter {
         factory = RealisticUniswapV3Factory(_factory);
     }
 
-    function quoteExactInputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint160)
+    // 定义结构体以匹配 IQuoterV2 接口
+    struct QuoteExactInputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        uint256 amountIn;
+        uint24 fee;
+        uint160 sqrtPriceLimitX96;
+    }
+
+    function quoteExactInputSingle(QuoteExactInputSingleParams memory params)
         external
         view
-        returns (uint256 amountOut)
+        returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate)
     {
         // 获取正确的池子地址
-        address poolAddress = factory.getPool(tokenIn, tokenOut, fee);
+        address poolAddress = factory.getPool(params.tokenIn, params.tokenOut, params.fee);
         if (poolAddress == address(0)) {
             revert("Pool not found");
         }
 
         RealisticUniswapV3Pool targetPool = RealisticUniswapV3Pool(poolAddress);
         (uint160 sqrtPriceX96,,,,,,) = targetPool.slot0();
+
+        // 计算价格
         uint256 priceX96 = (uint256(sqrtPriceX96) * uint256(sqrtPriceX96)) >> 96;
 
-        if (tokenIn == targetPool.token0() && tokenOut == targetPool.token1()) {
-            amountOut = (amountIn * priceX96) / (1 << 96);
-        } else if (tokenIn == targetPool.token1() && tokenOut == targetPool.token0()) {
-            amountOut = (amountIn << 96) / priceX96;
+        if (params.tokenIn == targetPool.token0() && params.tokenOut == targetPool.token1()) {
+            amountOut = (params.amountIn * priceX96) / (1 << 96);
+        } else if (params.tokenIn == targetPool.token1() && params.tokenOut == targetPool.token0()) {
+            amountOut = (params.amountIn << 96) / priceX96;
         } else {
             revert("invalid pair");
         }
 
-        // 应用手续费
-        amountOut = (amountOut * (1e6 - fee)) / 1e6;
+        // 应用手续费 (fee 以基点为单位，3000 = 0.3%)
+        amountOut = (amountOut * (10000 - params.fee)) / 10000;
+
+        // 返回接口要求的所有值
+        sqrtPriceX96After = sqrtPriceX96;
+        initializedTicksCrossed = 0; // 简化实现，假设没有跨越tick
+        gasEstimate = 100000; // 估算gas消耗
     }
 }

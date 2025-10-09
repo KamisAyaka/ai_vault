@@ -233,10 +233,7 @@ contract DeployAIVault is ScaffoldETHDeploy {
 
         // Deploy UniswapV3 adapter
         uniswapV3Adapter = new UniswapV3Adapter(
-            address(realisticUniswapV3Router),
-            address(realisticPositionManager),
-            address(realisticUniswapV3Factory),
-            address(realisticQuoter)
+            address(realisticUniswapV3Router), address(realisticPositionManager), address(realisticUniswapV3Factory)
         );
         console.log("UniswapV3Adapter deployed at:", address(uniswapV3Adapter));
         deployments.push(Deployment("UniswapV3Adapter", address(uniswapV3Adapter)));
@@ -384,8 +381,8 @@ contract DeployAIVault is ScaffoldETHDeploy {
             address(weth),
             5000, // 50% slippage - 非常宽松的滑点设置
             3000, // 0.3% fee tier
-            -600, // tick lower
-            600, // tick upper
+            59400, // tick lower - 更合理的价格区间
+            60600, // tick upper - 更合理的价格区间
             vault
         );
         manager.execute(2, 0, data); // UniswapV3 adapter index = 2
@@ -403,8 +400,8 @@ contract DeployAIVault is ScaffoldETHDeploy {
             address(usdc), // ETH 使用 USDC 作为交易对
             5000, // 50% slippage - 非常宽松的滑点设置
             3000, // 0.3% fee tier
-            -600, // tick lower
-            600, // tick upper
+            59400, // tick lower - 更合理的价格区间
+            60600, // tick upper - 更合理的价格区间
             vault
         );
         manager.execute(2, 0, data); // UniswapV3 adapter index = 2

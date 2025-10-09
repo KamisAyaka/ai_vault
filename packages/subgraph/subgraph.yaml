@@ -11,8 +11,8 @@ dataSources:
     network: sepolia
     source:
       abi: VaultFactory
-      address: "0x9B20939E88D9072e2f08f44Cde24DF0E78dFFaAE"
-      startBlock: 9347376
+      address: "0x88196cb89debc5681e78f860eb26cc3cbea52301"
+      startBlock: 9374108
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -39,8 +39,8 @@ dataSources:
     network: sepolia
     source:
       abi: AIAgentVaultManager
-      address: "0x6E997C66181AE215C6a3E5423cE4aa6fFB4CFff2"
-      startBlock: 9347376
+      address: "0x2a79e44be58c2ea6c098554575005f659fad29ff"
+      startBlock: 9374108
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -70,8 +70,8 @@ dataSources:
     network: sepolia
     source:
       abi: VaultImplementation
-      address: "0x32Cac3f333b5cED4846DeD2C4efA17350741B8B1"
-      startBlock: 9347376
+      address: "0xe6211eefde76f052d0559541cfa05df8b4675d3c"
+      startBlock: 9374108
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -105,8 +105,8 @@ dataSources:
     network: sepolia
     source:
       abi: VaultSharesETH
-      address: "0x3e6c65b902385921Ead89369569f71e571FA1e49"
-      startBlock: 9347376
+      address: "0xcc80c5f5daf5d4904d4f3889b4fbcf515be5a567"
+      startBlock: 9374109
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -140,8 +140,8 @@ dataSources:
     network: sepolia
     source:
       abi: AaveAdapter
-      address: "0x6005EC07f4e4F61be7526695445f3274B360CE30"
-      startBlock: 9347376
+      address: "0x95c3328154f237472b6f56f1f869aff59b2a95a0"
+      startBlock: 9374108
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -165,8 +165,8 @@ dataSources:
     network: sepolia
     source:
       abi: UniswapV2Adapter
-      address: "0x386A472650E95229ff59b7b196F0fC2FB93B735E"
-      startBlock: 9347376
+      address: "0xb5022824fa9d2d51dc009c1d7870c2dec7459b47"
+      startBlock: 9374108
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -194,8 +194,8 @@ dataSources:
     network: sepolia
     source:
       abi: UniswapV3Adapter
-      address: "0x1206dfd237894aE33a16D16e84ec4C245BEb1800"
-      startBlock: 9347376
+      address: "0x01d5bfc9d59b4ce25778e9e085532d7310453332"
+      startBlock: 9374108
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9

@@ -133,8 +133,7 @@ contract DeploySepoliaAIVault is ScaffoldETHDeploy {
         deployments.push(Deployment("UniswapV2Adapter", address(uniswapV2Adapter)));
 
         // Deploy UniswapV3 adapter with Sepolia addresses
-        uniswapV3Adapter =
-            new UniswapV3Adapter(UNISWAP_V3_ROUTER, UNISWAP_V3_POSITION_MANAGER, UNISWAP_V3_FACTORY, UNISWAP_V3_QUOTER);
+        uniswapV3Adapter = new UniswapV3Adapter(UNISWAP_V3_ROUTER, UNISWAP_V3_POSITION_MANAGER, UNISWAP_V3_FACTORY);
         console.log("UniswapV3Adapter deployed at:", address(uniswapV3Adapter));
         deployments.push(Deployment("UniswapV3Adapter", address(uniswapV3Adapter)));
 
@@ -281,8 +280,8 @@ contract DeploySepoliaAIVault is ScaffoldETHDeploy {
             address(counterPartyToken),
             500, // 5% slippage tolerance
             3000, // 0.3% fee tier
-            -600, // tick lower
-            600, // tick upper
+            59400, // tick lower - 更合理的价格区间
+            60600, // tick upper - 更合理的价格区间
             vault
         );
         manager.execute(2, 0, data); // UniswapV3 adapter index = 2
