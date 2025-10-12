@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount, useWriteContract } from "wagmi";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
+import { useTokenUsdPrices } from "~~/hooks/useTokenUsdPrices";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -34,6 +35,20 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
 
   const assetSymbol = vault.asset?.symbol?.toUpperCase() || "TOKEN";
   const assetDecimals = vault.asset?.decimals || 18;
+  const { tokenPrices } = useTokenUsdPrices();
+
+  const formatUsdValue = (value?: number | null, fractionDigits = 2) => {
+    if (value === undefined || value === null || !Number.isFinite(value)) return null;
+    return `$${value.toLocaleString(undefined, { maximumFractionDigits: fractionDigits })}`;
+  };
+
+  const assetUsdPrice = useMemo(() => {
+    const upper = assetSymbol.toUpperCase();
+    if (tokenPrices[upper]) return tokenPrices[upper];
+    if (upper === "ETH" || upper === "WETH") return tokenPrices.WETH;
+    if (["USDC", "USDT", "DAI", "USDP", "TUSD"].includes(upper)) return 1;
+    return undefined;
+  }, [assetSymbol, tokenPrices]);
 
   const { data: vaultContractInfo } = useDeployedContractInfo({
     contractName: "VaultImplementation",
@@ -179,6 +194,41 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
     }
   }, [amount, mode, userPosition, estimation, assetDecimals]);
 
+  const amountUsd = useMemo(() => {
+    if (!assetUsdPrice || !amount) return null;
+    if (mode === "assets") {
+      const numeric = Number(amount);
+      return Number.isFinite(numeric) ? numeric * assetUsdPrice : null;
+    }
+    const numeric = Number(estimation.assets);
+    return Number.isFinite(numeric) ? numeric * assetUsdPrice : null;
+  }, [amount, assetUsdPrice, estimation.assets, mode]);
+
+  const estimationUsd = useMemo(() => {
+    if (!assetUsdPrice) return null;
+    const numeric = Number(estimation.assets);
+    return Number.isFinite(numeric) ? numeric * assetUsdPrice : null;
+  }, [assetUsdPrice, estimation.assets]);
+
+  const remainingValueUsd = useMemo(() => {
+    if (!assetUsdPrice) return null;
+    const numeric = Number(formatUnits(remainingPosition.value, assetDecimals));
+    return Number.isFinite(numeric) ? numeric * assetUsdPrice : null;
+  }, [assetDecimals, assetUsdPrice, remainingPosition.value]);
+
+  const userCurrentValueUsd = useMemo(() => {
+    if (!assetUsdPrice) return null;
+    const numeric = Number(formatUnits(userPosition.value, assetDecimals));
+    return Number.isFinite(numeric) ? numeric * assetUsdPrice : null;
+  }, [assetDecimals, assetUsdPrice, userPosition.value]);
+
+  const userProfitUsd = useMemo(() => {
+    if (!assetUsdPrice) return null;
+    const numeric = Number(formatUnits(userPosition.profit, assetDecimals));
+    return Number.isFinite(numeric) ? numeric * assetUsdPrice : null;
+  }, [assetDecimals, assetUsdPrice, userPosition.profit]);
+  const userProfitUsdDisplay = userProfitUsd !== null ? formatUsdValue(Math.abs(userProfitUsd)) : null;
+
   const handleMaxClick = () => {
     if (mode === "assets") {
       setAmount(formatUnits(userPosition.value, assetDecimals));
@@ -316,6 +366,9 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
             <p className="font-semibold">
               ~{formatBalance(userPosition.value)} {assetSymbol}
             </p>
+            {formatUsdValue(userCurrentValueUsd) && (
+              <p className="text-xs opacity-70">≈ {formatUsdValue(userCurrentValueUsd)} USDT</p>
+            )}
           </div>
           <div>
             <p className="mb-1 text-xs opacity-70">收益</p>
@@ -327,6 +380,12 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
                 {profitPercent.toFixed(2)}%)
               </span>
             </p>
+            {userProfitUsdDisplay && (
+              <p className={`text-xs mt-1 ${userPosition.profit >= 0n ? "text-success" : "text-error"}`}>
+                {userPosition.profit >= 0n ? "+" : "-"}
+                {userProfitUsdDisplay} USDT
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -351,6 +410,9 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
             最大
           </button>
         </div>
+        {formatUsdValue(amountUsd) && amount && (
+          <p className="mt-2 text-xs opacity-70">≈ {formatUsdValue(amountUsd)} USDT</p>
+        )}
       </div>
 
       {amount && isValidAmount && (
@@ -364,6 +426,9 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
               <p className="mt-1 text-xs opacity-70">
                 (当前汇率: 1 v{assetSymbol} = {exchangeRate} {assetSymbol})
               </p>
+              {formatUsdValue(estimationUsd) && (
+                <p className="text-xs opacity-70 mt-1">≈ {formatUsdValue(estimationUsd)} USDT</p>
+              )}
             </>
           ) : (
             <>
@@ -374,6 +439,9 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
               <p className="mt-1 text-xs opacity-70">
                 (当前汇率: 1 v{assetSymbol} = {exchangeRate} {assetSymbol})
               </p>
+              {formatUsdValue(estimationUsd) && (
+                <p className="text-xs opacity-70 mt-1">≈ {formatUsdValue(estimationUsd)} USDT</p>
+              )}
             </>
           )}
         </div>
@@ -396,6 +464,9 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
               </span>
             </li>
           </ul>
+          {formatUsdValue(remainingValueUsd) && (
+            <p className="mt-2 text-xs opacity-70">≈ {formatUsdValue(remainingValueUsd)} USDT</p>
+          )}
         </div>
       )}
 

@@ -8,15 +8,9 @@ import { useAccount } from "wagmi";
 import { VaultReactivationModal } from "~~/components/admin/VaultReactivationModal";
 import { RoleDisplay } from "~~/components/auth/RoleDisplay";
 import { Address } from "~~/components/scaffold-eth";
-import {
-  DepositETHModal,
-  DepositModal,
-  MintETHModal,
-  MintModal,
-  WithdrawETHModal,
-  WithdrawModal,
-} from "~~/components/vault";
+import { DepositMintModal, WithdrawETHModal, WithdrawModal } from "~~/components/vault";
 import { useGsapFadeReveal, useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
+import { useTokenUsdPrices } from "~~/hooks/useTokenUsdPrices";
 import { useUserPortfolio } from "~~/hooks/useUserPortfolio";
 import { useUserRole } from "~~/hooks/useUserRole";
 import { useVaultPerformance } from "~~/hooks/useVaultPerformance";
@@ -60,11 +54,12 @@ const VaultDetailPage = () => {
   const { address: connectedAddress } = useAccount();
   const { vaults, loading, error, refetch } = useVaults(200);
   const { data: performanceData } = useVaultPerformance(200);
+  const { tokenPrices } = useTokenUsdPrices();
   const { balances: userBalances } = useUserPortfolio();
 
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [entryModalMode, setEntryModalMode] = useState<"deposit" | "mint">("deposit");
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-  const [isMintModalOpen, setIsMintModalOpen] = useState(false);
   const [isReactivationModalOpen, setIsReactivationModalOpen] = useState(false);
 
   const heroRef = useRef<HTMLDivElement | null>(null);
@@ -100,6 +95,22 @@ const VaultDetailPage = () => {
 
   const totalAssets = safeBigInt(vault?.totalAssets);
   const totalSupply = safeBigInt(vault?.totalSupply);
+
+  const formatUsdValue = (value?: number | null, fractionDigits = 2) => {
+    if (value === undefined || value === null || !Number.isFinite(value)) return null;
+    return `$${value.toLocaleString(undefined, { maximumFractionDigits: fractionDigits })}`;
+  };
+
+  const resolveTokenUsdPrice = (symbol: string) => {
+    const upper = symbol.toUpperCase();
+    if (tokenPrices[upper]) return tokenPrices[upper];
+    if (upper === "ETH" || upper === "WETH") return tokenPrices.WETH;
+    return undefined;
+  };
+
+  const assetUsdPrice = resolveTokenUsdPrice(assetSymbol);
+  const totalAssetsNumber = Number(formatUnits(totalAssets, assetDecimals));
+  const totalAssetsUsd = assetUsdPrice ? totalAssetsNumber * assetUsdPrice : null;
 
   const sharePrice = useMemo(() => {
     if (totalSupply === 0n) return "1.0000";
@@ -191,6 +202,13 @@ const VaultDetailPage = () => {
   }, [vault, userVaultBalance, connectedAddress, totalAssets, totalSupply]);
 
   const userBalanceUpdatedAt = userVaultBalance ? Number(userVaultBalance.lastUpdated ?? "0") * 1000 : 0;
+  const userValueUsd = assetUsdPrice ? Number(formatUnits(userStats.value, assetDecimals)) * assetUsdPrice : null;
+  const userDepositedUsd = assetUsdPrice
+    ? Number(formatUnits(userStats.deposited, assetDecimals)) * assetUsdPrice
+    : null;
+  const userRedeemedUsd = assetUsdPrice ? Number(formatUnits(userStats.redeemed, assetDecimals)) * assetUsdPrice : null;
+  const userProfitUsd = assetUsdPrice ? Number(formatUnits(userStats.profit, assetDecimals)) * assetUsdPrice : null;
+  const userProfitUsdDisplay = userProfitUsd !== null ? formatUsdValue(Math.abs(userProfitUsd)) : null;
 
   const transactionRows = useMemo(() => {
     const deposits = vault?.deposits ?? [];
@@ -280,6 +298,9 @@ const VaultDetailPage = () => {
                   <p className="text-lg font-semibold">
                     {formatTokenAmount(totalAssets, assetDecimals)} {assetSymbol}
                   </p>
+                  {formatUsdValue(totalAssetsUsd) && (
+                    <p className="text-xs opacity-70">≈ {formatUsdValue(totalAssetsUsd)} USDT</p>
+                  )}
                 </div>
                 <div>
                   <p className="opacity-70">Total Supply</p>
@@ -340,18 +361,36 @@ const VaultDetailPage = () => {
                         {formatTokenAmount(userStats.value, assetDecimals)} {assetSymbol}
                       </span>
                     </div>
+                    {formatUsdValue(userValueUsd) && (
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-70">≈</span>
+                        <span className="opacity-70">{formatUsdValue(userValueUsd)} USDT</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="opacity-70">Total Deposited</span>
                       <span>
                         {formatTokenAmount(userStats.deposited, assetDecimals)} {assetSymbol}
                       </span>
                     </div>
+                    {formatUsdValue(userDepositedUsd) && (
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-70">≈</span>
+                        <span className="opacity-70">{formatUsdValue(userDepositedUsd)} USDT</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="opacity-70">Total Withdrawn</span>
                       <span>
                         {formatTokenAmount(userStats.redeemed, assetDecimals)} {assetSymbol}
                       </span>
                     </div>
+                    {formatUsdValue(userRedeemedUsd) && (
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-70">≈</span>
+                        <span className="opacity-70">{formatUsdValue(userRedeemedUsd)} USDT</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="opacity-70">Profit / Loss</span>
                       <span className={userStats.profit >= 0n ? "text-success" : "text-error"}>
@@ -360,6 +399,15 @@ const VaultDetailPage = () => {
                         {formatPercent(userStats.profitPercent, 2)})
                       </span>
                     </div>
+                    {userProfitUsdDisplay && (
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-70">≈</span>
+                        <span className={userStats.profit >= 0n ? "text-success" : "text-error"}>
+                          {userStats.profit >= 0n ? "+" : "-"}
+                          {userProfitUsdDisplay} USDT
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -372,14 +420,20 @@ const VaultDetailPage = () => {
                 <div className="card-actions justify-end gap-2 pt-2">
                   <button
                     className="btn btn-primary"
-                    onClick={() => setIsDepositModalOpen(true)}
+                    onClick={() => {
+                      setEntryModalMode("deposit");
+                      setIsDepositModalOpen(true);
+                    }}
                     disabled={!vault.isActive}
                   >
                     Deposit
                   </button>
                   <button
                     className="btn btn-accent"
-                    onClick={() => setIsMintModalOpen(true)}
+                    onClick={() => {
+                      setEntryModalMode("mint");
+                      setIsDepositModalOpen(true);
+                    }}
                     disabled={!vault.isActive}
                   >
                     Mint Shares
@@ -573,48 +627,27 @@ const VaultDetailPage = () => {
         </div>
       </div>
 
+      <DepositMintModal
+        vault={vault}
+        isOpen={isDepositModalOpen}
+        onClose={() => setIsDepositModalOpen(false)}
+        onSuccess={refetch}
+        defaultMode={entryModalMode}
+      />
       {isETHVault ? (
-        <>
-          <DepositETHModal
-            vault={vault}
-            isOpen={isDepositModalOpen}
-            onClose={() => setIsDepositModalOpen(false)}
-            onSuccess={refetch}
-          />
-          <MintETHModal
-            vault={vault}
-            isOpen={isMintModalOpen}
-            onClose={() => setIsMintModalOpen(false)}
-            onSuccess={refetch}
-          />
-          <WithdrawETHModal
-            vault={vault}
-            isOpen={isWithdrawModalOpen}
-            onClose={() => setIsWithdrawModalOpen(false)}
-            onSuccess={refetch}
-          />
-        </>
+        <WithdrawETHModal
+          vault={vault}
+          isOpen={isWithdrawModalOpen}
+          onClose={() => setIsWithdrawModalOpen(false)}
+          onSuccess={refetch}
+        />
       ) : (
-        <>
-          <DepositModal
-            vault={vault}
-            isOpen={isDepositModalOpen}
-            onClose={() => setIsDepositModalOpen(false)}
-            onSuccess={refetch}
-          />
-          <MintModal
-            vault={vault}
-            isOpen={isMintModalOpen}
-            onClose={() => setIsMintModalOpen(false)}
-            onSuccess={refetch}
-          />
-          <WithdrawModal
-            vault={vault}
-            isOpen={isWithdrawModalOpen}
-            onClose={() => setIsWithdrawModalOpen(false)}
-            onSuccess={refetch}
-          />
-        </>
+        <WithdrawModal
+          vault={vault}
+          isOpen={isWithdrawModalOpen}
+          onClose={() => setIsWithdrawModalOpen(false)}
+          onSuccess={refetch}
+        />
       )}
 
       <VaultReactivationModal

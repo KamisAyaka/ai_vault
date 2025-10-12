@@ -7,6 +7,7 @@ import { WithdrawETHModal } from "./WithdrawETHModal";
 import { WithdrawModal } from "./WithdrawModal";
 import { formatUnits } from "viem";
 import { Address } from "~~/components/scaffold-eth";
+import { useTokenUsdPrices } from "~~/hooks/useTokenUsdPrices";
 import { useVaultPerformance } from "~~/hooks/useVaultPerformance";
 import { useTranslations } from "~~/services/i18n/I18nProvider";
 import type { Vault } from "~~/types/vault";
@@ -22,6 +23,7 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const tCard = useTranslations("vaultCard");
   const tStatus = useTranslations("common.status");
+  const { tokenPrices } = useTokenUsdPrices();
 
   // 获取金库性能数据
   const { data: performanceData } = useVaultPerformance(1000);
@@ -70,6 +72,22 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
   const totalAssetsBigInt = safeBigInt(vault.totalAssets);
   const totalSupplyBigInt = safeBigInt(vault.totalSupply);
 
+  const formatUsdValue = (value?: number | null, fractionDigits = 2) => {
+    if (value === undefined || value === null || !Number.isFinite(value)) return null;
+    return `$${value.toLocaleString(undefined, { maximumFractionDigits: fractionDigits })}`;
+  };
+
+  const resolveTokenUsdPrice = (symbol: string) => {
+    const upper = symbol.toUpperCase();
+    if (tokenPrices[upper]) return tokenPrices[upper];
+    if (upper === "ETH" || upper === "WETH") return tokenPrices.WETH;
+    return undefined;
+  };
+
+  const assetUsdPrice = resolveTokenUsdPrice(assetSymbol);
+  const totalAssetsAmount = Number(formatUnits(totalAssetsBigInt, assetDecimals));
+  const tvlUsd = assetUsdPrice ? totalAssetsAmount * assetUsdPrice : null;
+
   // 使用真实APY数据
   const apy = vaultPerformance?.currentAPY || 5.0;
   const managementFeeRate = vaultPerformance?.managementFeeRate || 0.01;
@@ -84,7 +102,7 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
 
   const userShareData = () => {
     if (!userAddress) {
-      return { shares: 0n, formattedShares: "0", formattedValue: "0" };
+      return { shares: 0n, formattedShares: "0", formattedValue: "0", valueNumber: 0 };
     }
 
     const lowercaseAddress = userAddress.toLowerCase();
@@ -93,7 +111,7 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
       .reduce<bigint>((sum, deposit) => sum + safeBigInt(deposit.userShares), 0n);
 
     if (userShares === 0n) {
-      return { shares: 0n, formattedShares: "0", formattedValue: "0" };
+      return { shares: 0n, formattedShares: "0", formattedValue: "0", valueNumber: 0 };
     }
 
     const vaultTotalSupply = totalSupplyBigInt;
@@ -104,10 +122,12 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
       shares: userShares,
       formattedShares: formatTokenAmount(userShares, assetDecimals, 4),
       formattedValue: formatTokenAmount(userAssetAmount, assetDecimals, 4),
+      valueNumber: Number(formatUnits(userAssetAmount, assetDecimals)),
     };
   };
 
-  const { formattedShares, formattedValue } = userShareData();
+  const { formattedShares, formattedValue, valueNumber: userValueNumber } = userShareData();
+  const userValueUsd = assetUsdPrice ? userValueNumber * assetUsdPrice : null;
 
   // 判断是否为 ETH 金库
   const isETHVault = assetSymbol === "WETH" || assetSymbol === "ETH";
@@ -139,6 +159,7 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
               <div className="font-bold text-lg">
                 {formatTokenAmount(totalAssetsBigInt, assetDecimals)} {assetSymbol}
               </div>
+              {formatUsdValue(tvlUsd) && <div className="text-xs opacity-70 mt-1">≈ {formatUsdValue(tvlUsd)} USDT</div>}
             </div>
             <div className="bg-base-200 p-3 rounded-lg">
               <div className="text-xs opacity-70 mb-1">{tCard("labels.apy")}</div>
@@ -197,6 +218,9 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
                 <div className="opacity-70 text-xs mt-1">
                   ≈ {formattedValue} {assetSymbol}
                 </div>
+                {formatUsdValue(userValueUsd) && (
+                  <div className="opacity-70 text-xs mt-1">≈ {formatUsdValue(userValueUsd)} USDT</div>
+                )}
               </div>
             </div>
           )}
@@ -208,6 +232,7 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
                   {tCard("labels.shares")}:<span className="font-bold">0</span>
                 </div>
                 <p className="opacity-70 text-xs mt-1 leading-snug">{tCard("messages.noPosition")}</p>
+                {assetUsdPrice && <p className="opacity-70 text-xs mt-1">≈ $0.00 USDT</p>}
               </div>
             </div>
           )}

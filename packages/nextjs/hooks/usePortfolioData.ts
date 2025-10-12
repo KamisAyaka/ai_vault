@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTokenUsdPrices } from "./useTokenUsdPrices";
 import { useUserPortfolio } from "./useUserPortfolio";
 import { useVaults } from "./useVaults";
 import { formatUnits } from "viem";
@@ -94,9 +95,13 @@ const toNumber = (value: bigint, decimals: number) => {
   }
 };
 
-const getAssetPrice = (symbol: string, nativePrice: number) => {
-  if (STABLE_ASSETS.has(symbol)) return 1;
-  if (symbol === "ETH" || symbol === "WETH") return nativePrice || 0;
+const getAssetPrice = (symbol: string, nativePrice: number, tokenPrices: Record<string, number>) => {
+  const upper = symbol.toUpperCase();
+  if (tokenPrices[upper]) {
+    return tokenPrices[upper];
+  }
+  if (STABLE_ASSETS.has(upper)) return 1;
+  if (upper === "ETH" || upper === "WETH") return tokenPrices.WETH ?? nativePrice ?? 0;
   return 1;
 };
 
@@ -125,6 +130,7 @@ export const usePortfolioData = () => {
     error: userPortfolioError,
   } = useUserPortfolio();
   const nativePrice = useGlobalState(state => state.nativeCurrency.price) || 0;
+  const { tokenPrices } = useTokenUsdPrices();
 
   const lowerAddress = connectedAddress?.toLowerCase();
 
@@ -143,7 +149,7 @@ export const usePortfolioData = () => {
 
           const decimals = vault.asset?.decimals ?? 18;
           const symbol = vault.asset?.symbol?.toUpperCase() ?? "TOKEN";
-          const price = getAssetPrice(symbol, nativePrice);
+          const price = getAssetPrice(symbol, nativePrice, tokenPrices);
 
           const shares = toBigInt(balance.currentShares);
           const assetValue = toNumber(toBigInt(balance.currentValue), decimals);
@@ -199,7 +205,7 @@ export const usePortfolioData = () => {
       .map(vault => {
         const decimals = vault.asset?.decimals ?? 18;
         const symbol = vault.asset?.symbol?.toUpperCase() ?? "TOKEN";
-        const price = getAssetPrice(symbol, nativePrice);
+        const price = getAssetPrice(symbol, nativePrice, tokenPrices);
 
         const userDeposits = (vault.deposits || []).filter(
           deposit => deposit.user?.address?.toLowerCase() === lowerAddress,
@@ -330,7 +336,7 @@ export const usePortfolioData = () => {
 
     vaults?.forEach(vault => {
       const symbol = vault.asset?.symbol?.toUpperCase() ?? "TOKEN";
-      const price = getAssetPrice(symbol, nativePrice);
+      const price = getAssetPrice(symbol, nativePrice, tokenPrices);
       const decimals = vault.asset?.decimals ?? 18;
 
       (vault.deposits || []).forEach(deposit => {
@@ -402,7 +408,7 @@ export const usePortfolioData = () => {
     vaults.forEach(vault => {
       const decimals = vault.asset?.decimals ?? 18;
       const symbol = vault.asset?.symbol?.toUpperCase() ?? "TOKEN";
-      const price = getAssetPrice(symbol, nativePrice);
+      const price = getAssetPrice(symbol, nativePrice, tokenPrices);
 
       (vault.deposits || []).forEach((deposit, index) => {
         if (deposit.user?.address?.toLowerCase() !== lowerAddress) return;

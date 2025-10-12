@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount, useWriteContract } from "wagmi";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
+import { useTokenUsdPrices } from "~~/hooks/useTokenUsdPrices";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -33,6 +34,13 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
   const { address: connectedAddress } = useAccount();
 
   const assetDecimals = 18; // ETH always uses 18 decimals
+  const { tokenPrices } = useTokenUsdPrices();
+  const ethUsdPrice = tokenPrices.WETH;
+
+  const formatUsdValue = (value?: number | null, fractionDigits = 2) => {
+    if (value === undefined || value === null || !Number.isFinite(value)) return null;
+    return `$${value.toLocaleString(undefined, { maximumFractionDigits: fractionDigits })}`;
+  };
 
   const { data: vaultContractInfo } = useDeployedContractInfo({
     contractName: "VaultSharesETH",
@@ -178,6 +186,39 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
     }
   }, [amount, mode, userPosition, estimation, assetDecimals]);
 
+  const amountUsd = useMemo(() => {
+    if (!ethUsdPrice || !amount) return null;
+    if (mode === "assets") {
+      const numeric = Number(amount);
+      return Number.isFinite(numeric) ? numeric * ethUsdPrice : null;
+    }
+    const numeric = Number(estimation.assets);
+    return Number.isFinite(numeric) ? numeric * ethUsdPrice : null;
+  }, [amount, estimation.assets, ethUsdPrice, mode]);
+
+  const estimationUsd = useMemo(() => {
+    if (!ethUsdPrice) return null;
+    const numeric = Number(estimation.assets);
+    return Number.isFinite(numeric) ? numeric * ethUsdPrice : null;
+  }, [ethUsdPrice, estimation.assets]);
+
+  const remainingValueUsd = useMemo(() => {
+    if (!ethUsdPrice) return null;
+    const numeric = Number(formatUnits(remainingPosition.value, assetDecimals));
+    return Number.isFinite(numeric) ? numeric * ethUsdPrice : null;
+  }, [assetDecimals, ethUsdPrice, remainingPosition.value]);
+  const userCurrentValueUsd = useMemo(() => {
+    if (!ethUsdPrice) return null;
+    const numeric = Number(formatUnits(userPosition.value, assetDecimals));
+    return Number.isFinite(numeric) ? numeric * ethUsdPrice : null;
+  }, [assetDecimals, ethUsdPrice, userPosition.value]);
+  const userProfitUsd = useMemo(() => {
+    if (!ethUsdPrice) return null;
+    const numeric = Number(formatUnits(userPosition.profit, assetDecimals));
+    return Number.isFinite(numeric) ? numeric * ethUsdPrice : null;
+  }, [assetDecimals, ethUsdPrice, userPosition.profit]);
+  const userProfitUsdDisplay = userProfitUsd !== null ? formatUsdValue(Math.abs(userProfitUsd)) : null;
+
   const handleMaxClick = () => {
     if (mode === "assets") {
       setAmount(formatUnits(userPosition.value, assetDecimals));
@@ -315,6 +356,9 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
           <div>
             <p className="mb-1 text-xs opacity-70">当前价值</p>
             <p className="font-semibold">~{formatBalance(userPosition.value)} ETH</p>
+            {formatUsdValue(userCurrentValueUsd) && (
+              <p className="text-xs opacity-70">≈ {formatUsdValue(userCurrentValueUsd)} USDT</p>
+            )}
           </div>
           <div>
             <p className="mb-1 text-xs opacity-70">收益</p>
@@ -326,6 +370,12 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
                 {profitPercent.toFixed(2)}%)
               </span>
             </p>
+            {userProfitUsdDisplay && (
+              <p className={`text-xs mt-1 ${userPosition.profit >= 0n ? "text-success" : "text-error"}`}>
+                {userPosition.profit >= 0n ? "+" : "-"}
+                {userProfitUsdDisplay} USDT
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -350,6 +400,9 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
             最大
           </button>
         </div>
+        {formatUsdValue(amountUsd) && amount && (
+          <p className="mt-2 text-xs opacity-70">≈ {formatUsdValue(amountUsd)} USDT</p>
+        )}
       </div>
 
       {amount && isValidAmount && (
@@ -361,6 +414,9 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
                 ~{parseFloat(estimation.shares).toLocaleString(undefined, { maximumFractionDigits: 4 })} vETH
               </p>
               <p className="mt-1 text-xs opacity-70">(当前汇率: 1 vETH = {exchangeRate} ETH)</p>
+              {formatUsdValue(estimationUsd) && (
+                <p className="mt-1 text-xs opacity-70">≈ {formatUsdValue(estimationUsd)} USDT</p>
+              )}
             </>
           ) : (
             <>
@@ -369,6 +425,9 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
                 ~{parseFloat(estimation.assets).toLocaleString(undefined, { maximumFractionDigits: 4 })} ETH
               </p>
               <p className="mt-1 text-xs opacity-70">(当前汇率: 1 vETH = {exchangeRate} ETH)</p>
+              {formatUsdValue(estimationUsd) && (
+                <p className="mt-1 text-xs opacity-70">≈ {formatUsdValue(estimationUsd)} USDT</p>
+              )}
             </>
           )}
         </div>
@@ -387,6 +446,9 @@ export const WithdrawETHModal = ({ vault, isOpen, onClose, onSuccess }: Withdraw
               <span className="font-semibold">~{formatBalance(remainingPosition.value)} ETH</span>
             </li>
           </ul>
+          {formatUsdValue(remainingValueUsd) && (
+            <p className="mt-2 text-xs opacity-70">≈ {formatUsdValue(remainingValueUsd)} USDT</p>
+          )}
         </div>
       )}
 

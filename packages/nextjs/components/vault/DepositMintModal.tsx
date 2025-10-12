@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { erc20Abi, formatEther, formatUnits, isAddress, parseEther, parseUnits } from "viem";
 import { useAccount, useBalance, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
+import { useTokenUsdPrices } from "~~/hooks/useTokenUsdPrices";
 import { useGlobalState } from "~~/services/store/store";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
@@ -14,9 +15,12 @@ type DepositMintModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  defaultMode?: Mode;
 };
 
 type Mode = "deposit" | "mint";
+
+const STABLE_ASSETS = new Set(["USDC", "USDT", "DAI", "USDP", "TUSD"]);
 
 const safeBigInt = (value?: string) => {
   try {
@@ -48,8 +52,19 @@ const formatNumericString = (value: string, fractionDigits = 4) => {
   return numeric.toLocaleString(undefined, { maximumFractionDigits: fractionDigits });
 };
 
-export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositMintModalProps) => {
-  const [mode, setMode] = useState<Mode>("deposit");
+const formatUsdValue = (value?: number | null, fractionDigits = 2) => {
+  if (value === undefined || value === null || !Number.isFinite(value)) return null;
+  return `$${value.toLocaleString(undefined, { maximumFractionDigits: fractionDigits })}`;
+};
+
+export const DepositMintModal = ({
+  vault,
+  isOpen,
+  onClose,
+  onSuccess,
+  defaultMode = "deposit",
+}: DepositMintModalProps) => {
+  const [mode, setMode] = useState<Mode>(defaultMode);
   const [amountInput, setAmountInput] = useState("");
   const [shareInput, setShareInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -58,6 +73,7 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
 
   const { address: connectedAddress } = useAccount();
   const nativePrice = useGlobalState(state => state.nativeCurrency.price) || 0;
+  const { tokenPrices } = useTokenUsdPrices();
 
   const assetSymbolFromMetadata = vault.asset?.symbol ?? "";
   const fallbackSymbol = () => {
@@ -73,6 +89,18 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
   const assetDecimals = vault.asset?.decimals ?? 18;
   const isETHVault = assetSymbol === "WETH" || assetSymbol === "ETH";
   const displayAssetSymbol = isETHVault ? "ETH" : assetSymbol;
+
+  const assetUsdPrice = useMemo(() => {
+    const symbolCandidates = [displayAssetSymbol.toUpperCase(), assetSymbol];
+    for (const symbol of symbolCandidates) {
+      if (tokenPrices[symbol]) return tokenPrices[symbol];
+      if (STABLE_ASSETS.has(symbol)) return 1;
+      if (symbol === "ETH" || symbol === "WETH") {
+        return tokenPrices.WETH ?? nativePrice ?? 0;
+      }
+    }
+    return undefined;
+  }, [assetSymbol, displayAssetSymbol, nativePrice, tokenPrices]);
 
   const totalAssets = safeBigInt(vault.totalAssets);
   const totalSupply = safeBigInt(vault.totalSupply);
@@ -161,6 +189,30 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
     }
   }, [shareInput, assetDecimals, totalAssets, totalSupply, isETHVault]);
 
+  const depositAmountNumber = useMemo(() => {
+    if (!amountInput) return 0;
+    const numeric = Number(amountInput);
+    return Number.isFinite(numeric) ? numeric : 0;
+  }, [amountInput]);
+
+  const mintCostAmountNumber = useMemo(() => {
+    const numeric = Number(requiredAssetsForShares);
+    return Number.isFinite(numeric) ? numeric : 0;
+  }, [requiredAssetsForShares]);
+
+  const depositAmountUsd = assetUsdPrice ? depositAmountNumber * assetUsdPrice : null;
+  const mintCostAmountUsd = assetUsdPrice ? mintCostAmountNumber * assetUsdPrice : null;
+  const estimatedSharesNumber = useMemo(() => {
+    const numeric = Number(estimatedShares);
+    return Number.isFinite(numeric) ? numeric : 0;
+  }, [estimatedShares]);
+  const estimatedSharesUsd = assetUsdPrice ? estimatedSharesNumber * exchangeRateNumber * assetUsdPrice : null;
+  const shareInputNumber = useMemo(() => {
+    const numeric = Number(shareInput);
+    return Number.isFinite(numeric) ? numeric : 0;
+  }, [shareInput]);
+  const shareInputUsd = assetUsdPrice ? shareInputNumber * exchangeRateNumber * assetUsdPrice : null;
+
   const usdPreviewForAmount = useMemo(() => {
     if (!amountInput || !isETHVault) return "-";
     try {
@@ -241,7 +293,7 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
   const resetState = () => {
     setAmountInput("");
     setShareInput("");
-    setMode("deposit");
+    setMode(defaultMode);
     setIsProcessing(false);
     setIsApproving(false);
   };
@@ -250,7 +302,13 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
     if (!isOpen) {
       resetState();
     }
-  }, [isOpen]);
+  }, [isOpen, defaultMode]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setMode(defaultMode);
+    }
+  }, [defaultMode, isOpen]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -474,7 +532,15 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
   const formattedTotalAssets = `${formatTokenAmount(totalAssets, assetDecimals)} ${assetSymbol}`;
   const formattedTotalSupply = `${formatTokenAmount(totalSupply, assetDecimals, 4)} v${assetSymbol}`;
 
-  const renderSummaryPanel = (primaryValue: string, previewLabel: string, previewValue: string) => (
+  const renderSummaryPanel = (
+    primaryValue: string,
+    previewLabel: string,
+    previewValue: string,
+    options?: {
+      primaryUsd?: number | null;
+      previewUsd?: number | null;
+    },
+  ) => (
     <div className="grid gap-3 text-sm md:grid-cols-2">
       <div className="rounded-xl border border-base-200/60 bg-base-200/30 p-3">
         <p className="text-xs uppercase tracking-widest text-primary">交易概要</p>
@@ -483,10 +549,22 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
             <span className="opacity-70">操作金额</span>
             <span className="font-semibold">{primaryValue}</span>
           </div>
+          {options?.primaryUsd !== undefined && formatUsdValue(options.primaryUsd) && (
+            <div className="flex items-center justify-between text-xs opacity-70">
+              <span>≈</span>
+              <span>{formatUsdValue(options.primaryUsd)} USDT</span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span className="opacity-70">{previewLabel}</span>
             <span className="font-semibold">{previewValue}</span>
           </div>
+          {options?.previewUsd !== undefined && formatUsdValue(options.previewUsd) && (
+            <div className="flex items-center justify-between text-xs opacity-70">
+              <span>≈</span>
+              <span>{formatUsdValue(options.previewUsd)} USDT</span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span className="opacity-70">账户余额</span>
             <span className="font-semibold">{formattedUserBalance}</span>
@@ -551,6 +629,9 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
           </button>
         </div>
         <p className="mt-2 text-xs opacity-70">可用余额 {formattedUserBalance}</p>
+        {formatUsdValue(depositAmountUsd) && amountInput && (
+          <p className="mt-1 text-xs opacity-70">≈ {formatUsdValue(depositAmountUsd)} USDT</p>
+        )}
       </section>
 
       <section className="grid gap-3 md:grid-cols-2">
@@ -580,6 +661,10 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
         amountInput ? `${amountInput} ${displayAssetSymbol}` : "—",
         "预计获得",
         amountInput && isValidDepositAmount ? `~${formatNumericString(estimatedShares)} v${assetSymbol}` : "—",
+        {
+          primaryUsd: depositAmountUsd,
+          previewUsd: estimatedSharesUsd,
+        },
       )}
 
       <div className="flex flex-wrap justify-center gap-3 pt-1">
@@ -645,6 +730,9 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
             </button>
           </div>
           <p className="mt-2 text-xs opacity-70">可用余额 {formattedUserBalance}</p>
+          {formatUsdValue(mintCostAmountUsd) && shareInput && (
+            <p className="mt-1 text-xs opacity-70">≈ {formatUsdValue(mintCostAmountUsd)} USDT</p>
+          )}
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
@@ -678,6 +766,10 @@ export const DepositMintModal = ({ vault, isOpen, onClose, onSuccess }: DepositM
         shareInput && isValidShareAmount
           ? `~${formatNumericString(requiredAssetsForShares)} ${displayAssetSymbol}`
           : "—",
+        {
+          primaryUsd: shareInputUsd,
+          previewUsd: mintCostAmountUsd,
+        },
       )}
 
       <div className="flex flex-wrap justify-center gap-3 pt-1">
