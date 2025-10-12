@@ -22,14 +22,7 @@ const PortfolioPage = () => {
   const tPortfolioPage = useTranslations("portfolioPage");
 
   const { loading, error, isConnected, data } = usePortfolioData();
-  const {
-    positions,
-    stats,
-    revenueHistory,
-    feeBreakdown,
-    transactionHistory,
-    userStats: userStatsSummary,
-  } = data || {};
+  const { positions, stats, revenueHistory, feeBreakdown, transactionHistory } = data || {};
 
   const filteredRevenueHistory = useMemo(() => {
     if (!revenueHistory) return [];
@@ -50,8 +43,6 @@ const PortfolioPage = () => {
   const positionsRef = useRef<HTMLDivElement | null>(null);
   const feesRef = useRef<HTMLDivElement | null>(null);
   const activityRef = useRef<HTMLDivElement | null>(null);
-
-  const formatBigInt = (value: bigint) => value.toLocaleString();
 
   useGsapHeroIntro(heroRef, [loading]);
   useGsapStaggerReveal(statsRef, {
@@ -146,7 +137,6 @@ const PortfolioPage = () => {
             <div className="card-body">
               <h3 className="text-sm text-[#fbe6dc]">{t("stats.totalValue")}</h3>
               <p className="text-3xl font-bold text-white">${formatCurrency(stats.totalPortfolioValue)}</p>
-              <div className="text-xs text-[#fbe6dc] mt-1">{stats.totalPositions}</div>
             </div>
           </div>
           <div className="portfolio-stat-card card bg-black/60 backdrop-blur-sm shadow-xl border border-[#803100]/30">
@@ -174,29 +164,6 @@ const PortfolioPage = () => {
             </div>
           </div>
         </div>
-
-        {userStatsSummary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="card bg-black/60 backdrop-blur-sm shadow-xl border border-[#803100]/30">
-              <div className="card-body text-[#fbe6dc]">
-                <h3 className="text-sm font-semibold uppercase tracking-widest text-[#fbe6dc]/80">
-                  {tPortfolioPage("accountSnapshot")}
-                </h3>
-                <p className="mt-2 text-3xl font-bold text-white">{userStatsSummary.activeVaultAddresses.length}</p>
-                <p className="text-xs text-[#fbe6dc]">{tPortfolioPage("activeVaults")}</p>
-                {userStatsSummary.lastUpdated > 0 && (
-                  <p className="mt-3 text-xs text-[#fbe6dc]/70">
-                    {tPortfolioPage("lastUpdated")} {new Date(userStatsSummary.lastUpdated).toLocaleString("zh-CN")}
-                  </p>
-                )}
-                <p className="mt-3 text-[11px] text-[#fbe6dc]/50">
-                  {tPortfolioPage("rawTotals")} {formatBigInt(userStatsSummary.totalDeposited)} |{" "}
-                  {tPortfolioPage("shares")} {formatBigInt(userStatsSummary.totalShares)}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div
           className="portfolio-section-card card bg-black/60 backdrop-blur-sm shadow-xl mb-8 border border-[#803100]/30"

@@ -10,7 +10,6 @@ import { LiquidityPreferenceChart } from "~~/components/LiquidityPreferenceChart
 import { MaxDrawdownChart } from "~~/components/MaxDrawdownChart";
 import { StrategyPerformanceChart } from "~~/components/StrategyPerformanceChart";
 import { VaultReactivationModal } from "~~/components/admin/VaultReactivationModal";
-import { RoleDisplay } from "~~/components/auth/RoleDisplay";
 import { Address } from "~~/components/scaffold-eth";
 import { DepositMintModal, WithdrawETHModal, WithdrawModal } from "~~/components/vault";
 import { useGsapFadeReveal, useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
@@ -73,7 +72,6 @@ const VaultDetailPage = () => {
   const leftColumnRef = useRef<HTMLDivElement | null>(null);
   const rightColumnRef = useRef<HTMLDivElement | null>(null);
   const activityRef = useRef<HTMLDivElement | null>(null);
-  const roleRef = useRef<HTMLDivElement | null>(null);
 
   const vault = useMemo(
     () => vaults.find(v => v.id.toLowerCase() === vaultParam || v.address.toLowerCase() === vaultParam),
@@ -94,7 +92,6 @@ const VaultDetailPage = () => {
     vault?.allocations?.length ?? 0,
   ]);
   useGsapFadeReveal(activityRef, ".vault-activity-row", [vault?.deposits?.length ?? 0, vault?.redeems?.length ?? 0]);
-  useGsapFadeReveal(roleRef, ".vault-role-card", [vault?.address ?? ""]);
 
   const assetSymbol = vault?.asset?.symbol?.toUpperCase() ?? "TOKEN";
   const assetDecimals = vault?.asset?.decimals ?? 18;
@@ -649,16 +646,6 @@ const VaultDetailPage = () => {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="mt-10" ref={roleRef}>
-        <div className="vault-role-card">
-          <RoleDisplay
-            vaultAddress={vault.address}
-            managerAddress={vault.manager?.owner ?? vault.manager?.address ?? null}
-            showPermissions
-          />
         </div>
       </div>
 
