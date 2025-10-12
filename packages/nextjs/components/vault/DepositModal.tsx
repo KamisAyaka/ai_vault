@@ -168,6 +168,7 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
 
     setIsDepositing(true);
     try {
+      const depositAmountDisplay = amount;
       const amountBigInt = parseUnits(amount, assetDecimals);
 
       const makeWriteWithParams = () =>
@@ -179,14 +180,16 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
         });
 
       await writeTx(makeWriteWithParams, {
+        onTransactionSubmitted: () => {
+          setAmount("");
+          onClose();
+        },
         onBlockConfirmation: receipt => {
           console.debug("Deposit confirmed", receipt);
-          notification.success(`成功存入 ${amount} ${assetSymbol}!`);
-          setAmount("");
+          notification.success(`成功存入 ${depositAmountDisplay} ${assetSymbol}!`);
           refetchUserBalance();
           refetchAllowance();
           onSuccess?.();
-          onClose();
         },
       });
     } catch (error: any) {
@@ -264,9 +267,11 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0.00"
-              className="input input-bordered join-item w-full text-lg"
+              className="input input-bordered join-item flex-1 min-w-0 text-lg"
             />
-            <span className="btn btn-square join-item bg-base-200 border-base-300 no-animation">{assetSymbol}</span>
+            <span className="btn btn-square join-item bg-base-200 border-base-300 no-animation flex-none h-10 w-[50px] min-h-0">
+              {assetSymbol}
+            </span>
             <button onClick={handleMaxClick} className="btn btn-primary join-item">
               最大
             </button>

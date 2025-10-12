@@ -204,9 +204,11 @@ export const MintETHModal = ({ vault, isOpen, onClose, onSuccess }: MintETHModal
               value={shares}
               onChange={e => setShares(e.target.value)}
               placeholder="0.00"
-              className="input input-bordered join-item w-full text-lg"
+              className="input input-bordered join-item flex-1 min-w-0 text-lg"
             />
-            <span className="btn btn-square join-item bg-base-200 border-base-300 no-animation">vWETH</span>
+            <span className="btn btn-square join-item bg-base-200 border-base-300 no-animation flex-none h-10 w-[50px] min-h-0">
+              vWETH
+            </span>
             <button onClick={handleMaxClick} className="btn btn-primary join-item">
               最大
             </button>

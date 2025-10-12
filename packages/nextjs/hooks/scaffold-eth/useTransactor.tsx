@@ -69,6 +69,10 @@ export const useTransactor = (_walletClient?: WalletClient): TransactionFunc => 
       }
       notification.remove(notificationId);
 
+      if (transactionHash) {
+        options?.onTransactionSubmitted?.(transactionHash);
+      }
+
       blockExplorerTxURL = chainId ? getBlockExplorerTxLink(chainId, transactionHash) : "";
 
       notificationId = notification.loading(

@@ -5,7 +5,6 @@ import Link from "next/link";
 import type { NextPage } from "next";
 import { useAccount } from "wagmi";
 import { CountUp } from "~~/components/ui/CountUp";
-import { VaultCard } from "~~/components/vault/VaultCard";
 import { useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 import { useVaultStats } from "~~/hooks/useVaultStats";
 import { useVaults } from "~~/hooks/useVaults";
@@ -14,7 +13,6 @@ import { useTranslations } from "~~/services/i18n/I18nProvider";
 const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
   const tHero = useTranslations("home.hero");
-  const tTopVaults = useTranslations("home.topVaults");
   const tMetrics = useTranslations("home.metrics");
 
   // Fetch top vaults
@@ -23,7 +21,6 @@ const Home: NextPage = () => {
 
   const heroRef = useRef<HTMLDivElement | null>(null);
   const statsRef = useRef<HTMLDivElement | null>(null);
-  const topVaultsRef = useRef<HTMLDivElement | null>(null);
 
   const formatCurrency = (value?: number) => {
     if (!value || Number.isNaN(value)) return "$0.00";
@@ -46,10 +43,6 @@ const Home: NextPage = () => {
     from: { opacity: 0 },
     to: { opacity: 1, duration: 0.5, ease: "power2.out", stagger: 0.08 },
     deps: [loading, stats.totalValueLockedUsd, stats.activeVaults, stats.totalUsers, stats.averageApy],
-  });
-  useGsapStaggerReveal(topVaultsRef, {
-    selector: ".vault-card-animate",
-    deps: [loading, vaults.length],
   });
 
   return (
@@ -84,27 +77,6 @@ const Home: NextPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Top Vaults Section */}
-      {!loading && vaults.length > 0 && (
-        <div className="w-full px-4 py-16 bg-[#fbe6dc]/10 backdrop-blur-sm" ref={topVaultsRef}>
-          <div className="container mx-auto">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold text-white">{tTopVaults("title")}</h2>
-              <Link href="/vaults" className="btn bg-[#803100] hover:bg-[#803100]/80 border-none text-white">
-                {tTopVaults("action")}
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {vaults.map(vault => (
-                <div key={vault.id} className="vault-card-animate">
-                  <VaultCard vault={vault} userAddress={connectedAddress} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Compact Stats Widget */}
       <div className="pointer-events-none fixed bottom-6 right-6 z-20 w-[min(90vw,500px)]" ref={statsRef}>

@@ -56,6 +56,45 @@ export const GetVaultsDocument = `
   }
 `;
 
+export const GetUserPortfolioDocument = `
+  query GetUserPortfolio($userId: ID!) {
+    userStats(id: $userId) {
+      id
+      totalDeposited
+      totalShares
+      activeVaults
+      lastUpdated
+    }
+    userVaultBalances(where: { user: $userId }, first: 1000) {
+      id
+      totalDeposited
+      totalRedeemed
+      currentShares
+      currentValue
+      lastUpdated
+      user {
+        id
+        address
+      }
+      vault {
+        id
+        address
+        name
+        isActive
+        totalAssets
+        totalSupply
+        asset {
+          id
+          address
+          symbol
+          name
+          decimals
+        }
+      }
+    }
+  }
+`;
+
 type GraphClientOptions = {
   endpoint?: string;
   headers?: Record<string, string>;

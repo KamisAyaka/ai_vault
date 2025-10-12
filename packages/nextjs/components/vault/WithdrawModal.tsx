@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount, useWriteContract } from "wagmi";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
@@ -20,6 +21,14 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
   const [mode, setMode] = useState<WithdrawMode>("assets");
   const [amount, setAmount] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => {
+      setIsMounted(false);
+    };
+  }, []);
 
   const { address: connectedAddress } = useAccount();
 
@@ -259,25 +268,21 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
     }
   }, [amount, mode, userPosition, assetDecimals]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !isMounted) return null;
 
   const profitPercent = userPosition.value > 0n ? Number((userPosition.profit * 10000n) / userPosition.value) / 100 : 0;
 
-  return (
-    <div className="modal modal-open">
-      <div className="modal-box max-w-2xl">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold">📤 从金库取款</h3>
-          <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
-            ✕
-          </button>
+  const modalInner = (
+    <div className="space-y-6 px-5 py-5">
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.35em] text-primary">Vault Actions</p>
+          <h3 className="mt-1 text-2xl font-bold">📤 金库取款操作</h3>
+          <p className="mt-1 text-xs opacity-70">选择按资产直接取款或根据份额赎回 v{assetSymbol}。</p>
         </div>
-
-        {/* Mode Toggle */}
-        <div className="tabs tabs-boxed mb-6">
+        <div className="grid grid-cols-2 gap-1">
           <button
-            className={`tab flex-1 ${mode === "assets" ? "tab-active" : ""}`}
+            className={`tab tab-lifted h-9 w-full ${mode === "assets" ? "tab-active" : ""}`}
             onClick={() => {
               setMode("assets");
               setAmount("");
@@ -286,7 +291,7 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
             按资产取款
           </button>
           <button
-            className={`tab flex-1 ${mode === "shares" ? "tab-active" : ""}`}
+            className={`tab tab-lifted h-9 w-full ${mode === "shares" ? "tab-active" : ""}`}
             onClick={() => {
               setMode("shares");
               setAmount("");
@@ -295,152 +300,161 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
             按份额赎回
           </button>
         </div>
+      </div>
 
-        {/* User Position */}
-        <div className="bg-base-200 p-4 rounded-lg mb-6">
-          <p className="text-sm font-semibold mb-3">您的持仓</p>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <p className="text-xs opacity-70 mb-1">份额余额</p>
-              <p className="font-semibold">
-                {formatBalance(userPosition.shares)} v{assetSymbol}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs opacity-70 mb-1">当前价值</p>
-              <p className="font-semibold">
-                ~{formatBalance(userPosition.value)} {assetSymbol}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs opacity-70 mb-1">收益</p>
-              <p className={`font-semibold ${userPosition.profit >= 0n ? "text-success" : "text-error"}`}>
-                {userPosition.profit >= 0n ? "+" : ""}
-                {formatBalance(userPosition.profit)} {assetSymbol}
-                <span className="text-xs ml-1">
-                  ({userPosition.profit >= 0n ? "+" : ""}
-                  {profitPercent.toFixed(2)}%)
-                </span>
-              </p>
-            </div>
+      <div className="rounded-lg bg-base-200 p-4">
+        <p className="mb-3 text-sm font-semibold">您的持仓</p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div>
+            <p className="mb-1 text-xs opacity-70">份额余额</p>
+            <p className="font-semibold">
+              {formatBalance(userPosition.shares)} v{assetSymbol}
+            </p>
+          </div>
+          <div>
+            <p className="mb-1 text-xs opacity-70">当前价值</p>
+            <p className="font-semibold">
+              ~{formatBalance(userPosition.value)} {assetSymbol}
+            </p>
+          </div>
+          <div>
+            <p className="mb-1 text-xs opacity-70">收益</p>
+            <p className={`font-semibold ${userPosition.profit >= 0n ? "text-success" : "text-error"}`}>
+              {userPosition.profit >= 0n ? "+" : ""}
+              {formatBalance(userPosition.profit)} {assetSymbol}
+              <span className="ml-1 text-xs">
+                ({userPosition.profit >= 0n ? "+" : ""}
+                {profitPercent.toFixed(2)}%)
+              </span>
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Withdraw Amount */}
-        <div className="mb-6">
-          <label className="label">
-            <span className="label-text font-semibold">{mode === "assets" ? "取款金额" : "赎回份额"}</span>
-          </label>
-          <div className="join w-full">
-            <input
-              type="number"
-              step="any"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              placeholder="0.00"
-              className="input input-bordered join-item w-full text-lg"
-            />
-            <span className="btn btn-square join-item bg-base-200 border-base-300 no-animation">
-              {mode === "assets" ? assetSymbol : `v${assetSymbol}`}
-            </span>
-            <button onClick={handleMaxClick} className="btn btn-error join-item">
-              最大
-            </button>
-          </div>
-        </div>
-
-        {/* Estimation */}
-        {amount && isValidAmount && (
-          <div className="bg-error/10 p-4 rounded-lg mb-6">
-            {mode === "assets" ? (
-              <>
-                <p className="text-sm font-semibold mb-2">需要赎回的份额</p>
-                <p className="text-2xl font-bold text-error">
-                  ~{parseFloat(estimation.shares).toLocaleString(undefined, { maximumFractionDigits: 4 })} v
-                  {assetSymbol}
-                </p>
-                <p className="text-xs opacity-70 mt-1">
-                  (当前汇率: 1 v{assetSymbol} = {exchangeRate} {assetSymbol})
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-semibold mb-2">您将获得</p>
-                <p className="text-2xl font-bold text-error">
-                  ~{parseFloat(estimation.assets).toLocaleString(undefined, { maximumFractionDigits: 4 })} {assetSymbol}
-                </p>
-                <p className="text-xs opacity-70 mt-1">
-                  (当前汇率: 1 v{assetSymbol} = {exchangeRate} {assetSymbol})
-                </p>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Remaining Position */}
-        {amount && isValidAmount && (
-          <div className="bg-base-200 p-4 rounded-lg mb-6">
-            <p className="text-sm font-semibold mb-3">取款后剩余</p>
-            <ul className="space-y-2 text-sm">
-              <li className="flex justify-between">
-                <span className="opacity-70">剩余份额:</span>
-                <span className="font-semibold">
-                  {formatBalance(remainingPosition.shares)} v{assetSymbol}
-                </span>
-              </li>
-              <li className="flex justify-between">
-                <span className="opacity-70">剩余价值:</span>
-                <span className="font-semibold">
-                  ~{formatBalance(remainingPosition.value)} {assetSymbol}
-                </span>
-              </li>
-            </ul>
-          </div>
-        )}
-
-        {/* Processing Time */}
-        <div className="alert alert-info mb-6">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            className="stroke-current shrink-0 w-5 h-5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          <div className="text-xs">
-            <p className="font-semibold">⏱️ 处理时间估算</p>
-            <p className="opacity-80">金库需要从协议中撤出流动性，预计 2-5 分钟</p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <button onClick={onClose} className="btn btn-ghost flex-1">
-            取消
-          </button>
-          <button
-            onClick={handleWithdraw}
-            disabled={isWithdrawing || !isValidAmount || !connectedAddress}
-            className="btn btn-error flex-1"
-          >
-            {isWithdrawing ? (
-              <>
-                <span className="loading loading-spinner loading-sm"></span>
-                处理中...
-              </>
-            ) : (
-              `📤 确认${mode === "assets" ? "取款" : "赎回"}`
-            )}
+      <div>
+        <label className="label">
+          <span className="label-text font-semibold">{mode === "assets" ? "取款金额" : "赎回份额"}</span>
+        </label>
+        <div className="join w-full">
+          <input
+            type="number"
+            step="any"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            placeholder="0.00"
+            className="input input-bordered join-item flex-1 min-w-0 text-lg"
+          />
+          <span className="btn btn-square join-item border-base-300 bg-base-200 no-animation flex-none h-10 w-[50px] min-h-0">
+            {mode === "assets" ? assetSymbol : `v${assetSymbol}`}
+          </span>
+          <button onClick={handleMaxClick} className="btn btn-error join-item">
+            最大
           </button>
         </div>
       </div>
-      <div className="modal-backdrop bg-black/50" onClick={onClose}></div>
+
+      {amount && isValidAmount && (
+        <div className="rounded-lg bg-error/10 p-4">
+          {mode === "assets" ? (
+            <>
+              <p className="mb-2 text-sm font-semibold">需要赎回的份额</p>
+              <p className="text-2xl font-bold text-error">
+                ~{parseFloat(estimation.shares).toLocaleString(undefined, { maximumFractionDigits: 4 })} v{assetSymbol}
+              </p>
+              <p className="mt-1 text-xs opacity-70">
+                (当前汇率: 1 v{assetSymbol} = {exchangeRate} {assetSymbol})
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mb-2 text-sm font-semibold">您将获得</p>
+              <p className="text-2xl font-bold text-error">
+                ~{parseFloat(estimation.assets).toLocaleString(undefined, { maximumFractionDigits: 4 })} {assetSymbol}
+              </p>
+              <p className="mt-1 text-xs opacity-70">
+                (当前汇率: 1 v{assetSymbol} = {exchangeRate} {assetSymbol})
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
+      {amount && isValidAmount && (
+        <div className="rounded-lg bg-base-200 p-4">
+          <p className="mb-3 text-sm font-semibold">取款后剩余</p>
+          <ul className="space-y-2 text-sm">
+            <li className="flex justify-between">
+              <span className="opacity-70">剩余份额:</span>
+              <span className="font-semibold">
+                {formatBalance(remainingPosition.shares)} v{assetSymbol}
+              </span>
+            </li>
+            <li className="flex justify-between">
+              <span className="opacity-70">剩余价值:</span>
+              <span className="font-semibold">
+                ~{formatBalance(remainingPosition.value)} {assetSymbol}
+              </span>
+            </li>
+          </ul>
+        </div>
+      )}
+
+      <div className="alert alert-info">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          className="h-5 w-5 shrink-0 stroke-current"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+        <div className="text-xs">
+          <p className="font-semibold">⏱️ 处理时间估算</p>
+          <p className="opacity-80">金库需要从协议中撤出流动性，预计 2-5 分钟</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-3">
+        <button onClick={onClose} className="btn btn-ghost min-w-[120px]">
+          取消
+        </button>
+        <button
+          onClick={handleWithdraw}
+          disabled={isWithdrawing || !isValidAmount || !connectedAddress}
+          className="btn btn-error min-w-[140px]"
+        >
+          {isWithdrawing ? (
+            <>
+              <span className="loading loading-spinner loading-sm"></span>
+              处理中...
+            </>
+          ) : (
+            `📤 确认${mode === "assets" ? "取款" : "赎回"}`
+          )}
+        </button>
+      </div>
     </div>
   );
+
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose}></div>
+      <div
+        className="relative z-10 w-full max-h-[90vh] max-w-4xl overflow-y-auto rounded-2xl border border-primary/40 bg-base-100 shadow-2xl"
+        onClick={event => event.stopPropagation()}
+      >
+        <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 z-30">
+          ✕
+        </button>
+        {modalInner}
+      </div>
+    </div>
+  );
+
+  return createPortal(modalContent, document.body);
 };

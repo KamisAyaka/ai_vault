@@ -20,6 +20,7 @@ import {
   GetEventArgs,
   GetTransactionReceiptReturnType,
   GetTransactionReturnType,
+  Hash,
   Log,
   TransactionReceipt,
   WriteContractErrorType,
@@ -213,6 +214,7 @@ export type ScaffoldWriteContractVariables<
 type WriteVariables = WriteContractVariables<Abi, string, any[], Config, number>;
 
 export type TransactorFuncOptions = {
+  onTransactionSubmitted?: (txnHash: Hash) => void;
   onBlockConfirmation?: (txnReceipt: TransactionReceipt) => void;
   blockConfirmations?: number;
 };

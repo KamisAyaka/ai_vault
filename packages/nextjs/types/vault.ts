@@ -75,3 +75,32 @@ export type VaultStats = {
   averageApy: number;
   totalUsers: number;
 };
+
+export type VaultSummary = {
+  id: string;
+  address: string;
+  name: string;
+  isActive: boolean;
+  totalAssets: string;
+  totalSupply: string;
+  asset: Asset | null;
+};
+
+export type UserStatsEntity = {
+  id: string;
+  totalDeposited: string;
+  totalShares: string;
+  activeVaults: string[];
+  lastUpdated: string;
+};
+
+export type UserVaultBalance = {
+  id: string;
+  user: VaultUser;
+  vault: VaultSummary;
+  totalDeposited: string;
+  totalRedeemed: string;
+  currentShares: string;
+  currentValue: string;
+  lastUpdated: string;
+};

@@ -5,4 +5,5 @@ export { WithdrawModal } from "./WithdrawModal";
 export { DepositETHModal } from "./DepositETHModal";
 export { MintModal } from "./MintModal";
 export { MintETHModal } from "./MintETHModal";
+export { DepositMintModal } from "./DepositMintModal";
 export { WithdrawETHModal } from "./WithdrawETHModal";
