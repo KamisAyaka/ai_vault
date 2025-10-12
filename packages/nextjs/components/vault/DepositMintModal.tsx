@@ -6,6 +6,7 @@ import { erc20Abi, formatEther, formatUnits, isAddress, parseEther, parseUnits }
 import { useAccount, useBalance, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
 import { useTokenUsdPrices } from "~~/hooks/useTokenUsdPrices";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 import { useGlobalState } from "~~/services/store/store";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
@@ -64,6 +65,7 @@ export const DepositMintModal = ({
   onSuccess,
   defaultMode = "deposit",
 }: DepositMintModalProps) => {
+  const t = useTranslations("depositMintModal");
   const [mode, setMode] = useState<Mode>(defaultMode);
   const [amountInput, setAmountInput] = useState("");
   const [shareInput, setShareInput] = useState("");
@@ -331,14 +333,16 @@ export const DepositMintModal = ({
         await publicClient.waitForTransactionReceipt({ hash });
       }
 
-      notification.success(`已授权 ${formatUnits(requiredAssetBigInt, assetDecimals)} ${assetSymbol}`);
+      notification.success(
+        `${t("messages.approved")} ${formatUnits(requiredAssetBigInt, assetDecimals)} ${assetSymbol}`,
+      );
       refetchAllowance?.();
       refetchErc20Balance?.();
       onSuccess?.();
       onClose();
     } catch (error: any) {
       console.error("Approval failed", error);
-      notification.error(error?.message || "授权失败");
+      notification.error(error?.message || t("messages.approvalFailed"));
     } finally {
       setIsApproving(false);
     }
@@ -352,7 +356,7 @@ export const DepositMintModal = ({
     try {
       if (isETHVault) {
         if (!vaultEthInfo?.abi) {
-          notification.error("缺少金库合约 ABI");
+          notification.error(t("messages.abiMissing"));
           return;
         }
 
@@ -373,14 +377,14 @@ export const DepositMintModal = ({
           },
           onBlockConfirmation: receipt => {
             console.debug("Deposit ETH confirmed", receipt);
-            notification.success(`成功存入 ${depositAmountDisplay} ETH`);
+            notification.success(`${t("messages.depositSuccess")} ${depositAmountDisplay} ETH`);
             refetchEthBalance?.();
             onSuccess?.();
           },
         });
       } else {
         if (!vaultImplInfo?.abi) {
-          notification.error("缺少金库合约 ABI");
+          notification.error(t("messages.abiMissing"));
           return;
         }
 
@@ -400,7 +404,7 @@ export const DepositMintModal = ({
           },
           onBlockConfirmation: receipt => {
             console.debug("Deposit confirmed", receipt);
-            notification.success(`成功存入 ${depositAmountDisplay} ${assetSymbol}`);
+            notification.success(`${t("messages.depositSuccess")} ${depositAmountDisplay} ${assetSymbol}`);
             refetchErc20Balance?.();
             refetchAllowance?.();
             onSuccess?.();
@@ -409,7 +413,7 @@ export const DepositMintModal = ({
       }
     } catch (error: any) {
       console.error("Deposit failed", error);
-      notification.error(error?.message || "存入失败");
+      notification.error(error?.message || t("messages.depositFailed"));
     } finally {
       setIsProcessing(false);
     }
@@ -423,7 +427,7 @@ export const DepositMintModal = ({
     try {
       if (isETHVault) {
         if (!vaultEthInfo?.abi) {
-          notification.error("缺少金库合约 ABI");
+          notification.error(t("messages.abiMissing"));
           return;
         }
 
@@ -445,14 +449,14 @@ export const DepositMintModal = ({
           },
           onBlockConfirmation: receipt => {
             console.debug("Mint ETH confirmed", receipt);
-            notification.success(`成功铸造 ${shareAmountDisplay} v${displayAssetSymbol}`);
+            notification.success(`${t("messages.mintSuccess")} ${shareAmountDisplay} v${displayAssetSymbol}`);
             refetchEthBalance?.();
             onSuccess?.();
           },
         });
       } else {
         if (!vaultImplInfo?.abi) {
-          notification.error("缺少金库合约 ABI");
+          notification.error(t("messages.abiMissing"));
           return;
         }
 
@@ -472,7 +476,7 @@ export const DepositMintModal = ({
           },
           onBlockConfirmation: receipt => {
             console.debug("Mint confirmed", receipt);
-            notification.success(`成功铸造 ${shareAmountDisplay} v${assetSymbol}`);
+            notification.success(`${t("messages.mintSuccess")} ${shareAmountDisplay} v${assetSymbol}`);
             refetchErc20Balance?.();
             refetchAllowance?.();
             onSuccess?.();
@@ -481,7 +485,7 @@ export const DepositMintModal = ({
       }
     } catch (error: any) {
       console.error("Mint failed", error);
-      notification.error(error?.message || "铸造失败");
+      notification.error(error?.message || t("messages.mintFailed"));
     } finally {
       setIsProcessing(false);
     }
@@ -528,7 +532,7 @@ export const DepositMintModal = ({
   if (!isOpen || !isMounted) return null;
 
   const formattedUserBalance = `${isETHVault ? formatTokenAmount(ethBalance?.value, 18) : formatTokenAmount(erc20Balance, assetDecimals)} ${displayAssetSymbol}`;
-  const formattedAllowance = isETHVault ? "无需授权" : `${formatTokenAmount(allowance, assetDecimals)} ${assetSymbol}`;
+  const formattedAllowance = isETHVault ? "N/A" : `${formatTokenAmount(allowance, assetDecimals)} ${assetSymbol}`;
   const formattedTotalAssets = `${formatTokenAmount(totalAssets, assetDecimals)} ${assetSymbol}`;
   const formattedTotalSupply = `${formatTokenAmount(totalSupply, assetDecimals, 4)} v${assetSymbol}`;
 
@@ -543,10 +547,10 @@ export const DepositMintModal = ({
   ) => (
     <div className="grid gap-3 text-sm md:grid-cols-2">
       <div className="rounded-xl border border-base-200/60 bg-base-200/30 p-3">
-        <p className="text-xs uppercase tracking-widest text-primary">交易概要</p>
+        <p className="text-xs uppercase tracking-widest text-primary">{t("summary.title")}</p>
         <div className="mt-2 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="opacity-70">操作金额</span>
+            <span className="opacity-70">{t("summary.operationAmount")}</span>
             <span className="font-semibold">{primaryValue}</span>
           </div>
           {options?.primaryUsd !== undefined && formatUsdValue(options.primaryUsd) && (
@@ -566,36 +570,36 @@ export const DepositMintModal = ({
             </div>
           )}
           <div className="flex items-center justify-between">
-            <span className="opacity-70">账户余额</span>
+            <span className="opacity-70">{t("form.balance")}</span>
             <span className="font-semibold">{formattedUserBalance}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="opacity-70">授权额度</span>
+            <span className="opacity-70">{t("form.allowance")}</span>
             <span className={`font-semibold ${needsApproval ? "text-warning" : ""}`}>{formattedAllowance}</span>
           </div>
         </div>
       </div>
 
       <div className="rounded-xl border border-base-200/60 bg-base-200/30 p-3">
-        <p className="text-xs uppercase tracking-widest text-primary">金库概览</p>
+        <p className="text-xs uppercase tracking-widest text-primary">{t("overview.title")}</p>
         <div className="mt-2 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="opacity-70">当前 TVL</span>
+            <span className="opacity-70">{t("overview.tvl")}</span>
             <span className="font-semibold">{formattedTotalAssets}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="opacity-70">总份额</span>
+            <span className="opacity-70">{t("common.tables.shares", { ns: "messages" })}</span>
             <span className="font-semibold">{formattedTotalSupply}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="opacity-70">兑换比率</span>
+            <span className="opacity-70">{t("overview.exchangeRate")}</span>
             <span className="font-semibold">
               1 v{assetSymbol} ≈ {exchangeRateNumber.toFixed(4)} {displayAssetSymbol}
             </span>
           </div>
           {isETHVault && nativePrice > 0 && (
             <div className="flex items-center justify-between">
-              <span className="opacity-70">ETH 估值</span>
+              <span className="opacity-70">ETH {t("overview.tvl")}</span>
               <span className="font-semibold">
                 ${nativePrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
@@ -610,7 +614,7 @@ export const DepositMintModal = ({
     <div className="space-y-4">
       <section className="rounded-xl border border-base-200 bg-base-100 p-4 shadow-sm">
         <label className="label px-0 pt-0">
-          <span className="label-text text-xs uppercase tracking-widest text-primary">输入金额</span>
+          <span className="label-text text-xs uppercase tracking-widest text-primary">{t("form.inputAmount")}</span>
         </label>
         <div className="join w-full">
           <input
@@ -625,10 +629,12 @@ export const DepositMintModal = ({
             {displayAssetSymbol}
           </span>
           <button onClick={handleMaxClick} className="btn btn-primary join-item">
-            最大
+            {t("form.max")}
           </button>
         </div>
-        <p className="mt-2 text-xs opacity-70">可用余额 {formattedUserBalance}</p>
+        <p className="mt-2 text-xs opacity-70">
+          {t("form.balance")} {formattedUserBalance}
+        </p>
         {formatUsdValue(depositAmountUsd) && amountInput && (
           <p className="mt-1 text-xs opacity-70">≈ {formatUsdValue(depositAmountUsd)} USDT</p>
         )}
@@ -636,30 +642,30 @@ export const DepositMintModal = ({
 
       <section className="grid gap-3 md:grid-cols-2">
         <div className="rounded-xl border border-primary/30 bg-primary/10 p-3">
-          <p className="text-xs uppercase tracking-widest text-primary">预计份额</p>
+          <p className="text-xs uppercase tracking-widest text-primary">{t("form.expectedShares")}</p>
           <p className="mt-2 text-2xl font-semibold text-primary">
             {amountInput && isValidDepositAmount ? `~${formatNumericString(estimatedShares)}` : "—"} v{assetSymbol}
           </p>
           <p className="mt-2 text-sm opacity-70">
-            当前比率 1 {displayAssetSymbol} ≈ {(1 / exchangeRateNumber).toFixed(4)} v{assetSymbol}
+            {t("overview.exchangeRate")} 1 {displayAssetSymbol} ≈ {(1 / exchangeRateNumber).toFixed(4)} v{assetSymbol}
           </p>
           {isETHVault && usdPreviewForAmount !== "-" && (
             <p className="text-xs opacity-70">≈ ${usdPreviewForAmount} USD</p>
           )}
         </div>
         <div className="rounded-xl border border-base-200 p-3">
-          <p className="text-xs uppercase tracking-widest text-primary">注意事项</p>
+          <p className="text-xs uppercase tracking-widest text-primary">{t("notes.title")}</p>
           <ul className="mt-2 space-y-1 text-sm opacity-80">
-            <li>· 存入资产将自动部署至多策略组合</li>
-            <li>· 预计 1-2 个区块完成确认</li>
-            <li>· 需保留少量 {displayAssetSymbol} 用于 Gas</li>
+            <li>· {t("notes.item1")}</li>
+            <li>· {t("notes.item2")}</li>
+            <li>· {t("notes.item3")}</li>
           </ul>
         </div>
       </section>
 
       {renderSummaryPanel(
         amountInput ? `${amountInput} ${displayAssetSymbol}` : "—",
-        "预计获得",
+        t("form.willReceive"),
         amountInput && isValidDepositAmount ? `~${formatNumericString(estimatedShares)} v${assetSymbol}` : "—",
         {
           primaryUsd: depositAmountUsd,
@@ -669,7 +675,7 @@ export const DepositMintModal = ({
 
       <div className="flex flex-wrap justify-center gap-3 pt-1">
         <button onClick={handleClose} className="btn btn-ghost min-w-[120px]">
-          取消
+          {t("buttons.cancel")}
         </button>
         {needsApproval ? (
           <button
@@ -680,10 +686,10 @@ export const DepositMintModal = ({
             {isApproving ? (
               <>
                 <span className="loading loading-spinner loading-sm"></span>
-                授权中...
+                {t("buttons.approving")}
               </>
             ) : (
-              `🔓 授权 ${assetSymbol}`
+              `🔓 ${t("buttons.approve")} ${assetSymbol}`
             )}
           </button>
         ) : (
@@ -695,10 +701,10 @@ export const DepositMintModal = ({
             {isProcessing ? (
               <>
                 <span className="loading loading-spinner loading-sm"></span>
-                处理中...
+                {t("buttons.processing")}
               </>
             ) : (
-              "💰 确认存入"
+              `💰 ${t("buttons.confirmDeposit")}`
             )}
           </button>
         )}
@@ -711,7 +717,9 @@ export const DepositMintModal = ({
       <section className="space-y-4">
         <div className="rounded-xl border border-base-200 bg-base-100 p-4 shadow-sm">
           <label className="label px-0 pt-0">
-            <span className="label-text text-xs uppercase tracking-widest text-primary">输入份额</span>
+            <span className="label-text text-xs uppercase tracking-widest text-primary">
+              {t("form.expectedShares")}
+            </span>
           </label>
           <div className="join w-full">
             <input
@@ -726,10 +734,12 @@ export const DepositMintModal = ({
               v{assetSymbol}
             </span>
             <button onClick={handleMaxClick} className="btn btn-primary join-item">
-              最大
+              {t("form.max")}
             </button>
           </div>
-          <p className="mt-2 text-xs opacity-70">可用余额 {formattedUserBalance}</p>
+          <p className="mt-2 text-xs opacity-70">
+            {t("form.balance")} {formattedUserBalance}
+          </p>
           {formatUsdValue(mintCostAmountUsd) && shareInput && (
             <p className="mt-1 text-xs opacity-70">≈ {formatUsdValue(mintCostAmountUsd)} USDT</p>
           )}
@@ -737,24 +747,24 @@ export const DepositMintModal = ({
 
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded-xl border border-primary/30 bg-primary/10 p-3">
-            <p className="text-xs uppercase tracking-widest text-primary">预计支付</p>
+            <p className="text-xs uppercase tracking-widest text-primary">{t("form.willReceive")}</p>
             <p className="mt-2 text-2xl font-semibold text-primary">
               {shareInput && isValidShareAmount ? `~${formatNumericString(requiredAssetsForShares)}` : "—"}{" "}
               {displayAssetSymbol}
             </p>
             <p className="mt-2 text-sm opacity-70">
-              当前比率 1 v{assetSymbol} ≈ {exchangeRateNumber.toFixed(4)} {displayAssetSymbol}
+              {t("overview.exchangeRate")} 1 v{assetSymbol} ≈ {exchangeRateNumber.toFixed(4)} {displayAssetSymbol}
             </p>
             {isETHVault && usdPreviewForShares !== "-" && (
               <p className="text-xs opacity-70">≈ ${usdPreviewForShares} USD</p>
             )}
           </div>
           <div className="rounded-xl border border-base-200 p-3">
-            <p className="text-xs uppercase tracking-widest text-primary">操作说明</p>
+            <p className="text-xs uppercase tracking-widest text-primary">{t("notes.title")}</p>
             <ul className="mt-2 space-y-1 text-sm opacity-80">
-              <li>· 按当前汇率一次性铸造所需份额</li>
-              <li>· 实际消耗资产以链上结算为准</li>
-              <li>· 网络拥堵可能导致 Gas 成本波动</li>
+              <li>· {t("notes.item1")}</li>
+              <li>· {t("notes.item2")}</li>
+              <li>· {t("notes.item3")}</li>
             </ul>
           </div>
         </div>
@@ -762,7 +772,7 @@ export const DepositMintModal = ({
 
       {renderSummaryPanel(
         shareInput ? `${shareInput} v${assetSymbol}` : "—",
-        "预计支付",
+        t("form.willReceive"),
         shareInput && isValidShareAmount
           ? `~${formatNumericString(requiredAssetsForShares)} ${displayAssetSymbol}`
           : "—",
@@ -774,7 +784,7 @@ export const DepositMintModal = ({
 
       <div className="flex flex-wrap justify-center gap-3 pt-1">
         <button onClick={handleClose} className="btn btn-ghost min-w-[120px]">
-          取消
+          {t("buttons.cancel")}
         </button>
         {needsApproval ? (
           <button
@@ -785,10 +795,10 @@ export const DepositMintModal = ({
             {isApproving ? (
               <>
                 <span className="loading loading-spinner loading-sm"></span>
-                授权中...
+                {t("buttons.approving")}
               </>
             ) : (
-              `🔓 授权 ${assetSymbol}`
+              `🔓 ${t("buttons.approve")} ${assetSymbol}`
             )}
           </button>
         ) : (
@@ -800,10 +810,10 @@ export const DepositMintModal = ({
             {isProcessing ? (
               <>
                 <span className="loading loading-spinner loading-sm"></span>
-                处理中...
+                {t("buttons.processing")}
               </>
             ) : (
-              "🪙 确认铸造"
+              `🪙 ${t("buttons.confirmMint")}`
             )}
           </button>
         )}
@@ -825,8 +835,10 @@ export const DepositMintModal = ({
           <div className="space-y-3">
             <div>
               <p className="text-xs uppercase tracking-[0.35em] text-primary">Vault Actions</p>
-              <h3 className="mt-1 text-2xl font-bold">💰 金库存入操作</h3>
-              <p className="mt-1 text-xs opacity-70">选择直接存入资产或按目标份额铸造 v{assetSymbol}。</p>
+              <h3 className="mt-1 text-2xl font-bold">💰 {t("title")}</h3>
+              <p className="mt-1 text-xs opacity-70">
+                {t("tabs.deposit")} / {t("tabs.mint")} v{assetSymbol}
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-1">
               <button
@@ -836,7 +848,7 @@ export const DepositMintModal = ({
                   setShareInput("");
                 }}
               >
-                存入
+                {t("tabs.deposit")}
               </button>
               <button
                 className={`tab tab-lifted h-9 w-full ${mode === "mint" ? "tab-active" : ""}`}
@@ -845,7 +857,7 @@ export const DepositMintModal = ({
                   setAmountInput("");
                 }}
               >
-                按份额铸造
+                {t("tabs.mint")}
               </button>
             </div>
           </div>

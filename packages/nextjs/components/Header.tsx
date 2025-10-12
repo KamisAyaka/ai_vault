@@ -70,6 +70,7 @@ export const HeaderMenuLinks = () => {
 export const Header = () => {
   const { targetNetwork } = useTargetNetwork();
   const isLocalNetwork = targetNetwork.id === hardhat.id;
+  const t = useTranslations();
 
   const burgerMenuRef = useRef<HTMLDetailsElement>(null);
   useOutsideClick(burgerMenuRef, () => {
@@ -94,8 +95,8 @@ export const Header = () => {
         </details>
         <Link href="/" className="hidden lg:flex items-center gap-2 ml-4 mr-6 shrink-0">
           <div className="flex flex-col">
-            <span className="text-2xl font-bold leading-tight text-white tracking-wide">AI Vault Protocol</span>
-            <span className="text-xs uppercase tracking-[0.25em] text-[#fbe6dc]/80">Automated DeFi Management</span>
+            <span className="text-2xl font-bold leading-tight text-white tracking-wide">{t("header.logo.title")}</span>
+            <span className="text-xs uppercase tracking-[0.25em] text-[#fbe6dc]/80">{t("header.logo.subtitle")}</span>
           </div>
         </Link>
         <ul className="hidden lg:flex lg:flex-nowrap menu menu-horizontal px-1 gap-2">

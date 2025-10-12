@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 import { notification } from "~~/utils/scaffold-eth";
 
 type VaultCreationData = {
@@ -21,6 +22,7 @@ type BatchVaultCreationProps = {
 };
 
 export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
+  const t = useTranslations("admin.batchVaultCreation");
   const { address: connectedAddress } = useAccount();
   const [vaults, setVaults] = useState<VaultCreationData[]>([
     { id: "1", name: "", assetAddress: "", assetSymbol: "", decimals: 18, managementFee: "100", status: "pending" },
@@ -61,7 +63,7 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
   // 从CSV导入
   const importFromCSV = () => {
     if (!csvInput.trim()) {
-      notification.error("请输入CSV数据");
+      notification.error(t("notifications.csvInputRequired"));
       return;
     }
 
@@ -91,39 +93,39 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
       if (newVaults.length > 0) {
         setVaults(newVaults);
         setCsvInput("");
-        notification.success(`成功导入 ${newVaults.length} 个金库配置`);
+        notification.success(t("notifications.csvImportSuccess", { count: newVaults.length }));
       } else {
-        notification.error("未找到有效的金库配置");
+        notification.error(t("notifications.csvNoValid"));
       }
     } catch (error) {
       console.error("CSV解析失败:", error);
-      notification.error("CSV格式错误");
+      notification.error(t("notifications.csvParseError"));
     }
   };
 
   // 验证单个金库
   const validateVault = (vault: VaultCreationData): boolean => {
     if (!vault.name.trim()) {
-      updateVault(vault.id, "error", "金库名称不能为空");
+      updateVault(vault.id, "error", t("validation.nameRequired"));
       updateVault(vault.id, "status", "error");
       return false;
     }
 
     if (!vault.assetAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
-      updateVault(vault.id, "error", "无效的资产地址");
+      updateVault(vault.id, "error", t("validation.invalidAddress"));
       updateVault(vault.id, "status", "error");
       return false;
     }
 
     if (vault.decimals < 1 || vault.decimals > 18) {
-      updateVault(vault.id, "error", "Decimals 必须在 1-18 之间");
+      updateVault(vault.id, "error", t("validation.decimalsRange"));
       updateVault(vault.id, "status", "error");
       return false;
     }
 
     const feeValue = Number(vault.managementFee);
     if (Number.isNaN(feeValue) || feeValue < 0 || feeValue > 10000) {
-      updateVault(vault.id, "error", "管理费应在 0-10000 基点之间");
+      updateVault(vault.id, "error", t("validation.feeRange"));
       updateVault(vault.id, "status", "error");
       return false;
     }
@@ -134,12 +136,12 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
   // 批量创建金库
   const handleBatchCreate = async () => {
     if (!connectedAddress) {
-      notification.error("请先连接钱包");
+      notification.error(t("notifications.connectWallet"));
       return;
     }
 
     if (vaults.length === 0) {
-      notification.error("请至少添加一个金库");
+      notification.error(t("notifications.addVaultFirst"));
       return;
     }
 
@@ -155,7 +157,7 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
     }
 
     if (!allValid) {
-      notification.error("部分金库配置无效，请检查");
+      notification.error(t("notifications.validationFailed"));
       return;
     }
 
@@ -180,7 +182,7 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
         {
           onBlockConfirmation: receipt => {
             console.debug("Batch vaults created", receipt);
-            notification.success(`成功创建 ${vaults.length} 个金库！`);
+            notification.success(t("notifications.createSuccess", { count: vaults.length }));
 
             // 设置所有金库为成功状态
             vaults.forEach(v => updateVault(v.id, "status", "success"));
@@ -205,12 +207,12 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
       );
     } catch (error: any) {
       console.error("Batch vault creation failed:", error);
-      notification.error(error?.message || "批量创建失败");
+      notification.error(error?.message || t("notifications.createFailed"));
 
       // 设置所有金库为错误状态
       vaults.forEach(v => {
         updateVault(v.id, "status", "error");
-        updateVault(v.id, "error", error?.message || "创建失败");
+        updateVault(v.id, "error", error?.message || t("notifications.createFailed"));
       });
     } finally {
       setIsCreating(false);
@@ -220,15 +222,15 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
   const getStatusBadge = (status: VaultCreationData["status"]) => {
     switch (status) {
       case "pending":
-        return <span className="badge badge-ghost">待处理</span>;
+        return <span className="badge badge-ghost">{t("status.pending")}</span>;
       case "validating":
-        return <span className="badge badge-info">验证中...</span>;
+        return <span className="badge badge-info">{t("status.validating")}</span>;
       case "creating":
-        return <span className="badge badge-warning">创建中...</span>;
+        return <span className="badge badge-warning">{t("status.creating")}</span>;
       case "success":
-        return <span className="badge badge-success">✅ 成功</span>;
+        return <span className="badge badge-success">{t("status.success")}</span>;
       case "error":
-        return <span className="badge badge-error">❌ 失败</span>;
+        return <span className="badge badge-error">{t("status.error")}</span>;
       default:
         return null;
     }
@@ -239,8 +241,8 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
       {/* CSV Import Section */}
       <div className="card bg-base-100 shadow-md">
         <div className="card-body">
-          <h3 className="card-title text-lg">📄 CSV 快速导入</h3>
-          <p className="text-sm opacity-70 mb-2">格式: name,assetAddress,assetSymbol,decimals,managementFeeBps</p>
+          <h3 className="card-title text-lg">{t("csvImport.title")}</h3>
+          <p className="text-sm opacity-70 mb-2">{t("csvImport.formatLabel")}</p>
           <div className="form-control">
             <textarea
               className="textarea textarea-bordered h-24 font-mono text-xs"
@@ -251,7 +253,7 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
           </div>
           <div className="card-actions justify-end mt-2">
             <button onClick={importFromCSV} className="btn btn-sm btn-primary">
-              📥 导入 CSV
+              {t("csvImport.importButton")}
             </button>
           </div>
         </div>
@@ -260,19 +262,19 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
       {/* Vault Table */}
       <div className="card bg-base-100 shadow-md">
         <div className="card-body">
-          <h3 className="card-title text-lg mb-4">🏦 批量金库配置</h3>
+          <h3 className="card-title text-lg mb-4">{t("table.title")}</h3>
 
           <div className="overflow-x-auto">
             <table className="table table-sm">
               <thead>
                 <tr>
-                  <th>状态</th>
-                  <th>金库名称</th>
-                  <th>资产地址</th>
-                  <th>符号</th>
-                  <th>Decimals</th>
-                  <th>管理费率 (bps)</th>
-                  <th>操作</th>
+                  <th>{t("table.headers.status")}</th>
+                  <th>{t("table.headers.name")}</th>
+                  <th>{t("table.headers.assetAddress")}</th>
+                  <th>{t("table.headers.symbol")}</th>
+                  <th>{t("table.headers.decimals")}</th>
+                  <th>{t("table.headers.managementFee")}</th>
+                  <th>{t("table.headers.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -283,7 +285,7 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
                       <input
                         type="text"
                         className="input input-xs input-bordered w-full"
-                        placeholder="USDC Vault"
+                        placeholder={t("table.placeholders.name")}
                         value={vault.name}
                         onChange={e => updateVault(vault.id, "name", e.target.value)}
                         disabled={isCreating}
@@ -293,7 +295,7 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
                       <input
                         type="text"
                         className="input input-xs input-bordered w-full font-mono"
-                        placeholder="0x..."
+                        placeholder={t("table.placeholders.address")}
                         value={vault.assetAddress}
                         onChange={e => updateVault(vault.id, "assetAddress", e.target.value)}
                         disabled={isCreating}
@@ -303,7 +305,7 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
                       <input
                         type="text"
                         className="input input-xs input-bordered w-20"
-                        placeholder="USDC"
+                        placeholder={t("table.placeholders.symbol")}
                         value={vault.assetSymbol}
                         onChange={e => updateVault(vault.id, "assetSymbol", e.target.value)}
                         disabled={isCreating}
@@ -351,13 +353,13 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
           {vaults.some(v => v.error) && (
             <div className="alert alert-error mt-4">
               <div>
-                <h4 className="font-bold">验证错误:</h4>
+                <h4 className="font-bold">{t("errors.title")}</h4>
                 <ul className="list-disc list-inside text-sm">
                   {vaults
                     .filter(v => v.error)
                     .map(v => (
                       <li key={v.id}>
-                        {v.name || "未命名"}: {v.error}
+                        {v.name || t("errors.unnamed")}: {v.error}
                       </li>
                     ))}
                 </ul>
@@ -368,11 +370,11 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
           {/* Action Buttons */}
           <div className="flex justify-between items-center mt-4">
             <button onClick={addVaultRow} className="btn btn-sm btn-outline" disabled={isCreating}>
-              ➕ 添加金库
+              {t("actions.addVault")}
             </button>
 
             <div className="flex gap-2">
-              <div className="text-sm opacity-70 self-center">共 {vaults.length} 个金库</div>
+              <div className="text-sm opacity-70 self-center">{t("actions.totalVaults", { count: vaults.length })}</div>
               <button
                 onClick={handleBatchCreate}
                 disabled={isCreating || vaults.length === 0}
@@ -381,10 +383,10 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
                 {isCreating ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
-                    创建中...
+                    {t("actions.creating")}
                   </>
                 ) : (
-                  `🚀 批量创建 ${vaults.length} 个金库`
+                  t("actions.createButton", { count: vaults.length })
                 )}
               </button>
             </div>
@@ -408,12 +410,12 @@ export const BatchVaultCreation = ({ onSuccess }: BatchVaultCreationProps) => {
           ></path>
         </svg>
         <div className="text-sm">
-          <p className="font-semibold">💡 提示</p>
+          <p className="font-semibold">{t("infoNotice.title")}</p>
           <ul className="list-disc list-inside opacity-80 mt-1">
-            <li>确保所有资产地址有效且已部署</li>
-            <li>Decimals 通常为 18 (ETH/WETH), 6 (USDC/USDT), 18 (DAI)</li>
-            <li>管理费采用基点表示，例如 100 = 1%</li>
-            <li>批量创建使用单笔交易，节省 Gas 费用</li>
+            <li>{t("infoNotice.item1")}</li>
+            <li>{t("infoNotice.item2")}</li>
+            <li>{t("infoNotice.item3")}</li>
+            <li>{t("infoNotice.item4")}</li>
           </ul>
         </div>
       </div>

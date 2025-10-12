@@ -54,9 +54,29 @@
     "subgraph": "子图"
   },
   "header": {
+    "brand": "AI 金库协议",
+    "tagline": "智能化 DeFi 管理",
     "switcher": {
       "label": "语言"
+    },
+    "logo": {
+      "title": "AI 金库协议",
+      "subtitle": "智能化 DeFi 管理"
     }
+  },
+  "footer": {
+    "blockExplorer": "区块浏览器",
+    "fork": "Fork 我",
+    "builtWith": "构建于",
+    "at": "在",
+    "buidlGuidl": "BuidlGuidl",
+    "support": "支持"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "页面未找到",
+    "description": "您访问的页面不存在。",
+    "goHome": "返回首页"
   },
   "home": {
     "hero": {
@@ -136,6 +156,338 @@
       "hintFiltered": "请尝试调整搜索条件或筛选项",
       "hintEmpty": "当前还没有创建任何金库"
     }
+  },
+  "vaultDetail": {
+    "loading": "金库详情加载中...",
+    "notFound": "无法找到该金库。请检查 URL 或返回金库列表。",
+    "breadcrumbs": {
+      "home": "首页",
+      "vaults": "金库"
+    },
+    "status": {
+      "active": "活跃",
+      "inactive": "暂停"
+    },
+    "actions": {
+      "reactivate": "重新激活金库",
+      "deposit": "存入",
+      "mintShares": "按份额铸造",
+      "withdraw": "取出"
+    },
+    "metrics": {
+      "title": "金库指标",
+      "totalAssets": "总资产",
+      "totalSupply": "总供应",
+      "sharePrice": "份额价格",
+      "holders": "持有人数",
+      "manager": "管理者",
+      "owner": "所有者",
+      "created": "创建时间",
+      "updated": "更新时间",
+      "approx": "≈",
+      "usdt": "USDT"
+    },
+    "position": {
+      "title": "我的持仓",
+      "shares": "份额",
+      "noPosition": "您还没有在该金库中持仓。",
+      "currentValue": "当前价值",
+      "totalDeposited": "累计存入",
+      "totalWithdrawn": "累计取出",
+      "profitLoss": "盈亏",
+      "dataUpdated": "数据更新时间:"
+    },
+    "performance": {
+      "title": "业绩概览",
+      "currentApy": "当前年化",
+      "apy30d": "30天年化",
+      "apy90d": "90天年化",
+      "allTimeFees": "累计手续费"
+    },
+    "fees": {
+      "title": "手续费明细",
+      "managementRate": "管理费率",
+      "performanceRate": "业绩费率",
+      "managementUsd": "管理费 (USD)",
+      "performanceUsd": "业绩费 (USD)"
+    },
+    "risk": {
+      "title": "风险指标",
+      "volatility": "波动率",
+      "maxDrawdown": "最大回撤",
+      "sharpeRatio": "夏普比率"
+    },
+    "allocations": {
+      "title": "投资分配",
+      "noStrategy": "暂无策略配置。"
+    },
+    "activity": {
+      "title": "最近活动",
+      "last": "最近",
+      "entries": "条记录",
+      "type": "类型",
+      "assets": "资产",
+      "shares": "份额",
+      "timestamp": "时间戳",
+      "txHash": "交易哈希",
+      "noActivity": "暂无链上活动记录。"
+    },
+    "permissions": {
+      "title": "需要管理员权限",
+      "message": "当前连接的钱包没有查看金库详情的权限。只有金库管理员可以访问此页面。",
+      "backButton": "返回金库列表",
+      "switchHint": "或断开钱包后使用管理员地址登录。"
+    }
+  },
+  "depositMintModal": {
+    "title": "金库存入操作",
+    "tabs": {
+      "deposit": "按资产存入",
+      "mint": "按份额铸造"
+    },
+    "overview": {
+      "title": "金库概览",
+      "exchangeRate": "兑换比率",
+      "tvl": "TVL",
+      "apy": "年化收益"
+    },
+    "form": {
+      "amount": "数量",
+      "balance": "账户余额",
+      "allowance": "授权额度",
+      "max": "最大",
+      "inputAmount": "输入金额",
+      "expectedShares": "预计份额",
+      "willReceive": "您将获得"
+    },
+    "summary": {
+      "title": "交易概要",
+      "operationAmount": "操作金额",
+      "accountBalance": "账户余额",
+      "allowance": "授权额度"
+    },
+    "notes": {
+      "title": "注意事项",
+      "item1": "请确保账户有足够的资产余额",
+      "item2": "交易可能需要一些时间确认",
+      "item3": "请仔细核对 Gas 费用"
+    },
+    "buttons": {
+      "cancel": "取消",
+      "approving": "授权中...",
+      "approve": "授权",
+      "processing": "处理中...",
+      "confirmDeposit": "确认存入",
+      "confirmMint": "确认铸造"
+    },
+    "messages": {
+      "approved": "已授权",
+      "approvalFailed": "授权失败",
+      "abiMissing": "缺少金库合约 ABI",
+      "depositSuccess": "成功存入",
+      "depositFailed": "存入失败",
+      "mintSuccess": "成功铸造",
+      "mintFailed": "铸造失败"
+    }
+  },
+  "depositModal": {
+    "title": "存入资金到金库",
+    "vaultInfo": {
+      "address": "地址:",
+      "currentApy": "当前 APY",
+      "tvl": "TVL"
+    },
+    "form": {
+      "depositAmount": "存款金额",
+      "max": "最大",
+      "availableBalance": "可用余额:",
+      "willReceive": "您将获得",
+      "exchangeRate": "当前汇率:"
+    },
+    "approval": {
+      "title": "授权状态",
+      "unrecognizedAsset": "无法识别资产合约地址",
+      "approved": "已授权",
+      "needApproval": "需要授权才能存款",
+      "insufficientAllowance": "当前授权额度不足，需要增加授权"
+    },
+    "warnings": {
+      "title": "⚠️ 重要提示",
+      "autoAllocation": "存款后资金将自动分配到各 DeFi 协议",
+      "blockConfirmation": "预计需要 1-2 个区块确认",
+      "managementFee": "管理费: 1.00% (从收益中扣除)"
+    },
+    "buttons": {
+      "cancel": "取消",
+      "approving": "授权中...",
+      "approve": "授权",
+      "depositing": "存款中...",
+      "confirmDeposit": "确认存款"
+    },
+    "messages": {
+      "unrecognizedAsset": "无法识别的资产地址",
+      "approved": "已授权",
+      "approvalFailed": "授权失败",
+      "abiUnavailable": "缺少金库合约 ABI",
+      "depositSuccess": "成功存入",
+      "depositFailed": "存款失败"
+    }
+  },
+  "withdrawModal": {
+    "title": "金库取款操作",
+    "tabs": {
+      "withdraw": "按资产取款",
+      "redeem": "按份额赎回"
+    },
+    "position": {
+      "title": "您的持仓",
+      "shareBalance": "份额余额",
+      "currentValue": "当前价值",
+      "profit": "收益"
+    },
+    "form": {
+      "withdrawAmount": "取款金额",
+      "redeemShares": "赎回份额",
+      "max": "最大",
+      "sharesNeeded": "需要赎回的份额",
+      "willReceive": "您将获得",
+      "afterWithdraw": "取款后剩余",
+      "remainingShares": "剩余份额",
+      "remainingValue": "剩余价值"
+    },
+    "estimate": {
+      "title": "处理时间估算",
+      "value": "约 15-30 秒"
+    },
+    "buttons": {
+      "cancel": "取消",
+      "processing": "处理中...",
+      "confirmWithdraw": "确认取款",
+      "confirmRedeem": "确认赎回"
+    },
+    "messages": {
+      "abiMissing": "缺少金库合约 ABI",
+      "withdrawSuccess": "成功取款",
+      "redeemSuccess": "成功赎回",
+      "operationFailed": "操作失败"
+    }
+  },
+  "roleDisplay": {
+    "notConnected": "未连接钱包",
+    "currentRole": "当前角色",
+    "currentAddress": "当前地址",
+    "permissions": "权限列表:",
+    "manageFactory": "管理工厂",
+    "createVault": "创建金库",
+    "manageVault": "管理金库",
+    "updateStrategy": "更新策略",
+    "activateVault": "激活金库",
+    "deactivateVault": "停用金库",
+    "executeAI": "执行 AI 策略",
+    "manageAI": "管理 AI 代理"
+  },
+  "statsCard": {
+    "noDeposits": "当前无存款",
+    "tvl": "总锁仓价值",
+    "activeVaults": "活跃金库",
+    "totalVaults": "总金库数",
+    "totalUsers": "总用户数",
+    "averageApy": "平均年化"
+  },
+  "portfolioPage": {
+    "accountSnapshot": "账户快照",
+    "activeVaults": "活跃金库 (子图)",
+    "lastUpdated": "最后更新:",
+    "rawTotals": "原始总计 · 已存入:",
+    "shares": "份额:",
+    "asset": "资产",
+    "total": "总计",
+    "placeholder": "-"
+  },
+  "adminVaultCreation": {
+    "title": "🏗️ 创建新金库",
+    "assetAddress": {
+      "label": "资产代币地址",
+      "required": "必填",
+      "placeholder": "0x...",
+      "help": "这将作为 ERC-4626 金库名称"
+    },
+    "vaultName": {
+      "label": "金库名称",
+      "placeholder": "例如: USDC 金库"
+    },
+    "vaultSymbol": {
+      "label": "金库符号",
+      "placeholder": "例如: vUSDC",
+      "help": "金库份额的代币符号"
+    },
+    "managementFee": {
+      "label": "管理费 (基点)",
+      "help": "100 基点 = 1%, 10000 = 100%"
+    },
+    "buttons": {
+      "checking": "检查中...",
+      "check": "检查",
+      "creating": "创建中...",
+      "create": "创建金库"
+    },
+    "messages": {
+      "addressRequired": "请输入资产地址",
+      "fillAllFields": "请填写所有字段",
+      "vaultExists": "该资产的金库已存在",
+      "createSuccess": "金库创建成功！",
+      "createFailed": "创建金库失败",
+      "existsWarning": "⚠️ 金库已存在于:",
+      "noExisting": "✓ 该资产还没有金库"
+    }
+  },
+  "adminVaultActions": {
+    "title": "🔧 管理员操作",
+    "status": {
+      "label": "金库状态",
+      "accepting": "当前接受存款",
+      "disabled": "存款已禁用"
+    },
+    "connectWarning": "请使用金库管理员钱包连接以执行管理操作。",
+    "buttons": {
+      "processing": "处理中...",
+      "deactivate": "停用金库",
+      "alreadyInactive": "已停用"
+    },
+    "managerInfo": {
+      "label": "管理员信息",
+      "manager": "管理员:",
+      "owner": "所有者:"
+    },
+    "allocations": "投资分配",
+    "messages": {
+      "alreadyInactive": "金库已经停用。",
+      "confirmDeactivate": "停用 \"{vault}\"?\n\n这将阻止新存款但允许取款。此操作可由金库管理员撤销。",
+      "onlyManager": "只有金库管理员可以停用此金库。",
+      "abiMissing": "缺少金库合约 ABI",
+      "deactivateSuccess": "金库 \"{vault}\" 已停用。",
+      "deactivateFailed": "停用金库失败"
+    }
+  },
+  "adminVaultsPage": {
+    "loading": "管理面板加载中...",
+    "errorLoading": "加载金库时出错:",
+    "title": "金库管理面板",
+    "description": "创建和管理 AI 金库协议金库",
+    "existingVaults": "现有金库",
+    "refresh": "刷新",
+    "noVaults": {
+      "title": "暂无金库",
+      "description": "使用左侧表单创建您的第一个金库"
+    },
+    "selected": "已选择用于管理"
+  },
+  "analyticsPage": {
+    "activeUsers": "活跃用户",
+    "averageReturn": "平均收益"
+  },
+  "localeSwitcher": {
+    "ariaLabel": "选择语言"
   },
   "analytics": {
     "loading": "数据分析加载中...",
@@ -269,6 +621,126 @@
     }
   },
   "admin": {
+    "batchVaultPage": {
+      "title": "批量创建金库",
+      "backButton": "← 返回管理后台",
+      "breadcrumbs": {
+        "home": "首页",
+        "admin": "管理后台",
+        "batch": "批量创建金库"
+      },
+      "infoBanner": {
+        "title": "批量创建金库功能",
+        "description": "通过表格或 CSV 文件一次性创建多个金库，节省时间和 Gas 费用"
+      },
+      "guide": {
+        "title": "📖 使用指南",
+        "manual": {
+          "title": "1️⃣ 手动添加方式",
+          "step1": "点击 \"➕ 添加金库\" 按钮添加新行",
+          "step2": "填写每个金库的配置信息",
+          "step3": "点击 \"🚀 批量创建\" 执行创建"
+        },
+        "csv": {
+          "title": "2️⃣ CSV 导入方式",
+          "step1": "准备 CSV 格式数据（逗号分隔）",
+          "step2": "格式：name,assetAddress,assetSymbol,decimals,managementFeeBps",
+          "step3": "示例：USDC Vault,0x1234...,USDC,6,100",
+          "step4": "粘贴到文本框并点击 \"📥 导入 CSV\""
+        },
+        "fields": {
+          "title": "3️⃣ 字段说明",
+          "name": "金库名称",
+          "assetAddress": "资产合约地址（ERC20）",
+          "assetSymbol": "资产符号",
+          "decimals": "小数位数（1-18）",
+          "managementFeeBps": "管理费率（基点，100 = 1%）",
+          "exampleName": "USDC Vault",
+          "exampleSymbol": "USDC, WETH, DAI",
+          "exampleDecimals": "18 (ETH), 6 (USDC/USDT)",
+          "exampleFee": "100, 50"
+        },
+        "warnings": {
+          "title": "⚠️ 注意事项",
+          "item1": "确保资产合约地址有效且已部署在当前网络",
+          "item2": "金库符号会自动添加 \"v\" 前缀（如 vUSDC）",
+          "item3": "批量创建只需一笔交易，Gas 效率更高",
+          "item4": "创建后无法修改金库资产，请仔细检查",
+          "item5": "建议先在测试网验证配置"
+        }
+      },
+      "assets": {
+        "title": "🔗 常用资产地址 (Mainnet)",
+        "stablecoins": "💎 Stablecoins",
+        "eth": "Ξ ETH & Wrapped",
+        "warning": "⚠️ 以上为主网地址示例，请根据实际部署网络使用正确的合约地址"
+      }
+    },
+    "batchVaultCreation": {
+      "csvImport": {
+        "title": "📄 CSV 快速导入",
+        "formatLabel": "格式: name,assetAddress,assetSymbol,decimals,managementFeeBps",
+        "importButton": "📥 导入 CSV"
+      },
+      "table": {
+        "title": "🏦 批量金库配置",
+        "headers": {
+          "status": "状态",
+          "name": "金库名称",
+          "assetAddress": "资产地址",
+          "symbol": "符号",
+          "decimals": "Decimals",
+          "managementFee": "管理费率 (bps)",
+          "actions": "操作"
+        },
+        "placeholders": {
+          "name": "USDC Vault",
+          "address": "0x...",
+          "symbol": "USDC"
+        }
+      },
+      "status": {
+        "pending": "待处理",
+        "validating": "验证中...",
+        "creating": "创建中...",
+        "success": "✅ 成功",
+        "error": "❌ 失败"
+      },
+      "errors": {
+        "title": "验证错误:",
+        "unnamed": "未命名"
+      },
+      "actions": {
+        "addVault": "➕ 添加金库",
+        "totalVaults": "共 {count} 个金库",
+        "createButton": "🚀 批量创建 {count} 个金库",
+        "creating": "创建中..."
+      },
+      "infoNotice": {
+        "title": "💡 提示",
+        "item1": "确保所有资产地址有效且已部署",
+        "item2": "Decimals 通常为 18 (ETH/WETH), 6 (USDC/USDT), 18 (DAI)",
+        "item3": "管理费采用基点表示，例如 100 = 1%",
+        "item4": "批量创建使用单笔交易，节省 Gas 费用"
+      },
+      "notifications": {
+        "csvInputRequired": "请输入CSV数据",
+        "csvImportSuccess": "成功导入 {count} 个金库配置",
+        "csvNoValid": "未找到有效的金库配置",
+        "csvParseError": "CSV格式错误",
+        "connectWallet": "请先连接钱包",
+        "addVaultFirst": "请至少添加一个金库",
+        "validationFailed": "部分金库配置无效，请检查",
+        "createSuccess": "成功创建 {count} 个金库！",
+        "createFailed": "批量创建失败"
+      },
+      "validation": {
+        "nameRequired": "金库名称不能为空",
+        "invalidAddress": "无效的资产地址",
+        "decimalsRange": "Decimals 必须在 1-18 之间",
+        "feeRange": "管理费应在 0-10000 基点之间"
+      }
+    },
     "adaptersPage": {
       "title": "适配器管理",
       "breadcrumb": {

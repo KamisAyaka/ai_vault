@@ -17,7 +17,7 @@ const messagesMap: MessageDictionary = {
 type I18nContextValue = {
   locale: Locale;
   setLocale: (nextLocale: Locale) => void;
-  t: (key: string, defaultMessage?: string) => string;
+  t: (key: string, defaultMessageOrParams?: string | Record<string, any>) => string;
   messages: Messages;
   locales: readonly Locale[];
   labels: typeof localeLabels;
@@ -59,12 +59,19 @@ export const I18nProvider = ({ children }: { children: React.ReactNode }) => {
   const messages = useMemo(() => messagesMap[locale] ?? messagesMap[defaultLocale], [locale]);
 
   const translate = useCallback(
-    (key: string, defaultMessage?: string) => {
+    (key: string, defaultMessageOrParams?: string | Record<string, any>) => {
       const result = traverse(messages, key);
-      if (typeof result === "string") {
-        return result;
+      let message =
+        typeof result === "string" ? result : typeof defaultMessageOrParams === "string" ? defaultMessageOrParams : key;
+
+      // If params is an object, replace placeholders
+      if (typeof defaultMessageOrParams === "object" && defaultMessageOrParams !== null) {
+        Object.entries(defaultMessageOrParams).forEach(([paramKey, paramValue]) => {
+          message = message.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(paramValue));
+        });
       }
-      return defaultMessage ?? key;
+
+      return message;
     },
     [messages],
   );
@@ -99,7 +106,8 @@ export const useI18n = () => {
 export const useTranslations = (prefix?: string) => {
   const { t } = useI18n();
   return useCallback(
-    (key: string, defaultMessage?: string) => t(prefix ? `${prefix}.${key}` : key, defaultMessage),
+    (key: string, defaultMessageOrParams?: string | Record<string, any>) =>
+      t(prefix ? `${prefix}.${key}` : key, defaultMessageOrParams),
     [prefix, t],
   );
 };

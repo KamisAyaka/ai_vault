@@ -6,6 +6,7 @@ import { formatUnits, parseUnits } from "viem";
 import { useAccount, useWriteContract } from "wagmi";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
 import { useTokenUsdPrices } from "~~/hooks/useTokenUsdPrices";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -19,6 +20,7 @@ type WithdrawModalProps = {
 type WithdrawMode = "assets" | "shares";
 
 export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawModalProps) => {
+  const t = useTranslations("withdrawModal");
   const [mode, setMode] = useState<WithdrawMode>("assets");
   const [amount, setAmount] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -241,7 +243,7 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
     if (!connectedAddress || !amount) return;
 
     if (!vaultContractInfo?.abi) {
-      notification.error("Vault contract ABI not available");
+      notification.error(t("messages.abiMissing"));
       return;
     }
 
@@ -262,7 +264,7 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
         await writeTx(makeWriteWithParams, {
           onBlockConfirmation: receipt => {
             console.debug("Withdraw confirmed", receipt);
-            notification.success(`成功取款 ${amount} ${assetSymbol}!`);
+            notification.success(`${t("messages.withdrawSuccess")} ${amount} ${assetSymbol}!`);
             setAmount("");
             onSuccess?.();
             onClose();
@@ -283,7 +285,7 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
         await writeTx(makeWriteWithParams, {
           onBlockConfirmation: receipt => {
             console.debug("Redeem confirmed", receipt);
-            notification.success(`成功赎回 ${amount} v${assetSymbol}!`);
+            notification.success(`${t("messages.redeemSuccess")} ${amount} v${assetSymbol}!`);
             setAmount("");
             onSuccess?.();
             onClose();
@@ -292,7 +294,7 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
       }
     } catch (error: any) {
       console.error("Withdraw/Redeem failed:", error);
-      notification.error(error?.message || "操作失败");
+      notification.error(error?.message || t("messages.operationFailed"));
     } finally {
       setIsWithdrawing(false);
     }
@@ -327,8 +329,10 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
       <div className="space-y-3">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-primary">Vault Actions</p>
-          <h3 className="mt-1 text-2xl font-bold">📤 金库取款操作</h3>
-          <p className="mt-1 text-xs opacity-70">选择按资产直接取款或根据份额赎回 v{assetSymbol}。</p>
+          <h3 className="mt-1 text-2xl font-bold">📤 {t("title")}</h3>
+          <p className="mt-1 text-xs opacity-70">
+            {t("tabs.withdraw")} / {t("tabs.redeem")} v{assetSymbol}
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-1">
           <button
@@ -338,7 +342,7 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
               setAmount("");
             }}
           >
-            按资产取款
+            {t("tabs.withdraw")}
           </button>
           <button
             className={`tab tab-lifted h-9 w-full ${mode === "shares" ? "tab-active" : ""}`}
@@ -347,22 +351,22 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
               setAmount("");
             }}
           >
-            按份额赎回
+            {t("tabs.redeem")}
           </button>
         </div>
       </div>
 
       <div className="rounded-lg bg-base-200 p-4">
-        <p className="mb-3 text-sm font-semibold">您的持仓</p>
+        <p className="mb-3 text-sm font-semibold">{t("position.title")}</p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <p className="mb-1 text-xs opacity-70">份额余额</p>
+            <p className="mb-1 text-xs opacity-70">{t("position.shareBalance")}</p>
             <p className="font-semibold">
               {formatBalance(userPosition.shares)} v{assetSymbol}
             </p>
           </div>
           <div>
-            <p className="mb-1 text-xs opacity-70">当前价值</p>
+            <p className="mb-1 text-xs opacity-70">{t("position.currentValue")}</p>
             <p className="font-semibold">
               ~{formatBalance(userPosition.value)} {assetSymbol}
             </p>
@@ -371,7 +375,7 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
             )}
           </div>
           <div>
-            <p className="mb-1 text-xs opacity-70">收益</p>
+            <p className="mb-1 text-xs opacity-70">{t("position.profit")}</p>
             <p className={`font-semibold ${userPosition.profit >= 0n ? "text-success" : "text-error"}`}>
               {userPosition.profit >= 0n ? "+" : ""}
               {formatBalance(userPosition.profit)} {assetSymbol}
@@ -392,7 +396,9 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
 
       <div>
         <label className="label">
-          <span className="label-text font-semibold">{mode === "assets" ? "取款金额" : "赎回份额"}</span>
+          <span className="label-text font-semibold">
+            {mode === "assets" ? t("form.withdrawAmount") : t("form.redeemShares")}
+          </span>
         </label>
         <div className="join w-full">
           <input
@@ -407,7 +413,7 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
             {mode === "assets" ? assetSymbol : `v${assetSymbol}`}
           </span>
           <button onClick={handleMaxClick} className="btn btn-error join-item">
-            最大
+            {t("form.max")}
           </button>
         </div>
         {formatUsdValue(amountUsd) && amount && (
@@ -419,12 +425,12 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
         <div className="rounded-lg bg-error/10 p-4">
           {mode === "assets" ? (
             <>
-              <p className="mb-2 text-sm font-semibold">需要赎回的份额</p>
+              <p className="mb-2 text-sm font-semibold">{t("form.sharesNeeded")}</p>
               <p className="text-2xl font-bold text-error">
                 ~{parseFloat(estimation.shares).toLocaleString(undefined, { maximumFractionDigits: 4 })} v{assetSymbol}
               </p>
               <p className="mt-1 text-xs opacity-70">
-                (当前汇率: 1 v{assetSymbol} = {exchangeRate} {assetSymbol})
+                (1 v{assetSymbol} = {exchangeRate} {assetSymbol})
               </p>
               {formatUsdValue(estimationUsd) && (
                 <p className="text-xs opacity-70 mt-1">≈ {formatUsdValue(estimationUsd)} USDT</p>
@@ -432,12 +438,12 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
             </>
           ) : (
             <>
-              <p className="mb-2 text-sm font-semibold">您将获得</p>
+              <p className="mb-2 text-sm font-semibold">{t("form.willReceive")}</p>
               <p className="text-2xl font-bold text-error">
                 ~{parseFloat(estimation.assets).toLocaleString(undefined, { maximumFractionDigits: 4 })} {assetSymbol}
               </p>
               <p className="mt-1 text-xs opacity-70">
-                (当前汇率: 1 v{assetSymbol} = {exchangeRate} {assetSymbol})
+                (1 v{assetSymbol} = {exchangeRate} {assetSymbol})
               </p>
               {formatUsdValue(estimationUsd) && (
                 <p className="text-xs opacity-70 mt-1">≈ {formatUsdValue(estimationUsd)} USDT</p>
@@ -449,16 +455,16 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
 
       {amount && isValidAmount && (
         <div className="rounded-lg bg-base-200 p-4">
-          <p className="mb-3 text-sm font-semibold">取款后剩余</p>
+          <p className="mb-3 text-sm font-semibold">{t("form.afterWithdraw")}</p>
           <ul className="space-y-2 text-sm">
             <li className="flex justify-between">
-              <span className="opacity-70">剩余份额:</span>
+              <span className="opacity-70">{t("form.remainingShares")}:</span>
               <span className="font-semibold">
                 {formatBalance(remainingPosition.shares)} v{assetSymbol}
               </span>
             </li>
             <li className="flex justify-between">
-              <span className="opacity-70">剩余价值:</span>
+              <span className="opacity-70">{t("form.remainingValue")}:</span>
               <span className="font-semibold">
                 ~{formatBalance(remainingPosition.value)} {assetSymbol}
               </span>
@@ -485,14 +491,14 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
           ></path>
         </svg>
         <div className="text-xs">
-          <p className="font-semibold">⏱️ 处理时间估算</p>
-          <p className="opacity-80">金库需要从协议中撤出流动性，预计 2-5 分钟</p>
+          <p className="font-semibold">⏱️ {t("estimate.title")}</p>
+          <p className="opacity-80">{t("estimate.value")}</p>
         </div>
       </div>
 
       <div className="flex flex-wrap justify-center gap-3">
         <button onClick={onClose} className="btn btn-ghost min-w-[120px]">
-          取消
+          {t("buttons.cancel")}
         </button>
         <button
           onClick={handleWithdraw}
@@ -502,10 +508,10 @@ export const WithdrawModal = ({ vault, isOpen, onClose, onSuccess }: WithdrawMod
           {isWithdrawing ? (
             <>
               <span className="loading loading-spinner loading-sm"></span>
-              处理中...
+              {t("buttons.processing")}
             </>
           ) : (
-            `📤 确认${mode === "assets" ? "取款" : "赎回"}`
+            `📤 ${mode === "assets" ? t("buttons.confirmWithdraw") : t("buttons.confirmRedeem")}`
           )}
         </button>
       </div>

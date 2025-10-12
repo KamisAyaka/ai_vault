@@ -248,7 +248,7 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
                   onClick={() => setIsEntryModalOpen(true)}
                   disabled={!vault.isActive}
                 >
-                  💰 存入
+                  💰 {tCard("actions.deposit")}
                 </button>
                 <button
                   className="btn btn-secondary btn-sm"

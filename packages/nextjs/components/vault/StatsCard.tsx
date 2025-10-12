@@ -2,6 +2,7 @@
 
 import { formatUnits } from "viem";
 import { CountUp } from "~~/components/ui/CountUp";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 import type { VaultStatsBreakdown } from "~~/types/vault";
 
 type StatsCardProps = {
@@ -59,9 +60,9 @@ const formatUsdValue = (value: number) => {
   return `$${value.toFixed(2)}`;
 };
 
-const formatBreakdown = (breakdown: VaultStatsBreakdown[]) => {
+const formatBreakdown = (breakdown: VaultStatsBreakdown[], noDepositsText: string) => {
   if (!breakdown.length) {
-    return "No current deposits";
+    return noDepositsText;
   }
 
   return breakdown
@@ -89,29 +90,31 @@ export const VaultStatsOverview = ({
   averageApy,
   totalUsers,
 }: VaultStatsOverviewProps) => {
+  const t = useTranslations("statsCard");
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
       <StatsCard
         icon="📊"
-        label="Total Value Locked"
+        label={t("tvl")}
         value={totalValueLockedUsd}
         formatValue={formatUsdValue}
-        subValue={formatBreakdown(totalValueLockedBreakdown)}
+        subValue={formatBreakdown(totalValueLockedBreakdown, t("noDeposits"))}
         iconBg="bg-[#803100]"
       />
 
       <StatsCard
         icon="💰"
-        label="Active Vaults"
+        label={t("activeVaults")}
         value={activeVaults}
         formatValue={val => Math.round(val).toLocaleString()}
-        subValue={`${totalVaults} total vaults`}
+        subValue={`${totalVaults} ${t("totalVaults")}`}
         iconBg="bg-[#803100]"
       />
 
       <StatsCard
         icon="👥"
-        label="Total Users"
+        label={t("totalUsers")}
         value={totalUsers}
         formatValue={val => Math.round(val).toLocaleString()}
         iconBg="bg-[#803100]"
@@ -119,7 +122,7 @@ export const VaultStatsOverview = ({
 
       <StatsCard
         icon="📈"
-        label="Average APY"
+        label={t("averageApy")}
         value={averageApy}
         formatValue={val => `${val.toFixed(1)}%`}
         iconBg="bg-[#803100]"

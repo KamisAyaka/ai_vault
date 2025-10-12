@@ -81,11 +81,7 @@ const AdminVaultsPage = () => {
       <div className="container mx-auto w-full px-4 py-8">
         {/* Header */}
         <div className="mb-8" ref={heroRef}>
-          <h1 className="hero-heading text-4xl font-bold mb-2 text-white">
-            <span className="bg-gradient-to-r from-[#fbe6dc] to-[#803100] bg-clip-text text-transparent">
-              Vault Admin Panel
-            </span>
-          </h1>
+          <h1 className="hero-heading text-4xl font-bold mb-2 text-white">Vault Admin Panel</h1>
           <p className="hero-subheading text-lg text-[#fbe6dc]">Create and manage AI Vault Protocol vaults</p>
         </div>
 

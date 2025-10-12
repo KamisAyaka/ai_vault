@@ -18,6 +18,7 @@ const AnalyticsPage = () => {
   const tTime = useTranslations("common.timeRanges");
   const tActivity = useTranslations("common.activity");
   const tMenu = useTranslations("menu");
+  const tAnalyticsPage = useTranslations("analyticsPage");
 
   const { loading, error, data } = useAnalyticsData();
   const { tvlHistory, assetDistribution, protocolDistribution, transactionTrends, recentActivity, stats } = data || {};
@@ -119,14 +120,14 @@ const AnalyticsPage = () => {
             <div className="analytics-overview-card stat bg-black/60 backdrop-blur-sm shadow-lg rounded-lg border border-[#803100]/30">
               <div className="stat-title text-[#fbe6dc]">{t("overview.users")}</div>
               <div className="stat-value text-2xl text-white">{stats?.totalUsers || 0}</div>
-              <div className="stat-desc text-[#fbe6dc]">Active users</div>
+              <div className="stat-desc text-[#fbe6dc]">{tAnalyticsPage("activeUsers")}</div>
             </div>
             <div className="analytics-overview-card stat bg-black/60 backdrop-blur-sm shadow-lg rounded-lg border border-[#803100]/30">
               <div className="stat-title text-[#fbe6dc]">{t("overview.apy")}</div>
               <div className="stat-value text-2xl bg-gradient-to-r from-[#fbe6dc] to-[#803100] bg-clip-text text-transparent">
                 {stats ? stats.averageApy.toFixed(1) : "0.0"}%
               </div>
-              <div className="stat-desc text-[#fbe6dc]">Average return</div>
+              <div className="stat-desc text-[#fbe6dc]">{tAnalyticsPage("averageReturn")}</div>
             </div>
           </div>
         </div>
