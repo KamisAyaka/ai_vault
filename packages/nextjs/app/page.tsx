@@ -6,6 +6,7 @@ import type { NextPage } from "next";
 import { useAccount } from "wagmi";
 import { CountUp } from "~~/components/ui/CountUp";
 import { useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
+import { useUserRole } from "~~/hooks/useUserRole";
 import { useVaultStats } from "~~/hooks/useVaultStats";
 import { useVaults } from "~~/hooks/useVaults";
 import { useTranslations } from "~~/services/i18n/I18nProvider";
@@ -14,6 +15,7 @@ const Home: NextPage = () => {
   const { address: connectedAddress } = useAccount();
   const tHero = useTranslations("home.hero");
   const tMetrics = useTranslations("home.metrics");
+  const { isOwner } = useUserRole();
 
   // Fetch top vaults
   const { vaults, loading } = useVaults(3, 0, "totalAssets", "desc");
@@ -65,7 +67,7 @@ const Home: NextPage = () => {
               >
                 {tHero("explore")}
               </Link>
-              {connectedAddress && (
+              {connectedAddress && isOwner && (
                 <Link
                   href="/admin/vaults"
                   className="hero-cta btn bg-[#fbe6dc] hover:bg-[#fbe6dc]/80 border-none text-[#803100] btn-lg"

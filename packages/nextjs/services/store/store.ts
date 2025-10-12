@@ -18,6 +18,11 @@ type GlobalState = {
   };
   setNativeCurrencyPrice: (newNativeCurrencyPriceState: number) => void;
   setIsNativeCurrencyFetching: (newIsNativeCurrencyFetching: boolean) => void;
+  tokenPrices: Record<string, number>;
+  tokenPricesUpdatedAt: number | null;
+  isFetchingTokenPrices: boolean;
+  setTokenPrices: (updates: Record<string, number>, updatedAt?: number) => void;
+  setIsFetchingTokenPrices: (value: boolean) => void;
   targetNetwork: ChainWithAttributes;
   setTargetNetwork: (newTargetNetwork: ChainWithAttributes) => void;
 };
@@ -31,6 +36,15 @@ export const useGlobalState = create<GlobalState>(set => ({
     set(state => ({ nativeCurrency: { ...state.nativeCurrency, price: newValue } })),
   setIsNativeCurrencyFetching: (newValue: boolean): void =>
     set(state => ({ nativeCurrency: { ...state.nativeCurrency, isFetching: newValue } })),
+  tokenPrices: {},
+  tokenPricesUpdatedAt: null,
+  isFetchingTokenPrices: false,
+  setTokenPrices: (updates: Record<string, number>, updatedAt) =>
+    set(state => ({
+      tokenPrices: { ...state.tokenPrices, ...updates },
+      tokenPricesUpdatedAt: updatedAt ?? Date.now(),
+    })),
+  setIsFetchingTokenPrices: (value: boolean) => set(() => ({ isFetchingTokenPrices: value })),
   targetNetwork: {
     ...scaffoldConfig.targetNetworks[0],
     ...NETWORKS_EXTRA_DATA[scaffoldConfig.targetNetworks[0].id],

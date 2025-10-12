@@ -65,23 +65,37 @@ export const useGsapStaggerReveal = (
   }, deps);
 };
 
+type FadeOptions = {
+  from?: gsap.TweenVars;
+  to?: gsap.TweenVars;
+};
+
 export const useGsapFadeReveal = (
   containerRef: RefObject<HTMLElement | null>,
   selector: string,
   deps: any[] = [],
-  vars: gsap.TweenVars = {},
+  options: FadeOptions = {},
 ) => {
   useEffect(() => {
     if (!containerRef.current) return;
     const ctx = gsap.context(() => {
-      gsap.from(selector, {
-        opacity: 0,
-        y: 24,
-        duration: 0.6,
-        ease: "power2.out",
-        stagger: 0.08,
-        ...vars,
-      });
+      gsap.fromTo(
+        selector,
+        {
+          opacity: 0,
+          y: 24,
+          ...(options.from ?? {}),
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power2.out",
+          stagger: 0.08,
+          clearProps: "transform,opacity",
+          ...(options.to ?? {}),
+        },
+      );
     }, containerRef);
 
     return () => ctx.revert();
