@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { useScaffoldReadContract } from "./scaffold-eth";
 import { useAccount } from "wagmi";
+import { ADMIN_ADDRESSES } from "~~/utils/admin";
 
 export type UserRole = "owner" | "manager" | "ai_agent" | "user";
 
@@ -13,22 +13,23 @@ type UseUserRoleOptions = {
 export const useUserRole = (vaultAddress?: string, options: UseUserRoleOptions = {}) => {
   const { address: connectedAddress } = useAccount();
 
-  // 读取工厂合约所有者
-  const { data: factoryOwner } = useScaffoldReadContract({
-    contractName: "VaultFactory",
-    functionName: "owner",
-  });
+  const adminAddresses = useMemo(() => {
+    const addresses = new Set<string>(ADMIN_ADDRESSES);
+    if (options.factoryOwnerAddress) {
+      addresses.add(options.factoryOwnerAddress.toLowerCase());
+    }
+    return addresses;
+  }, [options.factoryOwnerAddress]);
 
   const role = useMemo<UserRole>(() => {
     if (!connectedAddress) return "user";
 
     const lowerAddress = connectedAddress.toLowerCase();
-    const factoryOwnerAddress = options.factoryOwnerAddress?.toLowerCase() ?? factoryOwner?.toLowerCase();
     const managerAddress = options.managerAddress?.toLowerCase();
     const aiAgentAddresses = options.aiAgentAddresses?.map(address => address.toLowerCase()) ?? [];
 
-    // 检查是否为工厂所有者
-    if (factoryOwnerAddress && factoryOwnerAddress === lowerAddress) {
+    // 检查是否为管理员/所有者
+    if (adminAddresses.has(lowerAddress)) {
       return "owner";
     }
 
@@ -43,14 +44,7 @@ export const useUserRole = (vaultAddress?: string, options: UseUserRoleOptions =
     }
 
     return "user";
-  }, [
-    connectedAddress,
-    factoryOwner,
-    options.factoryOwnerAddress,
-    options.managerAddress,
-    options.aiAgentAddresses,
-    vaultAddress,
-  ]);
+  }, [connectedAddress, adminAddresses, options.managerAddress, options.aiAgentAddresses, vaultAddress]);
 
   const permissions = useMemo(() => {
     return {

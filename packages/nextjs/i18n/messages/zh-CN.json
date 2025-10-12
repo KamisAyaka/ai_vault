@@ -51,8 +51,7 @@
     "strategies": "策略管理",
     "adapters": "适配器",
     "batch": "批量创建",
-    "subgraph": "子图",
-    "debug": "调试合约"
+    "subgraph": "子图"
   },
   "header": {
     "switcher": {
@@ -208,7 +207,11 @@
         "90d": "最近90天",
         "all": "全部"
       },
-      "loading": "正在加载收益趋势..."
+      "loading": "正在加载收益趋势...",
+      "empty": {
+        "title": "暂无收益数据",
+        "description": "当前时间段内还没有产生收益记录。"
+      }
     },
     "positions": {
       "title": "持仓详情",

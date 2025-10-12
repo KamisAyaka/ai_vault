@@ -231,11 +231,9 @@ const PortfolioPage = () => {
             </div>
 
             {!filteredRevenueHistory || filteredRevenueHistory.length === 0 ? (
-              <div className="flex items-center justify-center h-64 text-[#fbe6dc]">
-                <div className="text-center">
-                  <span className="loading loading-spinner loading-md text-[#fbe6dc]"></span>
-                  <p className="mt-2">{t("revenue.loading")}</p>
-                </div>
+              <div className="text-center py-16">
+                <h3 className="text-2xl font-bold mb-2 text-white">{t("revenue.empty.title")}</h3>
+                <p className="text-[#fbe6dc]">{t("revenue.empty.description")}</p>
               </div>
             ) : (
               <div className="h-64 flex items-end justify-between gap-1">

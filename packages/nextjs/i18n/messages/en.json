@@ -51,8 +51,7 @@
     "strategies": "Strategies",
     "adapters": "Adapters",
     "batch": "Batch Create",
-    "subgraph": "Subgraph",
-    "debug": "Debug Contracts"
+    "subgraph": "Subgraph"
   },
   "header": {
     "switcher": {
@@ -208,7 +207,11 @@
         "90d": "90 days",
         "all": "All"
       },
-      "loading": "Loading revenue trend..."
+      "loading": "Loading revenue trend...",
+      "empty": {
+        "title": "No revenue data yet",
+        "description": "Your vaults haven't generated any revenue during this period."
+      }
     },
     "positions": {
       "title": "Holdings",
