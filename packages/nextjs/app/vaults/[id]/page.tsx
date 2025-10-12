@@ -5,8 +5,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
+import { ExcessReturnCard } from "~~/components/ExcessReturnCard";
+import { LiquidityPreferenceChart } from "~~/components/LiquidityPreferenceChart";
+import { MaxDrawdownChart } from "~~/components/MaxDrawdownChart";
+import { StrategyPerformanceChart } from "~~/components/StrategyPerformanceChart";
 import { VaultReactivationModal } from "~~/components/admin/VaultReactivationModal";
-import { OwnerOnly } from "~~/components/auth/PermissionGuard";
 import { RoleDisplay } from "~~/components/auth/RoleDisplay";
 import { Address } from "~~/components/scaffold-eth";
 import { DepositMintModal, WithdrawETHModal, WithdrawModal } from "~~/components/vault";
@@ -16,7 +19,7 @@ import { useUserPortfolio } from "~~/hooks/useUserPortfolio";
 import { useUserRole } from "~~/hooks/useUserRole";
 import { useVaultPerformance } from "~~/hooks/useVaultPerformance";
 import { useVaults } from "~~/hooks/useVaults";
-import { PRIMARY_ADMIN_ADDRESS } from "~~/utils/admin";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 
 const safeBigInt = (value?: string) => {
   try {
@@ -50,7 +53,7 @@ const EMPTY_USER_STATS = {
   profitPercent: 0,
 };
 
-const VaultDetailContent = () => {
+const VaultDetailPage = () => {
   const params = useParams<{ id: string }>();
   const vaultParam = (params?.id ?? "").toLowerCase();
   const { address: connectedAddress } = useAccount();
@@ -58,6 +61,8 @@ const VaultDetailContent = () => {
   const { data: performanceData } = useVaultPerformance(200);
   const { tokenPrices } = useTokenUsdPrices();
   const { balances: userBalances } = useUserPortfolio();
+
+  const t = useTranslations("vaultDetail");
 
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [entryModalMode, setEntryModalMode] = useState<"deposit" | "mint">("deposit");
@@ -238,7 +243,7 @@ const VaultDetailContent = () => {
       <div className="flex min-h-screen flex-1 items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <span className="loading loading-spinner loading-lg text-[#fbe6dc]" />
-          <p className="text-lg text-[#fbe6dc]">Loading vault details...</p>
+          <p className="text-lg text-[#fbe6dc]">{t("loading")}</p>
         </div>
       </div>
     );
@@ -248,7 +253,7 @@ const VaultDetailContent = () => {
     return (
       <div className="container mx-auto px-4 py-10">
         <div className="rounded-xl border border-[#803100]/30 bg-black/60 p-6 text-[#fbe6dc] backdrop-blur-sm">
-          Unable to locate this vault. Please verify the URL or return to the vault list.
+          {t("notFound")}
         </div>
       </div>
     );
@@ -261,12 +266,12 @@ const VaultDetailContent = () => {
             <ul className="opacity-80">
               <li>
                 <Link href="/" className="hover:text-white">
-                  Home
+                  {t("breadcrumbs.home")}
                 </Link>
               </li>
               <li>
                 <Link href="/vaults" className="hover:text-white">
-                  Vaults
+                  {t("breadcrumbs.vaults")}
                 </Link>
               </li>
               <li className="text-white">{vault.name}</li>
@@ -275,7 +280,7 @@ const VaultDetailContent = () => {
           <h1 className="hero-heading text-4xl font-bold text-white">
             {vault.name}
             <span className={`badge ml-3 border-none bg-[#803100] ${vault.isActive ? "" : "bg-red-700"}`}>
-              {vault.isActive ? "Active" : "Inactive"}
+              {vault.isActive ? t("status.active") : t("status.inactive")}
             </span>
           </h1>
           <div className="mt-2 text-sm hero-subheading">
@@ -284,7 +289,7 @@ const VaultDetailContent = () => {
         </div>
         {!vault.isActive && permissions.canActivateVault && (
           <button onClick={() => setIsReactivationModalOpen(true)} className="hero-cta btn btn-success">
-            Reactivate Vault
+            {t("actions.reactivate")}
           </button>
         )}
       </div>
@@ -293,48 +298,50 @@ const VaultDetailContent = () => {
         <div className="space-y-6" ref={leftColumnRef}>
           <div className="vault-detail-card card bg-base-100 shadow-xl">
             <div className="card-body space-y-3">
-              <h2 className="card-title text-white">Vault Metrics</h2>
+              <h2 className="card-title text-white">{t("metrics.title")}</h2>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="opacity-70">Total Assets</p>
+                  <p className="opacity-70">{t("metrics.totalAssets")}</p>
                   <p className="text-lg font-semibold">
                     {formatTokenAmount(totalAssets, assetDecimals)} {assetSymbol}
                   </p>
                   {formatUsdValue(totalAssetsUsd) && (
-                    <p className="text-xs opacity-70">≈ {formatUsdValue(totalAssetsUsd)} USDT</p>
+                    <p className="text-xs opacity-70">
+                      {t("metrics.approx")} {formatUsdValue(totalAssetsUsd)} {t("metrics.usdt")}
+                    </p>
                   )}
                 </div>
                 <div>
-                  <p className="opacity-70">Total Supply</p>
+                  <p className="opacity-70">{t("metrics.totalSupply")}</p>
                   <p className="text-lg font-semibold">
                     {formatTokenAmount(totalSupply, assetDecimals)} v{assetSymbol}
                   </p>
                 </div>
                 <div>
-                  <p className="opacity-70">Share Price</p>
+                  <p className="opacity-70">{t("metrics.sharePrice")}</p>
                   <p className="text-lg font-semibold">{sharePrice}</p>
                 </div>
                 <div>
-                  <p className="opacity-70">Holders</p>
+                  <p className="opacity-70">{t("metrics.holders")}</p>
                   <p className="text-lg font-semibold">{uniqueHolders}</p>
                 </div>
               </div>
               <div className="divider my-3" />
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="opacity-70">Manager</p>
+                  <p className="opacity-70">{t("metrics.manager")}</p>
                   <Address address={vault.manager?.address} size="sm" />
                 </div>
                 <div>
-                  <p className="opacity-70">Owner</p>
+                  <p className="opacity-70">{t("metrics.owner")}</p>
                   <Address address={vault.manager?.owner} size="sm" />
                 </div>
                 <div>
-                  <p className="opacity-70">Created</p>
+                  <p className="opacity-70">{t("metrics.created")}</p>
                   <p>{new Date(Number(vault.createdAt) * 1000).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="opacity-70">Updated</p>
+                  <p className="opacity-70">{t("metrics.updated")}</p>
                   <p>{new Date(Number(vault.updatedAt) * 1000).toLocaleDateString()}</p>
                 </div>
               </div>
@@ -345,56 +352,62 @@ const VaultDetailContent = () => {
             <div className="vault-detail-card card bg-base-100 shadow-xl">
               <div className="card-body space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="card-title text-white">Your Position</h2>
+                  <h2 className="card-title text-white">{t("position.title")}</h2>
                   {userStats.shares > 0n && (
                     <span className="badge border-none bg-[#803100]/70 text-white">
-                      {formatTokenAmount(userStats.shares, assetDecimals, 4)} shares
+                      {formatTokenAmount(userStats.shares, assetDecimals, 4)} {t("position.shares")}
                     </span>
                   )}
                 </div>
 
                 {userStats.shares === 0n ? (
-                  <p className="text-sm opacity-70">You do not have a position in this vault yet.</p>
+                  <p className="text-sm opacity-70">{t("position.noPosition")}</p>
                 ) : (
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="opacity-70">Current Value</span>
+                      <span className="opacity-70">{t("position.currentValue")}</span>
                       <span className="font-semibold">
                         {formatTokenAmount(userStats.value, assetDecimals)} {assetSymbol}
                       </span>
                     </div>
                     {formatUsdValue(userValueUsd) && (
                       <div className="flex justify-between text-xs">
-                        <span className="opacity-70">≈</span>
-                        <span className="opacity-70">{formatUsdValue(userValueUsd)} USDT</span>
+                        <span className="opacity-70">{t("metrics.approx")}</span>
+                        <span className="opacity-70">
+                          {formatUsdValue(userValueUsd)} {t("metrics.usdt")}
+                        </span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="opacity-70">Total Deposited</span>
+                      <span className="opacity-70">{t("position.totalDeposited")}</span>
                       <span>
                         {formatTokenAmount(userStats.deposited, assetDecimals)} {assetSymbol}
                       </span>
                     </div>
                     {formatUsdValue(userDepositedUsd) && (
                       <div className="flex justify-between text-xs">
-                        <span className="opacity-70">≈</span>
-                        <span className="opacity-70">{formatUsdValue(userDepositedUsd)} USDT</span>
+                        <span className="opacity-70">{t("metrics.approx")}</span>
+                        <span className="opacity-70">
+                          {formatUsdValue(userDepositedUsd)} {t("metrics.usdt")}
+                        </span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="opacity-70">Total Withdrawn</span>
+                      <span className="opacity-70">{t("position.totalWithdrawn")}</span>
                       <span>
                         {formatTokenAmount(userStats.redeemed, assetDecimals)} {assetSymbol}
                       </span>
                     </div>
                     {formatUsdValue(userRedeemedUsd) && (
                       <div className="flex justify-between text-xs">
-                        <span className="opacity-70">≈</span>
-                        <span className="opacity-70">{formatUsdValue(userRedeemedUsd)} USDT</span>
+                        <span className="opacity-70">{t("metrics.approx")}</span>
+                        <span className="opacity-70">
+                          {formatUsdValue(userRedeemedUsd)} {t("metrics.usdt")}
+                        </span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="opacity-70">Profit / Loss</span>
+                      <span className="opacity-70">{t("position.profitLoss")}</span>
                       <span className={userStats.profit >= 0n ? "text-success" : "text-error"}>
                         {userStats.profit >= 0n ? "+" : ""}
                         {formatTokenAmount(userStats.profit, assetDecimals)} {assetSymbol} (
@@ -403,10 +416,10 @@ const VaultDetailContent = () => {
                     </div>
                     {userProfitUsdDisplay && (
                       <div className="flex justify-between text-xs">
-                        <span className="opacity-70">≈</span>
+                        <span className="opacity-70">{t("metrics.approx")}</span>
                         <span className={userStats.profit >= 0n ? "text-success" : "text-error"}>
                           {userStats.profit >= 0n ? "+" : "-"}
-                          {userProfitUsdDisplay} USDT
+                          {userProfitUsdDisplay} {t("metrics.usdt")}
                         </span>
                       </div>
                     )}
@@ -415,7 +428,7 @@ const VaultDetailContent = () => {
 
                 {userBalanceUpdatedAt > 0 && (
                   <p className="text-xs opacity-60 text-right">
-                    数据更新时间: {new Date(userBalanceUpdatedAt).toLocaleString("zh-CN")}
+                    {t("position.dataUpdated")} {new Date(userBalanceUpdatedAt).toLocaleString()}
                   </p>
                 )}
 
@@ -428,7 +441,7 @@ const VaultDetailContent = () => {
                     }}
                     disabled={!vault.isActive}
                   >
-                    Deposit
+                    {t("actions.deposit")}
                   </button>
                   <button
                     className="btn btn-accent"
@@ -438,14 +451,14 @@ const VaultDetailContent = () => {
                     }}
                     disabled={!vault.isActive}
                   >
-                    Mint Shares
+                    {t("actions.mintShares")}
                   </button>
                   <button
                     className="btn btn-secondary"
                     onClick={() => setIsWithdrawModalOpen(true)}
                     disabled={userStats.shares === 0n}
                   >
-                    Withdraw
+                    {t("actions.withdraw")}
                   </button>
                 </div>
               </div>
@@ -456,22 +469,22 @@ const VaultDetailContent = () => {
         <div className="space-y-6 lg:col-span-2" ref={rightColumnRef}>
           <div className="vault-detail-card card bg-base-100 shadow-xl">
             <div className="card-body">
-              <h2 className="card-title text-white">Performance Overview</h2>
+              <h2 className="card-title text-white">{t("performance.title")}</h2>
               <div className="mt-4 grid gap-4 md:grid-cols-4">
                 <div>
-                  <p className="opacity-70">Current APY</p>
+                  <p className="opacity-70">{t("performance.currentApy")}</p>
                   <p className="text-2xl font-semibold text-success">{formatPercent(performance?.currentAPY ?? 0)}</p>
                 </div>
                 <div>
-                  <p className="opacity-70">30d APY</p>
+                  <p className="opacity-70">{t("performance.apy30d")}</p>
                   <p className="text-2xl font-semibold text-white">{formatPercent(performance?.thirtyDayAPY ?? 0)}</p>
                 </div>
                 <div>
-                  <p className="opacity-70">90d APY</p>
+                  <p className="opacity-70">{t("performance.apy90d")}</p>
                   <p className="text-2xl font-semibold text-white">{formatPercent(performance?.ninetyDayAPY ?? 0)}</p>
                 </div>
                 <div>
-                  <p className="opacity-70">All-Time Fees</p>
+                  <p className="opacity-70">{t("performance.allTimeFees")}</p>
                   <p className="text-2xl font-semibold text-white">
                     $
                     {(performance?.totalFeesPaid ?? 0).toLocaleString(undefined, {
@@ -482,41 +495,43 @@ const VaultDetailContent = () => {
               </div>
 
               {performance && (
-                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                  <ExcessReturnCard vault={vault} />
+
                   <div className="rounded-lg bg-black/30 p-4">
-                    <h3 className="font-semibold text-white">Fee Breakdown</h3>
+                    <h3 className="font-semibold text-white">{t("fees.title")}</h3>
                     <div className="mt-2 space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="opacity-70">Management Fee Rate</span>
+                        <span className="opacity-70">{t("fees.managementRate")}</span>
                         <span>{formatPercent(performance.managementFeeRate * 100)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="opacity-70">Performance Fee Rate</span>
+                        <span className="opacity-70">{t("fees.performanceRate")}</span>
                         <span>{formatPercent(performance.performanceFeeRate * 100)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="opacity-70">Management Fees (USD)</span>
+                        <span className="opacity-70">{t("fees.managementUsd")}</span>
                         <span>${performance.feeBreakdown.managementFees.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="opacity-70">Performance Fees (USD)</span>
+                        <span className="opacity-70">{t("fees.performanceUsd")}</span>
                         <span>${performance.feeBreakdown.performanceFees.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
                   <div className="rounded-lg bg-black/30 p-4">
-                    <h3 className="font-semibold text-white">Risk Metrics</h3>
+                    <h3 className="font-semibold text-white">{t("risk.title")}</h3>
                     <div className="mt-2 space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="opacity-70">Volatility</span>
+                        <span className="opacity-70">{t("risk.volatility")}</span>
                         <span>{formatPercent(performance.riskMetrics.volatility * 100, 2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="opacity-70">Max Drawdown</span>
+                        <span className="opacity-70">{t("risk.maxDrawdown")}</span>
                         <span>{formatPercent(performance.riskMetrics.maxDrawdown * 100, 2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="opacity-70">Sharpe Ratio</span>
+                        <span className="opacity-70">{t("risk.sharpeRatio")}</span>
                         <span>{performance.riskMetrics.sharpeRatio.toFixed(2)}</span>
                       </div>
                     </div>
@@ -528,7 +543,19 @@ const VaultDetailContent = () => {
 
           <div className="vault-detail-card card bg-base-100 shadow-xl">
             <div className="card-body">
-              <h2 className="card-title text-white">Investment Allocations</h2>
+              <StrategyPerformanceChart vault={vault} days={30} />
+            </div>
+          </div>
+
+          <div className="vault-detail-card card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <MaxDrawdownChart vault={vault} days={90} />
+            </div>
+          </div>
+
+          <div className="vault-detail-card card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title text-white">{t("allocations.title")}</h2>
               {vault.allocations && vault.allocations.length > 0 ? (
                 <div className="mt-4 space-y-3">
                   {vault.allocations.map(allocation => {
@@ -554,35 +581,41 @@ const VaultDetailContent = () => {
                   })}
                 </div>
               ) : (
-                <p className="opacity-70">No strategy allocations configured yet.</p>
+                <p className="opacity-70">{t("allocations.noStrategy")}</p>
               )}
+            </div>
+          </div>
+
+          <div className="vault-detail-card card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <LiquidityPreferenceChart vault={vault} />
             </div>
           </div>
 
           <div className="vault-detail-card card bg-base-100 shadow-xl" ref={activityRef}>
             <div className="card-body">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <h2 className="card-title text-white">Recent Activity</h2>
+                <h2 className="card-title text-white">{t("activity.title")}</h2>
                 <span className="badge border-none bg-[#803100]/70 text-white">
-                  Last {transactionRows.length} entries
+                  {t("activity.last")} {transactionRows.length} {t("activity.entries")}
                 </span>
               </div>
               <div className="mt-4 overflow-x-auto">
                 <table className="table table-zebra">
                   <thead>
                     <tr className="text-xs uppercase opacity-70">
-                      <th>Type</th>
-                      <th className="text-right">Assets</th>
-                      <th className="text-right">Shares</th>
-                      <th>Timestamp</th>
-                      <th>Tx Hash</th>
+                      <th>{t("activity.type")}</th>
+                      <th className="text-right">{t("activity.assets")}</th>
+                      <th className="text-right">{t("activity.shares")}</th>
+                      <th>{t("activity.timestamp")}</th>
+                      <th>{t("activity.txHash")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {transactionRows.length === 0 && (
                       <tr>
                         <td colSpan={5} className="py-8 text-center text-sm opacity-70">
-                          No on-chain activity recorded yet.
+                          {t("activity.noActivity")}
                         </td>
                       </tr>
                     )}
@@ -659,41 +692,6 @@ const VaultDetailContent = () => {
         onSuccess={refetch}
       />
     </div>
-  );
-};
-
-const VaultDetailPage = () => {
-  const adminAddress = PRIMARY_ADMIN_ADDRESS;
-
-  const fallback = (
-    <div className="flex min-h-screen flex-1 items-center justify-center px-4">
-      <div className="max-w-md rounded-lg border border-[#803100]/40 bg-black/70 p-8 text-center text-[#fbe6dc] shadow-lg backdrop-blur">
-        <h2 className="text-2xl font-semibold text-white">需要管理员权限</h2>
-        {adminAddress ? (
-          <p className="mt-3 text-sm leading-relaxed opacity-80">
-            当前连接的钱包没有查看金库详情的权限。请使用管理员钱包地址
-            <span className="ml-1 font-mono text-xs text-white">{adminAddress}</span>
-            重新连接。
-          </p>
-        ) : (
-          <p className="mt-3 text-sm leading-relaxed opacity-80">
-            当前连接的钱包没有查看金库详情的权限，且管理员地址尚未在环境变量中配置。请联系系统管理员。
-          </p>
-        )}
-        <div className="mt-6 flex flex-col gap-2 text-sm">
-          <Link href="/vaults" className="btn btn-sm bg-[#803100] text-white hover:bg-[#803100]/80 border-none">
-            返回金库列表
-          </Link>
-          <p className="opacity-60">或断开钱包后使用管理员地址登录。</p>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <OwnerOnly fallback={fallback} showMessage={false}>
-      <VaultDetailContent />
-    </OwnerOnly>
   );
 };
 

@@ -16,6 +16,7 @@
       "inactive": "Inactive"
     },
     "timeRanges": {
+      "1d": "1d",
       "7d": "7d",
       "30d": "30d",
       "90d": "90d",
@@ -231,6 +232,55 @@
       "timestamp": "Timestamp",
       "txHash": "Tx Hash",
       "noActivity": "No on-chain activity recorded yet."
+    },
+    "performanceChart": {
+      "title": "Strategy vs Hold Performance",
+      "subtitle": "AI Strategy vs Buy & Hold Benchmark",
+      "strategy": "AI Strategy",
+      "hold": "Buy & Hold",
+      "excessReturn": "Excess Return",
+      "noData": "No historical data available"
+    },
+    "excessReturn": {
+      "title": "Excess Return",
+      "subtitle": "Strategy outperformance vs benchmark",
+      "value": "Current Excess Return",
+      "period": "Period",
+      "1day": "1 Day",
+      "7days": "7 Days",
+      "30days": "30 Days",
+      "allTime": "All Time",
+      "strategyPerformance": "Strategy",
+      "benchmark": "Benchmark",
+      "outperforming": "Outperforming",
+      "holdStrategy": "Buy & Hold"
+    },
+    "liquidityPreference": {
+      "title": "Liquidity Preference Analysis",
+      "subtitle": "AI strategy allocation across protocols",
+      "noData": "No allocation data available",
+      "totalAllocation": "Total Allocation",
+      "protocolCount": "Protocol Count",
+      "topProtocol": "Top Protocol",
+      "diversification": "Diversification",
+      "balanced": "Balanced",
+      "concentrated": "Concentrated"
+    },
+    "maxDrawdown": {
+      "title": "Maximum Drawdown Analysis",
+      "subtitle": "Historical drawdown and recovery metrics",
+      "noData": "No drawdown data available",
+      "drawdown": "Drawdown",
+      "maxDrawdown": "Max Drawdown",
+      "recoveryTime": "Recovery Time",
+      "currentDrawdown": "Current Drawdown",
+      "riskLevel": "Risk Level",
+      "days": " days",
+      "notRecovered": "Not Recovered",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "veryHigh": "Very High"
     },
     "permissions": {
       "title": "Admin Access Required",
@@ -527,7 +577,13 @@
       }
     },
     "ranking": {
-      "title": "Vault Performance Ranking"
+      "title": "Vault Performance Ranking by Yield",
+      "sortBy": "Sort by",
+      "sharpeRatio": "Sharpe Ratio",
+      "totalVaults": "Total Vaults",
+      "avgTVL": "Avg TVL",
+      "avgAPY": "Avg APY",
+      "total7dRevenue": "7d Total Revenue"
     },
     "activity": {
       "title": "Recent Activity (24h)",

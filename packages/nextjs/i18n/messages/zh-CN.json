@@ -16,6 +16,7 @@
       "inactive": "暂停"
     },
     "timeRanges": {
+      "1d": "1天",
       "7d": "7天",
       "30d": "30天",
       "90d": "90天",
@@ -231,6 +232,55 @@
       "timestamp": "时间戳",
       "txHash": "交易哈希",
       "noActivity": "暂无链上活动记录。"
+    },
+    "performanceChart": {
+      "title": "策略净值对比",
+      "subtitle": "AI策略 vs 持有不动基准",
+      "strategy": "AI策略净值",
+      "hold": "持有不动",
+      "excessReturn": "超额收益率",
+      "noData": "暂无历史数据"
+    },
+    "excessReturn": {
+      "title": "超额收益率",
+      "subtitle": "策略相对基准的超额表现",
+      "value": "当前超额收益",
+      "period": "周期",
+      "1day": "1天",
+      "7days": "7天",
+      "30days": "30天",
+      "allTime": "全部",
+      "strategyPerformance": "策略表现",
+      "benchmark": "对比基准",
+      "outperforming": "跑赢基准",
+      "holdStrategy": "买入持有"
+    },
+    "liquidityPreference": {
+      "title": "流动性偏好分析",
+      "subtitle": "AI策略在各协议的资金分配情况",
+      "noData": "暂无分配数据",
+      "totalAllocation": "总分配比例",
+      "protocolCount": "协议数量",
+      "topProtocol": "主要协议",
+      "diversification": "多元化程度",
+      "balanced": "均衡",
+      "concentrated": "集中"
+    },
+    "maxDrawdown": {
+      "title": "最大回撤分析",
+      "subtitle": "策略历史回撤与恢复情况",
+      "noData": "暂无回撤数据",
+      "drawdown": "回撤",
+      "maxDrawdown": "最大回撤",
+      "recoveryTime": "恢复时间",
+      "currentDrawdown": "当前回撤",
+      "riskLevel": "风险等级",
+      "days": "天",
+      "notRecovered": "未恢复",
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "veryHigh": "极高"
     },
     "permissions": {
       "title": "需要管理员权限",
@@ -527,7 +577,13 @@
       }
     },
     "ranking": {
-      "title": "金库性能排行"
+      "title": "投资池收益排名",
+      "sortBy": "排序方式",
+      "sharpeRatio": "夏普比率",
+      "totalVaults": "总金库数",
+      "avgTVL": "平均TVL",
+      "avgAPY": "平均APY",
+      "total7dRevenue": "7日总收益"
     },
     "activity": {
       "title": "24 小时实时活动",
