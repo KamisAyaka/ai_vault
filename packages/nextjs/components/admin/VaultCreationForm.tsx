@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface VaultCreationFormProps {
@@ -15,6 +16,7 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
   const [fee, setFee] = useState("100"); // Default 1% (100 basis points)
   const [isCreating, setIsCreating] = useState(false);
   const [checkingVault, setCheckingVault] = useState(false);
+  const t = useTranslations();
 
   const { writeContractAsync: createVaultAsync } = useScaffoldWriteContract("VaultFactory");
 
@@ -33,7 +35,7 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
 
   const handleCheckVault = async () => {
     if (!asset) {
-      notification.error("Please enter an asset address");
+      notification.error(t("adminVaultCreation.messages.addressRequired"));
       return;
     }
     setCheckingVault(true);
@@ -45,12 +47,12 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
     e.preventDefault();
 
     if (!asset || !vaultName || !vaultSymbol || !fee) {
-      notification.error("Please fill in all fields");
+      notification.error(t("adminVaultCreation.messages.fillAllFields"));
       return;
     }
 
     if (hasVault) {
-      notification.error("Vault already exists for this asset");
+      notification.error(t("adminVaultCreation.messages.vaultExists"));
       return;
     }
 
@@ -62,7 +64,7 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
         args: [asset, vaultName, vaultSymbol, BigInt(fee)],
       });
 
-      notification.success("Vault created successfully!");
+      notification.success(t("adminVaultCreation.messages.createSuccess"));
 
       // Reset form
       setAsset("");
@@ -74,7 +76,7 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
       onVaultCreated?.();
     } catch (error: any) {
       console.error("Failed to create vault:", error);
-      notification.error(error?.message || "Failed to create vault");
+      notification.error(error?.message || t("adminVaultCreation.messages.createFailed"));
     } finally {
       setIsCreating(false);
     }
@@ -83,21 +85,21 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
   return (
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
-        <h2 className="card-title text-2xl mb-4">🏗️ Create New Vault</h2>
+        <h2 className="card-title text-2xl mb-4">{t("adminVaultCreation.title")}</h2>
 
         <form onSubmit={handleCreateVault} className="space-y-4">
           {/* Asset Address */}
           <div className="form-control">
             <label className="label">
-              <span className="label-text font-semibold">Asset Token Address</span>
-              <span className="label-text-alt text-error">Required</span>
+              <span className="label-text font-semibold">{t("adminVaultCreation.assetAddress.label")}</span>
+              <span className="label-text-alt text-error">{t("adminVaultCreation.assetAddress.required")}</span>
             </label>
             <div className="join w-full">
               <input
                 type="text"
                 value={asset}
                 onChange={e => setAsset(e.target.value)}
-                placeholder="0x..."
+                placeholder={t("adminVaultCreation.assetAddress.placeholder")}
                 className="input input-bordered join-item w-full"
                 required
               />
@@ -107,19 +109,19 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
                 className="btn join-item"
                 disabled={!asset || checkingVault}
               >
-                {checkingVault ? "Checking..." : "Check"}
+                {checkingVault ? t("adminVaultCreation.buttons.checking") : t("adminVaultCreation.buttons.check")}
               </button>
             </div>
             {asset && hasVault && existingVault && (
               <label className="label">
                 <span className="label-text-alt text-warning">
-                  ⚠️ Vault already exists at: {existingVault.toString().slice(0, 10)}...
+                  {t("adminVaultCreation.messages.existsWarning")} {existingVault.toString().slice(0, 10)}...
                 </span>
               </label>
             )}
             {asset && !hasVault && (
               <label className="label">
-                <span className="label-text-alt text-success">✓ No existing vault for this asset</span>
+                <span className="label-text-alt text-success">{t("adminVaultCreation.messages.noExisting")}</span>
               </label>
             )}
           </div>
@@ -127,45 +129,45 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
           {/* Vault Name */}
           <div className="form-control">
             <label className="label">
-              <span className="label-text font-semibold">Vault Name</span>
-              <span className="label-text-alt text-error">Required</span>
+              <span className="label-text font-semibold">{t("adminVaultCreation.vaultName.label")}</span>
+              <span className="label-text-alt text-error">{t("adminVaultCreation.assetAddress.required")}</span>
             </label>
             <input
               type="text"
               value={vaultName}
               onChange={e => setVaultName(e.target.value)}
-              placeholder="e.g., USDC Vault"
+              placeholder={t("adminVaultCreation.vaultName.placeholder")}
               className="input input-bordered w-full"
               required
             />
             <label className="label">
-              <span className="label-text-alt">This will be the ERC-4626 vault name</span>
+              <span className="label-text-alt">{t("adminVaultCreation.assetAddress.help")}</span>
             </label>
           </div>
 
           {/* Vault Symbol */}
           <div className="form-control">
             <label className="label">
-              <span className="label-text font-semibold">Vault Symbol</span>
-              <span className="label-text-alt text-error">Required</span>
+              <span className="label-text font-semibold">{t("adminVaultCreation.vaultSymbol.label")}</span>
+              <span className="label-text-alt text-error">{t("adminVaultCreation.assetAddress.required")}</span>
             </label>
             <input
               type="text"
               value={vaultSymbol}
               onChange={e => setVaultSymbol(e.target.value)}
-              placeholder="e.g., vUSDC"
+              placeholder={t("adminVaultCreation.vaultSymbol.placeholder")}
               className="input input-bordered w-full"
               required
             />
             <label className="label">
-              <span className="label-text-alt">Token symbol for vault shares</span>
+              <span className="label-text-alt">{t("adminVaultCreation.vaultSymbol.help")}</span>
             </label>
           </div>
 
           {/* Management Fee */}
           <div className="form-control">
             <label className="label">
-              <span className="label-text font-semibold">Management Fee (Basis Points)</span>
+              <span className="label-text font-semibold">{t("adminVaultCreation.managementFee.label")}</span>
               <span className="label-text-alt">{fee ? `${(parseFloat(fee) / 100).toFixed(2)}%` : "0%"}</span>
             </label>
             <input
@@ -179,7 +181,7 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
               required
             />
             <label className="label">
-              <span className="label-text-alt">100 basis points = 1%, 10000 = 100%</span>
+              <span className="label-text-alt">{t("adminVaultCreation.managementFee.help")}</span>
             </label>
           </div>
 
@@ -193,10 +195,10 @@ export const VaultCreationForm = ({ onVaultCreated }: VaultCreationFormProps) =>
               {isCreating ? (
                 <>
                   <span className="loading loading-spinner"></span>
-                  Creating Vault...
+                  {t("adminVaultCreation.buttons.creating")}
                 </>
               ) : (
-                "Create Vault"
+                t("adminVaultCreation.buttons.create")
               )}
             </button>
           </div>

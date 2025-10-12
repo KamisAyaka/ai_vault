@@ -16,6 +16,7 @@
       "inactive": "Inactive"
     },
     "timeRanges": {
+      "1d": "1d",
       "7d": "7d",
       "30d": "30d",
       "90d": "90d",
@@ -54,9 +55,29 @@
     "subgraph": "Subgraph"
   },
   "header": {
+    "brand": "AI Vault Protocol",
+    "tagline": "Automated DeFi Management",
     "switcher": {
       "label": "Language"
+    },
+    "logo": {
+      "title": "AI Vault Protocol",
+      "subtitle": "Automated DeFi Management"
     }
+  },
+  "footer": {
+    "blockExplorer": "Block Explorer",
+    "fork": "Fork me",
+    "builtWith": "Built with",
+    "at": "at",
+    "buidlGuidl": "BuidlGuidl",
+    "support": "Support"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist.",
+    "goHome": "Go Home"
   },
   "home": {
     "hero": {
@@ -137,6 +158,387 @@
       "hintEmpty": "No vaults have been created yet"
     }
   },
+  "vaultDetail": {
+    "loading": "Loading vault details...",
+    "notFound": "Unable to locate this vault. Please verify the URL or return to the vault list.",
+    "breadcrumbs": {
+      "home": "Home",
+      "vaults": "Vaults"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "reactivate": "Reactivate Vault",
+      "deposit": "Deposit",
+      "mintShares": "Mint Shares",
+      "withdraw": "Withdraw"
+    },
+    "metrics": {
+      "title": "Vault Metrics",
+      "totalAssets": "Total Assets",
+      "totalSupply": "Total Supply",
+      "sharePrice": "Share Price",
+      "holders": "Holders",
+      "manager": "Manager",
+      "owner": "Owner",
+      "created": "Created",
+      "updated": "Updated",
+      "approx": "≈",
+      "usdt": "USDT"
+    },
+    "position": {
+      "title": "Your Position",
+      "shares": "shares",
+      "noPosition": "You do not have a position in this vault yet.",
+      "currentValue": "Current Value",
+      "totalDeposited": "Total Deposited",
+      "totalWithdrawn": "Total Withdrawn",
+      "profitLoss": "Profit / Loss",
+      "dataUpdated": "Data updated:"
+    },
+    "performance": {
+      "title": "Performance Overview",
+      "currentApy": "Current APY",
+      "apy30d": "30d APY",
+      "apy90d": "90d APY",
+      "allTimeFees": "All-Time Fees"
+    },
+    "fees": {
+      "title": "Fee Breakdown",
+      "managementRate": "Management Fee Rate",
+      "performanceRate": "Performance Fee Rate",
+      "managementUsd": "Management Fees (USD)",
+      "performanceUsd": "Performance Fees (USD)"
+    },
+    "risk": {
+      "title": "Risk Metrics",
+      "volatility": "Volatility",
+      "maxDrawdown": "Max Drawdown",
+      "sharpeRatio": "Sharpe Ratio"
+    },
+    "allocations": {
+      "title": "Investment Allocations",
+      "noStrategy": "No strategy allocations configured yet."
+    },
+    "activity": {
+      "title": "Recent Activity",
+      "last": "Last",
+      "entries": "entries",
+      "type": "Type",
+      "assets": "Assets",
+      "shares": "Shares",
+      "timestamp": "Timestamp",
+      "txHash": "Tx Hash",
+      "noActivity": "No on-chain activity recorded yet."
+    },
+    "performanceChart": {
+      "title": "Strategy vs Hold Performance",
+      "subtitle": "AI Strategy vs Buy & Hold Benchmark",
+      "strategy": "AI Strategy",
+      "hold": "Buy & Hold",
+      "excessReturn": "Excess Return",
+      "noData": "No historical data available"
+    },
+    "excessReturn": {
+      "title": "Excess Return",
+      "subtitle": "Strategy outperformance vs benchmark",
+      "value": "Current Excess Return",
+      "period": "Period",
+      "1day": "1 Day",
+      "7days": "7 Days",
+      "30days": "30 Days",
+      "allTime": "All Time",
+      "strategyPerformance": "Strategy",
+      "benchmark": "Benchmark",
+      "outperforming": "Outperforming",
+      "holdStrategy": "Buy & Hold"
+    },
+    "liquidityPreference": {
+      "title": "Liquidity Preference Analysis",
+      "subtitle": "AI strategy allocation across protocols",
+      "noData": "No allocation data available",
+      "totalAllocation": "Total Allocation",
+      "protocolCount": "Protocol Count",
+      "topProtocol": "Top Protocol",
+      "diversification": "Diversification",
+      "balanced": "Balanced",
+      "concentrated": "Concentrated"
+    },
+    "maxDrawdown": {
+      "title": "Maximum Drawdown Analysis",
+      "subtitle": "Historical drawdown and recovery metrics",
+      "noData": "No drawdown data available",
+      "drawdown": "Drawdown",
+      "maxDrawdown": "Max Drawdown",
+      "recoveryTime": "Recovery Time",
+      "currentDrawdown": "Current Drawdown",
+      "riskLevel": "Risk Level",
+      "days": " days",
+      "notRecovered": "Not Recovered",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "veryHigh": "Very High"
+    },
+    "permissions": {
+      "title": "Admin Access Required",
+      "message": "The currently connected wallet does not have permission to view vault details. Only the vault manager can access this page.",
+      "backButton": "Back to Vault List",
+      "switchHint": "or disconnect and log in with the admin address."
+    }
+  },
+  "depositMintModal": {
+    "title": "Vault Deposit Operation",
+    "tabs": {
+      "deposit": "Deposit Assets",
+      "mint": "Mint Shares"
+    },
+    "overview": {
+      "title": "Vault Overview",
+      "exchangeRate": "Exchange Rate",
+      "tvl": "TVL",
+      "apy": "APY"
+    },
+    "form": {
+      "amount": "Amount",
+      "balance": "Account Balance",
+      "allowance": "Allowance",
+      "max": "Max",
+      "inputAmount": "Enter Amount",
+      "expectedShares": "Expected Shares",
+      "willReceive": "You Will Receive"
+    },
+    "summary": {
+      "title": "Transaction Summary",
+      "operationAmount": "Operation Amount",
+      "accountBalance": "Account Balance",
+      "allowance": "Allowance"
+    },
+    "notes": {
+      "title": "Important Notes",
+      "item1": "Please ensure you have enough asset balance",
+      "item2": "Transaction may take some time to confirm",
+      "item3": "Please check the gas fee carefully"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "approving": "Approving...",
+      "approve": "Approve",
+      "processing": "Processing...",
+      "confirmDeposit": "Confirm Deposit",
+      "confirmMint": "Confirm Mint"
+    },
+    "messages": {
+      "approved": "Approved",
+      "approvalFailed": "Approval failed",
+      "abiMissing": "Vault contract ABI not available",
+      "depositSuccess": "Deposit successful",
+      "depositFailed": "Deposit failed",
+      "mintSuccess": "Mint successful",
+      "mintFailed": "Mint failed"
+    }
+  },
+  "depositModal": {
+    "title": "Deposit to Vault",
+    "vaultInfo": {
+      "address": "Address:",
+      "currentApy": "Current APY",
+      "tvl": "TVL"
+    },
+    "form": {
+      "depositAmount": "Deposit Amount",
+      "max": "Max",
+      "availableBalance": "Available Balance:",
+      "willReceive": "You Will Receive",
+      "exchangeRate": "Exchange Rate:"
+    },
+    "approval": {
+      "title": "Approval Status",
+      "unrecognizedAsset": "Cannot recognize asset contract address",
+      "approved": "Approved",
+      "needApproval": "Approval required for deposit",
+      "insufficientAllowance": "Current allowance is insufficient, need to increase approval"
+    },
+    "warnings": {
+      "title": "⚠️ Important Notes",
+      "autoAllocation": "Deposited funds will be automatically allocated to various DeFi protocols",
+      "blockConfirmation": "Expected to require 1-2 block confirmations",
+      "managementFee": "Management Fee: 1.00% (deducted from yield)"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "approving": "Approving...",
+      "approve": "Approve",
+      "depositing": "Depositing...",
+      "confirmDeposit": "Confirm Deposit"
+    },
+    "messages": {
+      "unrecognizedAsset": "Cannot recognize asset address",
+      "approved": "Approved",
+      "approvalFailed": "Approval failed",
+      "abiUnavailable": "Vault contract ABI not available",
+      "depositSuccess": "Successfully deposited",
+      "depositFailed": "Deposit failed"
+    }
+  },
+  "withdrawModal": {
+    "title": "Vault Withdrawal Operation",
+    "tabs": {
+      "withdraw": "Withdraw Assets",
+      "redeem": "Redeem Shares"
+    },
+    "position": {
+      "title": "Your Position",
+      "shareBalance": "Share Balance",
+      "currentValue": "Current Value",
+      "profit": "Profit"
+    },
+    "form": {
+      "withdrawAmount": "Withdraw Amount",
+      "redeemShares": "Redeem Shares",
+      "max": "Max",
+      "sharesNeeded": "Shares Required",
+      "willReceive": "You Will Receive",
+      "afterWithdraw": "After Withdrawal",
+      "remainingShares": "Remaining Shares",
+      "remainingValue": "Remaining Value"
+    },
+    "estimate": {
+      "title": "Estimated Processing Time",
+      "value": "Approximately 15-30 seconds"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "processing": "Processing...",
+      "confirmWithdraw": "Confirm Withdrawal",
+      "confirmRedeem": "Confirm Redeem"
+    },
+    "messages": {
+      "abiMissing": "Vault contract ABI not available",
+      "withdrawSuccess": "Withdrawal successful",
+      "redeemSuccess": "Redeem successful",
+      "operationFailed": "Operation failed"
+    }
+  },
+  "roleDisplay": {
+    "notConnected": "Wallet Not Connected",
+    "currentRole": "Current Role",
+    "currentAddress": "Current Address",
+    "permissions": "Permission List:",
+    "manageFactory": "Manage Factory",
+    "createVault": "Create Vault",
+    "manageVault": "Manage Vault",
+    "updateStrategy": "Update Strategy",
+    "activateVault": "Activate Vault",
+    "deactivateVault": "Deactivate Vault",
+    "executeAI": "Execute AI Strategy",
+    "manageAI": "Manage AI Agents"
+  },
+  "statsCard": {
+    "noDeposits": "No current deposits",
+    "tvl": "Total Value Locked",
+    "activeVaults": "Active Vaults",
+    "totalVaults": "total vaults",
+    "totalUsers": "Total Users",
+    "averageApy": "Average APY"
+  },
+  "portfolioPage": {
+    "accountSnapshot": "Account Snapshot",
+    "activeVaults": "Active vaults (subgraph)",
+    "lastUpdated": "Last updated:",
+    "rawTotals": "Raw totals · Deposited:",
+    "shares": "Shares:",
+    "asset": "Asset",
+    "total": "Total",
+    "placeholder": "-"
+  },
+  "adminVaultCreation": {
+    "title": "🏗️ Create New Vault",
+    "assetAddress": {
+      "label": "Asset Token Address",
+      "required": "Required",
+      "placeholder": "0x...",
+      "help": "This will be the ERC-4626 vault name"
+    },
+    "vaultName": {
+      "label": "Vault Name",
+      "placeholder": "e.g., USDC Vault"
+    },
+    "vaultSymbol": {
+      "label": "Vault Symbol",
+      "placeholder": "e.g., vUSDC",
+      "help": "Token symbol for vault shares"
+    },
+    "managementFee": {
+      "label": "Management Fee (Basis Points)",
+      "help": "100 basis points = 1%, 10000 = 100%"
+    },
+    "buttons": {
+      "checking": "Checking...",
+      "check": "Check",
+      "creating": "Creating Vault...",
+      "create": "Create Vault"
+    },
+    "messages": {
+      "addressRequired": "Please enter an asset address",
+      "fillAllFields": "Please fill in all fields",
+      "vaultExists": "Vault already exists for this asset",
+      "createSuccess": "Vault created successfully!",
+      "createFailed": "Failed to create vault",
+      "existsWarning": "⚠️ Vault already exists at:",
+      "noExisting": "✓ No existing vault for this asset"
+    }
+  },
+  "adminVaultActions": {
+    "title": "🔧 Admin Actions",
+    "status": {
+      "label": "Vault Status",
+      "accepting": "Currently accepting deposits",
+      "disabled": "Deposits disabled"
+    },
+    "connectWarning": "Connect with the vault manager wallet to perform admin actions.",
+    "buttons": {
+      "processing": "Processing...",
+      "deactivate": "Deactivate Vault",
+      "alreadyInactive": "Already Inactive"
+    },
+    "managerInfo": {
+      "label": "Manager Information",
+      "manager": "Manager:",
+      "owner": "Owner:"
+    },
+    "allocations": "Investment Allocations",
+    "messages": {
+      "alreadyInactive": "Vault is already inactive.",
+      "confirmDeactivate": "Deactivate \"{vault}\"?\n\nThis prevents new deposits but allows withdrawals. This action can be reversed by the vault manager.",
+      "onlyManager": "Only the vault manager can deactivate this vault.",
+      "abiMissing": "Vault contract ABI not available",
+      "deactivateSuccess": "Vault \"{vault}\" deactivated.",
+      "deactivateFailed": "Failed to deactivate vault"
+    }
+  },
+  "adminVaultsPage": {
+    "loading": "Loading admin panel...",
+    "errorLoading": "Error loading vaults:",
+    "title": "Vault Admin Panel",
+    "description": "Create and manage AI Vault Protocol vaults",
+    "existingVaults": "Existing Vaults",
+    "refresh": "Refresh",
+    "noVaults": {
+      "title": "No Vaults Yet",
+      "description": "Create your first vault using the form on the left"
+    },
+    "selected": "Selected for management"
+  },
+  "analyticsPage": {
+    "activeUsers": "Active users",
+    "averageReturn": "Average return"
+  },
+  "localeSwitcher": {
+    "ariaLabel": "Select language"
+  },
   "analytics": {
     "loading": "Loading analytics...",
     "error": "Failed to load analytics",
@@ -175,7 +577,13 @@
       }
     },
     "ranking": {
-      "title": "Vault Performance Ranking"
+      "title": "Vault Performance Ranking by Yield",
+      "sortBy": "Sort by",
+      "sharpeRatio": "Sharpe Ratio",
+      "totalVaults": "Total Vaults",
+      "avgTVL": "Avg TVL",
+      "avgAPY": "Avg APY",
+      "total7dRevenue": "7d Total Revenue"
     },
     "activity": {
       "title": "Recent Activity (24h)",
@@ -269,6 +677,126 @@
     }
   },
   "admin": {
+    "batchVaultPage": {
+      "title": "Batch Create Vaults",
+      "backButton": "← Back to Admin",
+      "breadcrumbs": {
+        "home": "Home",
+        "admin": "Admin",
+        "batch": "Batch Vault Creation"
+      },
+      "infoBanner": {
+        "title": "Batch Vault Creation Feature",
+        "description": "Create multiple vaults at once via table or CSV file, saving time and gas fees"
+      },
+      "guide": {
+        "title": "📖 Usage Guide",
+        "manual": {
+          "title": "1️⃣ Manual Entry",
+          "step1": "Click \"➕ Add Vault\" button to add a new row",
+          "step2": "Fill in configuration information for each vault",
+          "step3": "Click \"🚀 Batch Create\" to execute creation"
+        },
+        "csv": {
+          "title": "2️⃣ CSV Import",
+          "step1": "Prepare CSV format data (comma-separated)",
+          "step2": "Format: name,assetAddress,assetSymbol,decimals,managementFeeBps",
+          "step3": "Example: USDC Vault,0x1234...,USDC,6,100",
+          "step4": "Paste into text box and click \"📥 Import CSV\""
+        },
+        "fields": {
+          "title": "3️⃣ Field Description",
+          "name": "Vault name",
+          "assetAddress": "Asset contract address (ERC20)",
+          "assetSymbol": "Asset symbol",
+          "decimals": "Decimal places (1-18)",
+          "managementFeeBps": "Management fee rate (basis points, 100 = 1%)",
+          "exampleName": "USDC Vault",
+          "exampleSymbol": "USDC, WETH, DAI",
+          "exampleDecimals": "18 (ETH), 6 (USDC/USDT)",
+          "exampleFee": "100, 50"
+        },
+        "warnings": {
+          "title": "⚠️ Important Notes",
+          "item1": "Ensure asset contract address is valid and deployed on current network",
+          "item2": "Vault symbol will automatically add \"v\" prefix (e.g., vUSDC)",
+          "item3": "Batch creation uses a single transaction for better gas efficiency",
+          "item4": "Vault asset cannot be modified after creation, please verify carefully",
+          "item5": "Recommend testing configuration on testnet first"
+        }
+      },
+      "assets": {
+        "title": "🔗 Common Asset Addresses (Mainnet)",
+        "stablecoins": "💎 Stablecoins",
+        "eth": "Ξ ETH & Wrapped",
+        "warning": "⚠️ These are mainnet address examples, please use correct contract addresses for your deployment network"
+      }
+    },
+    "batchVaultCreation": {
+      "csvImport": {
+        "title": "📄 CSV Quick Import",
+        "formatLabel": "Format: name,assetAddress,assetSymbol,decimals,managementFeeBps",
+        "importButton": "📥 Import CSV"
+      },
+      "table": {
+        "title": "🏦 Batch Vault Configuration",
+        "headers": {
+          "status": "Status",
+          "name": "Vault Name",
+          "assetAddress": "Asset Address",
+          "symbol": "Symbol",
+          "decimals": "Decimals",
+          "managementFee": "Management Fee (bps)",
+          "actions": "Actions"
+        },
+        "placeholders": {
+          "name": "USDC Vault",
+          "address": "0x...",
+          "symbol": "USDC"
+        }
+      },
+      "status": {
+        "pending": "Pending",
+        "validating": "Validating...",
+        "creating": "Creating...",
+        "success": "✅ Success",
+        "error": "❌ Failed"
+      },
+      "errors": {
+        "title": "Validation Errors:",
+        "unnamed": "Unnamed"
+      },
+      "actions": {
+        "addVault": "➕ Add Vault",
+        "totalVaults": "{count} vaults total",
+        "createButton": "🚀 Batch Create {count} Vaults",
+        "creating": "Creating..."
+      },
+      "infoNotice": {
+        "title": "💡 Tips",
+        "item1": "Ensure all asset addresses are valid and deployed",
+        "item2": "Decimals are typically 18 (ETH/WETH), 6 (USDC/USDT), 18 (DAI)",
+        "item3": "Management fee uses basis points, e.g., 100 = 1%",
+        "item4": "Batch creation uses a single transaction to save gas fees"
+      },
+      "notifications": {
+        "csvInputRequired": "Please enter CSV data",
+        "csvImportSuccess": "Successfully imported {count} vault configurations",
+        "csvNoValid": "No valid vault configurations found",
+        "csvParseError": "CSV format error",
+        "connectWallet": "Please connect wallet first",
+        "addVaultFirst": "Please add at least one vault",
+        "validationFailed": "Some vault configurations are invalid, please check",
+        "createSuccess": "Successfully created {count} vaults!",
+        "createFailed": "Batch creation failed"
+      },
+      "validation": {
+        "nameRequired": "Vault name cannot be empty",
+        "invalidAddress": "Invalid asset address",
+        "decimalsRange": "Decimals must be between 1-18",
+        "feeRange": "Management fee should be between 0-10000 basis points"
+      }
+    },
     "adaptersPage": {
       "title": "Adapter Management",
       "breadcrumb": {

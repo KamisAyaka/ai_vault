@@ -2,6 +2,7 @@
 
 import { useMemo, useRef } from "react";
 import Link from "next/link";
+import { VaultRankingTable } from "~~/components/VaultRankingTable";
 import { useAnalyticsData } from "~~/hooks/useAnalyticsData";
 import { useGsapFadeReveal, useGsapHeroIntro, useGsapStaggerReveal } from "~~/hooks/useGsapAnimations";
 import { useTranslations } from "~~/services/i18n/I18nProvider";
@@ -13,14 +14,14 @@ const formatNumber = (value: number, maximumFractionDigits = 0) => {
 
 const AnalyticsPage = () => {
   const t = useTranslations("analytics");
-  const tTables = useTranslations("common.tables");
-  const tStatus = useTranslations("common.status");
   const tTime = useTranslations("common.timeRanges");
   const tActivity = useTranslations("common.activity");
   const tMenu = useTranslations("menu");
+  const tAnalyticsPage = useTranslations("analyticsPage");
+  const tTables = useTranslations("common.tables");
 
   const { loading, error, data } = useAnalyticsData();
-  const { tvlHistory, assetDistribution, protocolDistribution, transactionTrends, recentActivity, stats } = data || {};
+  const { tvlHistory, assetDistribution, transactionTrends, recentActivity, stats } = data || {};
 
   const rankedVaults = data?.rankedVaults ?? [];
 
@@ -40,12 +41,7 @@ const AnalyticsPage = () => {
     selector: ".analytics-overview-card",
     deps: [stats?.totalValueLockedUsd, stats?.totalVaults, stats?.totalUsers, stats?.averageApy],
   });
-  useGsapFadeReveal(distributionRef, ".analytics-card", [
-    assetDistribution?.length,
-    protocolDistribution?.length,
-    transactionTrends?.deposits?.length || 0,
-    transactionTrends?.withdrawals?.length || 0,
-  ]);
+  useGsapFadeReveal(distributionRef, ".analytics-card", [assetDistribution?.length]);
   useGsapFadeReveal(rankingRef, ".analytics-ranking-item", [rankedVaults.length]);
   useGsapFadeReveal(activityRef, ".analytics-activity-row", [recentActivity?.length || 0]);
 
@@ -119,14 +115,14 @@ const AnalyticsPage = () => {
             <div className="analytics-overview-card stat bg-black/60 backdrop-blur-sm shadow-lg rounded-lg border border-[#803100]/30">
               <div className="stat-title text-[#fbe6dc]">{t("overview.users")}</div>
               <div className="stat-value text-2xl text-white">{stats?.totalUsers || 0}</div>
-              <div className="stat-desc text-[#fbe6dc]">Active users</div>
+              <div className="stat-desc text-[#fbe6dc]">{tAnalyticsPage("activeUsers")}</div>
             </div>
             <div className="analytics-overview-card stat bg-black/60 backdrop-blur-sm shadow-lg rounded-lg border border-[#803100]/30">
               <div className="stat-title text-[#fbe6dc]">{t("overview.apy")}</div>
               <div className="stat-value text-2xl bg-gradient-to-r from-[#fbe6dc] to-[#803100] bg-clip-text text-transparent">
                 {stats ? stats.averageApy.toFixed(1) : "0.0"}%
               </div>
-              <div className="stat-desc text-[#fbe6dc]">Average return</div>
+              <div className="stat-desc text-[#fbe6dc]">{tAnalyticsPage("averageReturn")}</div>
             </div>
           </div>
         </div>
@@ -182,7 +178,7 @@ const AnalyticsPage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" ref={distributionRef}>
+        <div className="mb-8" ref={distributionRef}>
           <div className="analytics-card">
             <h2 className="text-2xl font-bold mb-4 text-white">{t("charts.assetsTitle")}</h2>
             <div className="card bg-black/60 backdrop-blur-sm shadow-xl p-6 border border-[#803100]/30">
@@ -215,95 +211,11 @@ const AnalyticsPage = () => {
               )}
             </div>
           </div>
-
-          <div className="analytics-card">
-            <h2 className="text-2xl font-bold mb-4 text-white">{t("charts.protocolTitle")}</h2>
-            <div className="card bg-black/60 backdrop-blur-sm shadow-xl p-6 border border-[#803100]/30">
-              {!protocolDistribution || protocolDistribution.length === 0 ? (
-                <div className="text-center opacity-70 py-8">
-                  <span className="loading loading-spinner loading-md text-[#fbe6dc]"></span>
-                  <p className="mt-2 text-white">{t("charts.protocolLoading")}</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {protocolDistribution.map((protocol, index) => {
-                    const progressOpacity = index === 0 ? "80" : index === 1 ? "60" : index === 2 ? "40" : "20";
-                    return (
-                      <div key={protocol.name}>
-                        <div className="flex justify-between mb-2">
-                          <span className="font-semibold text-white">{protocol.name}</span>
-                          <span className="font-semibold text-[#fbe6dc]">
-                            {protocol.percentage.toFixed(1)}% ({protocol.formattedValue})
-                          </span>
-                        </div>
-                        <progress
-                          className={`progress bg-black/40 w-full`}
-                          value={protocol.percentage}
-                          max="100"
-                          style={{
-                            ["--progress-color" as string]: `rgba(128, 49, 0, 0.${progressOpacity})`,
-                          }}
-                        ></progress>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-8" ref={rankingRef}>
           <h2 className="text-2xl font-bold mb-4 text-white">{t("ranking.title")}</h2>
-          <div
-            className="card bg-black/60 backdrop-blur-sm shadow-xl overflow-x-auto border border-[#803100]/30"
-            ref={rankingRef}
-          >
-            <table className="table">
-              <thead>
-                <tr className="border-b border-[#803100]/30">
-                  <th className="text-[#fbe6dc]">{tTables("rank")}</th>
-                  <th className="text-[#fbe6dc]">{tTables("vault")}</th>
-                  <th className="text-[#fbe6dc]">{tTables("tvl")}</th>
-                  <th className="text-[#fbe6dc]">{tTables("apy")}</th>
-                  <th className="text-[#fbe6dc]">{tTables("revenue7d")}</th>
-                  <th className="text-[#fbe6dc]">{tTables("users")}</th>
-                  <th className="text-[#fbe6dc]">{tTables("status")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rankedVaults.map((entry, index) => {
-                  const tvlValue = Number.isFinite(entry.tvlUsd) ? entry.tvlUsd : 0;
-                  const revenueValue = Number.isFinite(entry.sevenDayRevenueUsd) ? entry.sevenDayRevenueUsd : 0;
-                  const apyValue = Number.isFinite(entry.apy) ? entry.apy : 0;
-                  return (
-                    <tr
-                      key={entry.vault.id}
-                      className="analytics-ranking-item border-b border-[#803100]/30 hover:bg-[#803100]/10"
-                    >
-                      <td>
-                        <div className="text-2xl font-bold text-[#803100]">
-                          {index === 0 ? "#1" : index === 1 ? "#2" : index === 2 ? "#3" : `#${index + 1}`}
-                        </div>
-                      </td>
-                      <td className="font-semibold text-white">{entry.vault.name}</td>
-                      <td className="text-white">${formatNumber(tvlValue)}</td>
-                      <td className="font-semibold text-[#fbe6dc]">{apyValue.toFixed(2)}%</td>
-                      <td className="text-[#fbe6dc]">+${formatNumber(revenueValue)}</td>
-                      <td className="text-white">{entry.userCount}</td>
-                      <td>
-                        <span
-                          className={`badge ${entry.vault.isActive ? "bg-green-900/60 border-green-500/30 text-white" : "bg-yellow-900/60 border-yellow-500/30 text-white"}`}
-                        >
-                          {entry.vault.isActive ? tStatus("active") : tStatus("inactive")}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <VaultRankingTable vaults={rankedVaults} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">

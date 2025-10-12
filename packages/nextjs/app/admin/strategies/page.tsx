@@ -414,9 +414,7 @@ const StrategiesPage = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-8" ref={heroRef}>
           <div>
-            <h1 className="hero-heading text-4xl font-bold mb-2 bg-gradient-to-r from-[#fbe6dc] to-[#803100] bg-clip-text text-transparent">
-              {tPage("title")}
-            </h1>
+            <h1 className="hero-heading text-4xl font-bold mb-2 text-white">{tPage("title")}</h1>
             <div className="hero-subheading text-sm breadcrumbs">
               <ul className="text-[#fbe6dc]">
                 <li>

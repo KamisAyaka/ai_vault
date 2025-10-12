@@ -3,6 +3,7 @@
 import { useAccount } from "wagmi";
 import { Address } from "~~/components/scaffold-eth";
 import { useUserRole } from "~~/hooks/useUserRole";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 
 type RoleDisplayProps = {
   vaultAddress?: string;
@@ -25,11 +26,12 @@ export const RoleDisplay = ({
     factoryOwnerAddress,
     aiAgentAddresses,
   });
+  const t = useTranslations("roleDisplay");
 
   if (!connectedAddress) {
     return (
       <div className="card bg-base-200 p-4">
-        <p className="text-sm opacity-70">未连接钱包</p>
+        <p className="text-sm opacity-70">{t("notConnected")}</p>
       </div>
     );
   }
@@ -41,11 +43,11 @@ export const RoleDisplay = ({
       <div className="card-body">
         <div className="flex justify-between items-start mb-3">
           <div>
-            <h3 className="font-semibold mb-1">当前角色</h3>
+            <h3 className="font-semibold mb-1">{t("currentRole")}</h3>
             <span className={`badge ${badge.className}`}>{badge.text}</span>
           </div>
           <div className="text-right">
-            <p className="text-xs opacity-70 mb-1">当前地址</p>
+            <p className="text-xs opacity-70 mb-1">{t("currentAddress")}</p>
             <Address address={connectedAddress} size="sm" />
           </div>
         </div>
@@ -56,54 +58,54 @@ export const RoleDisplay = ({
           <>
             <div className="divider my-2"></div>
             <div>
-              <p className="text-sm font-semibold mb-2">权限列表:</p>
+              <p className="text-sm font-semibold mb-2">{t("permissions")}</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {permissions.canManageFactory && (
                   <div className="flex items-center gap-1">
                     <span className="text-success">✓</span>
-                    <span>管理工厂</span>
+                    <span>{t("manageFactory")}</span>
                   </div>
                 )}
                 {permissions.canCreateVault && (
                   <div className="flex items-center gap-1">
                     <span className="text-success">✓</span>
-                    <span>创建金库</span>
+                    <span>{t("createVault")}</span>
                   </div>
                 )}
                 {permissions.canManageVault && (
                   <div className="flex items-center gap-1">
                     <span className="text-success">✓</span>
-                    <span>管理金库</span>
+                    <span>{t("manageVault")}</span>
                   </div>
                 )}
                 {permissions.canUpdateStrategy && (
                   <div className="flex items-center gap-1">
                     <span className="text-success">✓</span>
-                    <span>更新策略</span>
+                    <span>{t("updateStrategy")}</span>
                   </div>
                 )}
                 {permissions.canActivateVault && (
                   <div className="flex items-center gap-1">
                     <span className="text-success">✓</span>
-                    <span>激活金库</span>
+                    <span>{t("activateVault")}</span>
                   </div>
                 )}
                 {permissions.canDeactivateVault && (
                   <div className="flex items-center gap-1">
                     <span className="text-success">✓</span>
-                    <span>停用金库</span>
+                    <span>{t("deactivateVault")}</span>
                   </div>
                 )}
                 {permissions.canExecuteAIStrategy && (
                   <div className="flex items-center gap-1">
                     <span className="text-success">✓</span>
-                    <span>执行 AI 策略</span>
+                    <span>{t("executeAI")}</span>
                   </div>
                 )}
                 {permissions.canManageAIAgents && (
                   <div className="flex items-center gap-1">
                     <span className="text-success">✓</span>
-                    <span>管理 AI 代理</span>
+                    <span>{t("manageAI")}</span>
                   </div>
                 )}
               </div>

@@ -19,6 +19,7 @@ const PortfolioPage = () => {
 
   const t = useTranslations("portfolio");
   const tTables = useTranslations("common.tables");
+  const tPortfolioPage = useTranslations("portfolioPage");
 
   const { loading, error, isConnected, data } = usePortfolioData();
   const {
@@ -178,17 +179,19 @@ const PortfolioPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="card bg-black/60 backdrop-blur-sm shadow-xl border border-[#803100]/30">
               <div className="card-body text-[#fbe6dc]">
-                <h3 className="text-sm font-semibold uppercase tracking-widest text-[#fbe6dc]/80">Account Snapshot</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-widest text-[#fbe6dc]/80">
+                  {tPortfolioPage("accountSnapshot")}
+                </h3>
                 <p className="mt-2 text-3xl font-bold text-white">{userStatsSummary.activeVaultAddresses.length}</p>
-                <p className="text-xs text-[#fbe6dc]">Active vaults (subgraph)</p>
+                <p className="text-xs text-[#fbe6dc]">{tPortfolioPage("activeVaults")}</p>
                 {userStatsSummary.lastUpdated > 0 && (
                   <p className="mt-3 text-xs text-[#fbe6dc]/70">
-                    Last updated: {new Date(userStatsSummary.lastUpdated).toLocaleString("zh-CN")}
+                    {tPortfolioPage("lastUpdated")} {new Date(userStatsSummary.lastUpdated).toLocaleString("zh-CN")}
                   </p>
                 )}
                 <p className="mt-3 text-[11px] text-[#fbe6dc]/50">
-                  Raw totals · Deposited: {formatBigInt(userStatsSummary.totalDeposited)} | Shares:{" "}
-                  {formatBigInt(userStatsSummary.totalShares)}
+                  {tPortfolioPage("rawTotals")} {formatBigInt(userStatsSummary.totalDeposited)} |{" "}
+                  {tPortfolioPage("shares")} {formatBigInt(userStatsSummary.totalShares)}
                 </p>
               </div>
             </div>
@@ -285,7 +288,7 @@ const PortfolioPage = () => {
                   <thead>
                     <tr className="border-b border-[#803100]/30">
                       <th className="text-[#fbe6dc]">{tTables("vault")}</th>
-                      <th className="text-[#fbe6dc]">Asset</th>
+                      <th className="text-[#fbe6dc]">{tPortfolioPage("asset")}</th>
                       <th className="text-[#fbe6dc]">{t("positions.table.value")}</th>
                       <th className="text-[#fbe6dc]">{t("positions.table.pnl")}</th>
                       <th className="text-[#fbe6dc]">{t("positions.table.shares")}</th>

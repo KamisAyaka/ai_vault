@@ -8,7 +8,6 @@ import { WithdrawModal } from "./WithdrawModal";
 import { formatUnits } from "viem";
 import { Address } from "~~/components/scaffold-eth";
 import { useTokenUsdPrices } from "~~/hooks/useTokenUsdPrices";
-import { useUserRole } from "~~/hooks/useUserRole";
 import { useVaultPerformance } from "~~/hooks/useVaultPerformance";
 import { useTranslations } from "~~/services/i18n/I18nProvider";
 import type { Vault } from "~~/types/vault";
@@ -25,7 +24,6 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
   const tCard = useTranslations("vaultCard");
   const tStatus = useTranslations("common.status");
   const { tokenPrices } = useTokenUsdPrices();
-  const { isOwner } = useUserRole();
 
   // 获取金库性能数据
   const { data: performanceData } = useVaultPerformance(1000);
@@ -241,14 +239,14 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
 
           {/* Action buttons */}
           <div className="card-actions justify-end mt-2 gap-1">
-            {vault.isActive ? (
+            {vault.isActive && (
               <>
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() => setIsEntryModalOpen(true)}
                   disabled={!vault.isActive}
                 >
-                  💰 存入
+                  💰 {tCard("actions.deposit")}
                 </button>
                 <button
                   className="btn btn-secondary btn-sm"
@@ -258,18 +256,10 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
                   📤 {tCard("actions.withdraw")}
                 </button>
               </>
-            ) : (
-              isOwner && (
-                <Link href={`/vaults/${vault.id}`} className="btn btn-ghost btn-sm">
-                  {tCard("actions.view")}
-                </Link>
-              )
             )}
-            {isOwner && (
-              <Link href={`/vaults/${vault.id}`} className="btn btn-ghost btn-sm">
-                📊 {tCard("actions.details")}
-              </Link>
-            )}
+            <Link href={`/vaults/${vault.id}`} className="btn btn-ghost btn-sm">
+              📊 {tCard("actions.details")}
+            </Link>
           </div>
         </div>
       </div>

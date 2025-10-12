@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { erc20Abi, formatUnits, isAddress, parseUnits } from "viem";
 import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
+import { useTranslations } from "~~/services/i18n/I18nProvider";
 import type { Vault } from "~~/types/vault";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -15,6 +16,7 @@ type DepositModalProps = {
 };
 
 export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModalProps) => {
+  const t = useTranslations("depositModal");
   const [amount, setAmount] = useState("");
   const [isDepositing, setIsDepositing] = useState(false);
   const [needsApproval, setNeedsApproval] = useState(false);
@@ -130,7 +132,7 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
     setIsApproving(true);
     try {
       if (!isSupportedAsset) {
-        notification.error("无法识别的资产地址");
+        notification.error(t("messages.unrecognizedAsset"));
         return;
       }
 
@@ -147,12 +149,12 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
         await publicClient.waitForTransactionReceipt({ hash });
       }
 
-      notification.success(`已授权 ${amount} ${assetSymbol}`);
+      notification.success(`${t("messages.approved")} ${amount} ${assetSymbol}`);
       refetchAllowance();
       refetchUserBalance();
     } catch (error: any) {
       console.error("Approval failed:", error);
-      notification.error(error?.message || "授权失败");
+      notification.error(error?.message || t("messages.approvalFailed"));
     } finally {
       setIsApproving(false);
     }
@@ -162,7 +164,7 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
     if (!connectedAddress || !amount) return;
 
     if (!vaultContractInfo?.abi) {
-      notification.error("Vault contract ABI not available");
+      notification.error(t("messages.abiUnavailable"));
       return;
     }
 
@@ -186,7 +188,7 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
         },
         onBlockConfirmation: receipt => {
           console.debug("Deposit confirmed", receipt);
-          notification.success(`成功存入 ${depositAmountDisplay} ${assetSymbol}!`);
+          notification.success(`${t("messages.depositSuccess")} ${depositAmountDisplay} ${assetSymbol}!`);
           refetchUserBalance();
           refetchAllowance();
           onSuccess?.();
@@ -194,7 +196,7 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
       });
     } catch (error: any) {
       console.error("Deposit failed:", error);
-      notification.error(error?.message || "存款失败");
+      notification.error(error?.message || t("messages.depositFailed"));
     } finally {
       setIsDepositing(false);
     }
@@ -226,7 +228,7 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
       <div className="modal-box max-w-2xl">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold">💰 存入资金到金库</h3>
+          <h3 className="text-2xl font-bold">💰 {t("title")}</h3>
           <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
             ✕
           </button>
@@ -238,17 +240,17 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
             <div>
               <p className="text-lg font-semibold">🏦 {vault.name}</p>
               <p className="text-xs opacity-70">
-                地址: {vault.address.slice(0, 10)}...{vault.address.slice(-8)}
+                {t("vaultInfo.address")} {vault.address.slice(0, 10)}...{vault.address.slice(-8)}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm opacity-70">当前 APY</p>
+              <p className="text-sm opacity-70">{t("vaultInfo.currentApy")}</p>
               <p className="text-xl font-bold text-success">8.5%</p>
             </div>
           </div>
           <div className="divider my-2"></div>
           <div className="flex justify-between text-sm">
-            <span className="opacity-70">TVL</span>
+            <span className="opacity-70">{t("vaultInfo.tvl")}</span>
             <span className="font-semibold">
               {formatBalance(safeBigInt(vault.totalAssets))} {assetSymbol}
             </span>
@@ -258,7 +260,7 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
         {/* Deposit Amount */}
         <div className="mb-6">
           <label className="label">
-            <span className="label-text font-semibold">存款金额</span>
+            <span className="label-text font-semibold">{t("form.depositAmount")}</span>
           </label>
           <div className="join w-full">
             <input
@@ -273,12 +275,12 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
               {assetSymbol}
             </span>
             <button onClick={handleMaxClick} className="btn btn-primary join-item">
-              最大
+              {t("form.max")}
             </button>
           </div>
           <label className="label">
             <span className="label-text-alt">
-              可用余额: {formatBalance(userBalance)} {assetSymbol}
+              {t("form.availableBalance")} {formatBalance(userBalance)} {assetSymbol}
             </span>
           </label>
         </div>
@@ -286,39 +288,39 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
         {/* Estimated Shares */}
         {amount && isValidAmount && (
           <div className="bg-primary/10 p-4 rounded-lg mb-6">
-            <p className="text-sm font-semibold mb-2">您将获得</p>
+            <p className="text-sm font-semibold mb-2">{t("form.willReceive")}</p>
             <p className="text-2xl font-bold text-primary">
               ~{parseFloat(estimatedShares).toLocaleString(undefined, { maximumFractionDigits: 4 })} v{assetSymbol}
             </p>
             <p className="text-xs opacity-70 mt-1">
-              (当前汇率: 1 {assetSymbol} = {(1 / parseFloat(exchangeRate)).toFixed(4)} v{assetSymbol})
+              ({t("form.exchangeRate")} 1 {assetSymbol} = {(1 / parseFloat(exchangeRate)).toFixed(4)} v{assetSymbol})
             </p>
           </div>
         )}
 
         {/* Approval Status */}
         <div className="bg-base-200 p-4 rounded-lg mb-6">
-          <p className="text-sm font-semibold mb-2">授权状态</p>
+          <p className="text-sm font-semibold mb-2">{t("approval.title")}</p>
           {!isSupportedAsset ? (
             <div className="flex items-center gap-2 text-warning">
               <span>⚠️</span>
-              <span className="text-sm">无法识别资产合约地址</span>
+              <span className="text-sm">{t("approval.unrecognizedAsset")}</span>
             </div>
           ) : allowance && allowance > 0n ? (
             <div className="flex items-center gap-2">
               <span className="text-success">✅</span>
               <span className="text-sm">
-                已授权 {formattedAllowance} {assetSymbol}
+                {t("approval.approved")} {formattedAllowance} {assetSymbol}
               </span>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-warning">⚠️</span>
-              <span className="text-sm">需要授权才能存款</span>
+              <span className="text-sm">{t("approval.needApproval")}</span>
             </div>
           )}
           {needsApproval && isSupportedAsset && (
-            <p className="text-xs text-warning mt-2">当前授权额度不足，需要增加授权</p>
+            <p className="text-xs text-warning mt-2">{t("approval.insufficientAllowance")}</p>
           )}
         </div>
 
@@ -338,11 +340,11 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
             />
           </svg>
           <div className="text-xs">
-            <p className="font-semibold mb-1">⚠️ 重要提示</p>
+            <p className="font-semibold mb-1">{t("warnings.title")}</p>
             <ul className="list-disc list-inside space-y-1 opacity-80">
-              <li>存款后资金将自动分配到各 DeFi 协议</li>
-              <li>预计需要 1-2 个区块确认</li>
-              <li>管理费: 1.00% (从收益中扣除)</li>
+              <li>{t("warnings.autoAllocation")}</li>
+              <li>{t("warnings.blockConfirmation")}</li>
+              <li>{t("warnings.managementFee")}</li>
             </ul>
           </div>
         </div>
@@ -350,17 +352,17 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
         {/* Action Buttons */}
         <div className="flex gap-3">
           <button onClick={onClose} className="btn btn-ghost flex-1">
-            取消
+            {t("buttons.cancel")}
           </button>
           {needsApproval ? (
             <button onClick={handleApprove} disabled={isApproving || !isValidAmount} className="btn btn-primary flex-1">
               {isApproving ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
-                  授权中...
+                  {t("buttons.approving")}
                 </>
               ) : (
-                `🔓 授权 ${assetSymbol}`
+                `🔓 ${t("buttons.approve")} ${assetSymbol}`
               )}
             </button>
           ) : (
@@ -372,10 +374,10 @@ export const DepositModal = ({ vault, isOpen, onClose, onSuccess }: DepositModal
               {isDepositing ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
-                  存款中...
+                  {t("buttons.depositing")}
                 </>
               ) : (
-                "💰 确认存款"
+                `💰 ${t("buttons.confirmDeposit")}`
               )}
             </button>
           )}
