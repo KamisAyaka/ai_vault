@@ -39,7 +39,7 @@
     "ipfs": "yarn workspace @se-2/nextjs ipfs",
     "lint": "yarn next:lint && yarn foundry:lint",
     "next:build": "yarn workspace @se-2/nextjs build",
-    "next:check-types": "yarn workspace @se-2/nextjs check-types",
+    "next:check-types": "node ./packages/nextjs/node_modules/typescript/bin/tsc --project packages/nextjs/tsconfig.json --noEmit --incremental",
     "next:format": "yarn workspace @se-2/nextjs format",
     "next:lint": "yarn workspace @se-2/nextjs lint",
     "next:serve": "yarn workspace @se-2/nextjs serve",

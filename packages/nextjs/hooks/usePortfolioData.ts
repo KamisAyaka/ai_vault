@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useUserPortfolio } from "./useUserPortfolio";
 import { useVaults } from "./useVaults";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
@@ -70,6 +71,13 @@ type PortfolioTransaction = {
   shares: string;
 };
 
+type UserStatsSummary = {
+  totalDeposited: bigint;
+  totalShares: bigint;
+  activeVaultAddresses: string[];
+  lastUpdated: number;
+};
+
 const toBigInt = (value?: string) => {
   try {
     return BigInt(value || "0");
@@ -109,13 +117,83 @@ const formatAmount = (value: number, symbol: string) => {
 
 export const usePortfolioData = () => {
   const { address: connectedAddress } = useAccount();
-  const { vaults, loading, error } = useVaults(200);
+  const { vaults, loading: vaultLoading, error: vaultError } = useVaults(200);
+  const {
+    userStats: userStatsEntity,
+    balances: userBalances,
+    loading: userPortfolioLoading,
+    error: userPortfolioError,
+  } = useUserPortfolio();
   const nativePrice = useGlobalState(state => state.nativeCurrency.price) || 0;
 
   const lowerAddress = connectedAddress?.toLowerCase();
 
+  const vaultMap = useMemo(() => {
+    return new Map(vaults.map(vault => [vault.id.toLowerCase(), vault]));
+  }, [vaults]);
+
   const positions = useMemo<PortfolioPosition[]>(() => {
-    if (!vaults || !lowerAddress) return [];
+    if (userBalances.length > 0) {
+      return userBalances
+        .map(balance => {
+          const vault = vaultMap.get(balance.vault.id.toLowerCase());
+          if (!vault) {
+            return null;
+          }
+
+          const decimals = vault.asset?.decimals ?? 18;
+          const symbol = vault.asset?.symbol?.toUpperCase() ?? "TOKEN";
+          const price = getAssetPrice(symbol, nativePrice);
+
+          const shares = toBigInt(balance.currentShares);
+          const assetValue = toNumber(toBigInt(balance.currentValue), decimals);
+          const depositedValue = toNumber(toBigInt(balance.totalDeposited), decimals);
+          const redeemedValue = toNumber(toBigInt(balance.totalRedeemed), decimals);
+
+          if (shares === 0n && depositedValue === 0 && redeemedValue === 0) {
+            return null;
+          }
+
+          const valueUsd = assetValue * price;
+          const depositedUsd = depositedValue * price;
+          const redeemedUsd = redeemedValue * price;
+          const profitLoss = assetValue + redeemedValue - depositedValue;
+          const profitLossUsd = valueUsd + redeemedUsd - depositedUsd;
+          const profitLossPercent = depositedUsd > 0 ? (profitLossUsd / depositedUsd) * 100 : 0;
+
+          const lastUpdatedMs = Number(balance.lastUpdated ?? "0") * 1000;
+          const daysHeld = Math.max(
+            1,
+            (Date.now() - (lastUpdatedMs > 0 ? lastUpdatedMs : Date.now())) / (1000 * 60 * 60 * 24),
+          );
+
+          const managementFeeUsd = annualisedFee(valueUsd, 0.01, daysHeld);
+          const performanceFeeUsd = Math.max(profitLossUsd, 0) * 0.2;
+
+          return {
+            vault,
+            assetSymbol: symbol,
+            assetDecimals: decimals,
+            shares,
+            sharesFormatted: formatUnits(shares, decimals),
+            value: assetValue,
+            valueUsd,
+            totalDeposited: depositedValue,
+            totalDepositedUsd: depositedUsd,
+            totalRedeemed: redeemedValue,
+            totalRedeemedUsd: redeemedUsd,
+            profitLoss,
+            profitLossUsd,
+            profitLossPercent,
+            daysHeld,
+            managementFeeUsd,
+            performanceFeeUsd,
+          } satisfies PortfolioPosition | null;
+        })
+        .filter(Boolean) as PortfolioPosition[];
+    }
+
+    if (!vaults.length || !lowerAddress) return [];
 
     return vaults
       .map(vault => {
@@ -189,7 +267,7 @@ export const usePortfolioData = () => {
         } satisfies PortfolioPosition | null;
       })
       .filter(Boolean) as PortfolioPosition[];
-  }, [vaults, lowerAddress, nativePrice]);
+  }, [userBalances, vaultMap, vaults, lowerAddress, nativePrice]);
 
   const totalPortfolioValue = useMemo(
     () => positions.reduce((sum, position) => sum + position.valueUsd, 0),
@@ -212,6 +290,18 @@ export const usePortfolioData = () => {
     [positions],
   );
 
+  const userStatsSummary = useMemo<UserStatsSummary | null>(() => {
+    if (!userStatsEntity) return null;
+    return {
+      totalDeposited: toBigInt(userStatsEntity.totalDeposited),
+      totalShares: toBigInt(userStatsEntity.totalShares),
+      activeVaultAddresses: userStatsEntity.activeVaults ?? [],
+      lastUpdated: Number(userStatsEntity.lastUpdated ?? "0") * 1000,
+    };
+  }, [userStatsEntity]);
+
+  const totalPositionsCount = userStatsSummary?.activeVaultAddresses.length ?? positions.length;
+
   const stats = useMemo<PortfolioStats>(() => {
     const profitLossPercent = totalDepositsUsd > 0 ? (totalProfitLossUsd / totalDepositsUsd) * 100 : 0;
 
@@ -220,11 +310,18 @@ export const usePortfolioData = () => {
       totalProfitLoss: totalProfitLossUsd,
       totalProfitLossPercent: profitLossPercent,
       totalFees: totalFeesUsd,
-      totalPositions: positions.length,
+      totalPositions: totalPositionsCount,
       totalDeposits: totalDepositsUsd,
       totalWithdrawals: totalWithdrawalsUsd,
     };
-  }, [positions.length, totalPortfolioValue, totalProfitLossUsd, totalFeesUsd, totalDepositsUsd, totalWithdrawalsUsd]);
+  }, [
+    totalPortfolioValue,
+    totalProfitLossUsd,
+    totalFeesUsd,
+    totalDepositsUsd,
+    totalWithdrawalsUsd,
+    totalPositionsCount,
+  ]);
 
   const revenueHistory = useMemo<RevenuePoint[]>(() => {
     if (!positions.length) return [];
@@ -355,6 +452,9 @@ export const usePortfolioData = () => {
     return transactions.sort((a, b) => b.timestamp - a.timestamp).slice(0, 50);
   }, [vaults, lowerAddress, nativePrice]);
 
+  const loading = vaultLoading || userPortfolioLoading;
+  const error = vaultError ?? userPortfolioError ?? null;
+
   return {
     loading,
     error,
@@ -365,6 +465,8 @@ export const usePortfolioData = () => {
       revenueHistory,
       feeBreakdown,
       transactionHistory,
+      userStats: userStatsSummary,
+      userVaultBalances: userBalances,
     },
   };
 };

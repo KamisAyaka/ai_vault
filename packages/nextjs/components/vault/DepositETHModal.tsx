@@ -110,6 +110,7 @@ export const DepositETHModal = ({ vault, isOpen, onClose, onSuccess }: DepositET
 
     setIsDepositing(true);
     try {
+      const depositAmountDisplay = amount;
       const amountBigInt = parseEther(amount);
 
       const makeWriteWithParams = () =>
@@ -122,12 +123,14 @@ export const DepositETHModal = ({ vault, isOpen, onClose, onSuccess }: DepositET
         });
 
       await writeTx(makeWriteWithParams, {
+        onTransactionSubmitted: () => {
+          setAmount("");
+          onClose();
+        },
         onBlockConfirmation: receipt => {
           console.debug("ETH Deposit confirmed", receipt);
-          notification.success(`成功存入 ${amount} ETH!`);
-          setAmount("");
+          notification.success(`成功存入 ${depositAmountDisplay} ETH!`);
           onSuccess?.();
-          onClose();
         },
       });
     } catch (error: any) {
@@ -224,9 +227,11 @@ export const DepositETHModal = ({ vault, isOpen, onClose, onSuccess }: DepositET
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0.00"
-              className="input input-bordered join-item w-full text-lg"
+              className="input input-bordered join-item flex-1 min-w-0 text-lg"
             />
-            <span className="btn btn-square join-item bg-base-200 border-base-300 no-animation">Ξ ETH</span>
+            <span className="btn btn-square join-item bg-base-200 border-base-300 no-animation flex-none h-10 w-[50px] min-h-0">
+              Ξ ETH
+            </span>
             <button onClick={handleMaxClick} className="btn btn-primary join-item">
               最大
             </button>

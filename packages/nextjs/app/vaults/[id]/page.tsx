@@ -17,6 +17,7 @@ import {
   WithdrawModal,
 } from "~~/components/vault";
 import { useGsapFadeReveal, useGsapHeroIntro } from "~~/hooks/useGsapAnimations";
+import { useUserPortfolio } from "~~/hooks/useUserPortfolio";
 import { useUserRole } from "~~/hooks/useUserRole";
 import { useVaultPerformance } from "~~/hooks/useVaultPerformance";
 import { useVaults } from "~~/hooks/useVaults";
@@ -44,12 +45,22 @@ const formatPercent = (value?: number, fractionDigits = 1) => {
   return `${value!.toFixed(fractionDigits)}%`;
 };
 
+const EMPTY_USER_STATS = {
+  shares: 0n,
+  deposited: 0n,
+  redeemed: 0n,
+  value: 0n,
+  profit: 0n,
+  profitPercent: 0,
+};
+
 const VaultDetailPage = () => {
   const params = useParams<{ id: string }>();
   const vaultParam = (params?.id ?? "").toLowerCase();
   const { address: connectedAddress } = useAccount();
   const { vaults, loading, error, refetch } = useVaults(200);
   const { data: performanceData } = useVaultPerformance(200);
+  const { balances: userBalances } = useUserPortfolio();
 
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -108,20 +119,42 @@ const VaultDetailPage = () => {
     return holders.size;
   }, [vault?.deposits]);
 
+  const userVaultBalance = useMemo(() => {
+    if (!vault || !connectedAddress) return null;
+    const targetId = vault.id.toLowerCase();
+    return userBalances.find(balance => balance.vault.id.toLowerCase() === targetId) ?? null;
+  }, [userBalances, vault, connectedAddress]);
+
   const userStats = useMemo(() => {
-    if (!connectedAddress) {
+    if (!vault) {
+      return EMPTY_USER_STATS;
+    }
+
+    if (userVaultBalance) {
+      const shares = safeBigInt(userVaultBalance.currentShares);
+      const deposited = safeBigInt(userVaultBalance.totalDeposited);
+      const redeemed = safeBigInt(userVaultBalance.totalRedeemed);
+      const value = safeBigInt(userVaultBalance.currentValue);
+      const investedPrincipal = deposited - redeemed;
+      const profit = value - investedPrincipal;
+      const profitPercent = Number(investedPrincipal > 0n ? (profit * 10000n) / investedPrincipal : 0n) / 100;
+
       return {
-        shares: 0n,
-        deposited: 0n,
-        redeemed: 0n,
-        value: 0n,
-        profit: 0n,
-        profitPercent: 0,
+        shares,
+        deposited,
+        redeemed,
+        value,
+        profit,
+        profitPercent,
       };
     }
 
-    const deposits = vault?.deposits ?? [];
-    const redeems = vault?.redeems ?? [];
+    if (!connectedAddress) {
+      return EMPTY_USER_STATS;
+    }
+
+    const deposits = vault.deposits ?? [];
+    const redeems = vault.redeems ?? [];
 
     const lower = connectedAddress.toLowerCase();
     const depositShares = deposits
@@ -155,7 +188,9 @@ const VaultDetailPage = () => {
       profit,
       profitPercent,
     };
-  }, [connectedAddress, vault?.deposits, vault?.redeems, totalAssets, totalSupply]);
+  }, [vault, userVaultBalance, connectedAddress, totalAssets, totalSupply]);
+
+  const userBalanceUpdatedAt = userVaultBalance ? Number(userVaultBalance.lastUpdated ?? "0") * 1000 : 0;
 
   const transactionRows = useMemo(() => {
     const deposits = vault?.deposits ?? [];
@@ -326,6 +361,12 @@ const VaultDetailPage = () => {
                       </span>
                     </div>
                   </div>
+                )}
+
+                {userBalanceUpdatedAt > 0 && (
+                  <p className="text-xs opacity-60 text-right">
+                    数据更新时间: {new Date(userBalanceUpdatedAt).toLocaleString("zh-CN")}
+                  </p>
                 )}
 
                 <div className="card-actions justify-end gap-2 pt-2">

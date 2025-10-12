@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { DepositETHModal } from "./DepositETHModal";
-import { DepositModal } from "./DepositModal";
-import { MintETHModal } from "./MintETHModal";
-import { MintModal } from "./MintModal";
+import { DepositMintModal } from "./DepositMintModal";
 import { WithdrawETHModal } from "./WithdrawETHModal";
 import { WithdrawModal } from "./WithdrawModal";
 import { formatUnits } from "viem";
@@ -21,9 +18,8 @@ type VaultCardProps = {
 };
 
 export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => {
-  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-  const [isMintModalOpen, setIsMintModalOpen] = useState(false);
   const tCard = useTranslations("vaultCard");
   const tStatus = useTranslations("common.status");
 
@@ -205,7 +201,15 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
             </div>
           )}
           {userAddress && formattedShares === "0" && (
-            <div className="bg-base-200 p-3 rounded-lg mb-4 text-sm opacity-70">{tCard("messages.noPosition")}</div>
+            <div className="bg-primary/10 p-3 rounded-lg mb-4">
+              <div className="text-sm font-semibold mb-2">{tCard("labels.position")}</div>
+              <div className="text-sm">
+                <div>
+                  {tCard("labels.shares")}:<span className="font-bold">0</span>
+                </div>
+                <p className="opacity-70 text-xs mt-1 leading-snug">{tCard("messages.noPosition")}</p>
+              </div>
+            </div>
           )}
 
           {/* Action buttons */}
@@ -214,17 +218,10 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
               <>
                 <button
                   className="btn btn-primary btn-sm"
-                  onClick={() => setIsDepositModalOpen(true)}
+                  onClick={() => setIsEntryModalOpen(true)}
                   disabled={!vault.isActive}
                 >
-                  💵 {tCard("actions.deposit")}
-                </button>
-                <button
-                  className="btn btn-accent btn-sm"
-                  onClick={() => setIsMintModalOpen(true)}
-                  disabled={!vault.isActive}
-                >
-                  🪙 {tCard("actions.mint")}
+                  💰 存入
                 </button>
                 <button
                   className="btn btn-secondary btn-sm"
@@ -247,48 +244,26 @@ export const VaultCard = ({ vault, userAddress, onSuccess }: VaultCardProps) => 
       </div>
 
       {/* Modals */}
+      <DepositMintModal
+        vault={vault}
+        isOpen={isEntryModalOpen}
+        onClose={() => setIsEntryModalOpen(false)}
+        onSuccess={onSuccess}
+      />
       {isETHVault ? (
-        <>
-          <DepositETHModal
-            vault={vault}
-            isOpen={isDepositModalOpen}
-            onClose={() => setIsDepositModalOpen(false)}
-            onSuccess={onSuccess}
-          />
-          <MintETHModal
-            vault={vault}
-            isOpen={isMintModalOpen}
-            onClose={() => setIsMintModalOpen(false)}
-            onSuccess={onSuccess}
-          />
-          <WithdrawETHModal
-            vault={vault}
-            isOpen={isWithdrawModalOpen}
-            onClose={() => setIsWithdrawModalOpen(false)}
-            onSuccess={onSuccess}
-          />
-        </>
+        <WithdrawETHModal
+          vault={vault}
+          isOpen={isWithdrawModalOpen}
+          onClose={() => setIsWithdrawModalOpen(false)}
+          onSuccess={onSuccess}
+        />
       ) : (
-        <>
-          <DepositModal
-            vault={vault}
-            isOpen={isDepositModalOpen}
-            onClose={() => setIsDepositModalOpen(false)}
-            onSuccess={onSuccess}
-          />
-          <MintModal
-            vault={vault}
-            isOpen={isMintModalOpen}
-            onClose={() => setIsMintModalOpen(false)}
-            onSuccess={onSuccess}
-          />
-          <WithdrawModal
-            vault={vault}
-            isOpen={isWithdrawModalOpen}
-            onClose={() => setIsWithdrawModalOpen(false)}
-            onSuccess={onSuccess}
-          />
-        </>
+        <WithdrawModal
+          vault={vault}
+          isOpen={isWithdrawModalOpen}
+          onClose={() => setIsWithdrawModalOpen(false)}
+          onSuccess={onSuccess}
+        />
       )}
     </>
   );
