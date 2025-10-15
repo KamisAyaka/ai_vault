@@ -1,0 +1,20 @@
+{
+  "pool_symbol": "wBTC-USDC",
+  "generated_at": "2025-10-10T15:30:59.235779",
+  "allocations": {
+    "aave_wbtc_pool": 0.7402624487876892,
+    "uniswap_lp": 0.2597375810146332
+  },
+  "safety_bounds": {
+    "price_lower": 118472.3284002591,
+    "price_upper": 124177.17777196995,
+    "vol_threshold": 0.010199720971286297
+  },
+  "model_confidence": 0.9496681680902839,
+  "strategy_type": "multi_factor_continuous",
+  "market_conditions": {
+    "recent_volatility": 0.39439359307289124,
+    "recent_volume_trend": 0.7372021158050426,
+    "recent_price_trend": 0.05628455150199879
+  }
+}
