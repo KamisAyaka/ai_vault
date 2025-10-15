@@ -35,8 +35,8 @@ class AIVaultClient:
 
         Example:
             allocations = [
-                {"adapter_index": 0, "percentage": 5000},  # 50% to Aave
-                {"adapter_index": 1, "percentage": 5000}   # 50% to UniswapV2
+                {"adapter_index": 0, "percentage": 500},  # 50% to Aave
+                {"adapter_index": 1, "percentage": 500}   # 50% to UniswapV2
             ]
         """
         data = {
@@ -176,9 +176,9 @@ def ai_generate_strategy(market_conditions: Dict[str, Any]) -> Dict[str, Any]:
     if volatility == "high":
         # High volatility: Conservative allocation, prefer stable Aave
         allocations = [
-            {"adapter_index": 0, "percentage": 7000},  # 70% Aave (safe lending)
-            {"adapter_index": 1, "percentage": 2000},  # 20% UniswapV2 (moderate)
-            {"adapter_index": 2, "percentage": 1000},  # 10% UniswapV3 (risky)
+            {"adapter_index": 0, "percentage": 700},  # 70% Aave (safe lending)
+            {"adapter_index": 1, "percentage": 200},  # 20% UniswapV2 (moderate)
+            {"adapter_index": 2, "percentage": 100},  # 10% UniswapV3 (risky)
         ]
         strategy_name = "AI Conservative Strategy"
         description = "Conservative allocation for high volatility market"

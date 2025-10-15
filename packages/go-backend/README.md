@@ -92,11 +92,11 @@ Content-Type: application/json
   "allocations": [
     {
       "adapter_index": 0,      # 全局适配器列表中的索引 (不是地址!)
-      "percentage": 6000       # 60% (0-10000 表示 0-100%)
+      "percentage": 600       # 60% (0-1000 表示 0-100%)
     },
     {
       "adapter_index": 1,      # 第二个适配器的索引
-      "percentage": 4000       # 40%
+      "percentage": 400       # 40%
     }
   ]
 }
@@ -119,7 +119,7 @@ Content-Type: application/json
   - 0 = Aave 适配器
   - 1 = UniswapV2 适配器
   - 2 = UniswapV3 适配器
-- `percentage`: 分配比例,使用基点 (10000 = 100%)
+- `percentage`: 分配比例,使用基点 (1000 = 100%)
 
 ### 提取投资
 

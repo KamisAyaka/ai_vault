@@ -19,9 +19,10 @@ import (
 
 // Client wraps the Ethereum client with additional functionality
 type Client struct {
-	client     *ethclient.Client
-	privateKey *ecdsa.PrivateKey
-	chainID    *big.Int
+	client      *ethclient.Client
+	privateKey  *ecdsa.PrivateKey
+	chainID     *big.Int
+	maxGasLimit uint64
 }
 
 // NewClient creates a new blockchain client
@@ -44,9 +45,10 @@ func NewClient(cfg config.BlockchainConfig) (*Client, error) {
 	}
 
 	return &Client{
-		client:     client,
-		privateKey: privateKey,
-		chainID:    chainID,
+		client:      client,
+		privateKey:  privateKey,
+		chainID:     chainID,
+		maxGasLimit: cfg.MaxGasLimit,
 	}, nil
 }
 
@@ -74,7 +76,7 @@ func (c *Client) GetTransactOpts(ctx context.Context) (*bind.TransactOpts, error
 
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)
-	auth.GasLimit = uint64(0) // Will be estimated
+	auth.GasLimit = c.maxGasLimit // Use configured max gas limit
 	auth.GasPrice = gasPrice
 	auth.Context = ctx
 
@@ -121,7 +123,7 @@ func (c *Client) SendTransaction(ctx context.Context, to common.Address, value *
 	}
 
 	// Estimate gas limit
-	gasLimit, err := c.client.EstimateGas(ctx, ethereum.CallMsg{
+	estimatedGas, err := c.client.EstimateGas(ctx, ethereum.CallMsg{
 		From:  c.GetAddress(),
 		To:    &to,
 		Value: value,
@@ -129,6 +131,12 @@ func (c *Client) SendTransaction(ctx context.Context, to common.Address, value *
 	})
 	if err != nil {
 		return nil, err
+	}
+	
+	// Set gas limit with reasonable maximum for Sepolia
+	gasLimit := estimatedGas
+	if gasLimit > c.maxGasLimit {
+		gasLimit = c.maxGasLimit // Cap at configured max gas limit
 	}
 
 	// Create transaction

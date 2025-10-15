@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -23,6 +24,7 @@ type BlockchainConfig struct {
 	RPCURL              string
 	PrivateKey          string
 	VaultManagerAddress string
+	MaxGasLimit         uint64
 }
 
 // Load loads configuration from environment variables
@@ -38,6 +40,7 @@ func Load() (*Config, error) {
 			RPCURL:              getEnv("ETH_RPC_URL", "http://localhost:8545"),
 			PrivateKey:          getEnv("PRIVATE_KEY", ""),
 			VaultManagerAddress: getEnv("VAULT_MANAGER_ADDRESS", ""),
+			MaxGasLimit:         getEnvUint64("MAX_GAS_LIMIT", 15000000), // Default 15M for Sepolia
 		},
 		LogLevel: getEnv("LOG_LEVEL", "info"),
 	}
@@ -49,6 +52,16 @@ func Load() (*Config, error) {
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
+	}
+	return defaultValue
+}
+
+// getEnvUint64 gets an environment variable as uint64 with a fallback default value
+func getEnvUint64(key string, defaultValue uint64) uint64 {
+	if value := os.Getenv(key); value != "" {
+		if parsed, err := strconv.ParseUint(value, 10, 64); err == nil {
+			return parsed
+		}
 	}
 	return defaultValue
 }

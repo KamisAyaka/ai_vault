@@ -76,7 +76,7 @@ func (cs *ContractService) UpdateVaultAllocations(ctx context.Context, tokenAddr
 
 	for i, alloc := range allocations {
 		adapterIndices[i] = new(big.Int).SetUint64(alloc.AdapterIndex)
-		// Percentage is already in contract precision (0-1000 where 1000 = 100%)
+		// Percentage uses same precision as contract (0-1000 where 1000 = 100%)
 		allocationData[i] = new(big.Int).SetUint64(alloc.Percentage)
 	}
 

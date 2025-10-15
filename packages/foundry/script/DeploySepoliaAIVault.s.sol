@@ -280,8 +280,8 @@ contract DeploySepoliaAIVault is ScaffoldETHDeploy {
             address(counterPartyToken),
             500, // 5% slippage tolerance
             3000, // 0.3% fee tier
-            59400, // tick lower - 更合理的价格区间
-            60600, // tick upper - 更合理的价格区间
+            57000, // tick lower - 更宽的价格区间，提供更多流动性
+            63000, // tick upper - 更宽的价格区间，提供更多流动性
             vault
         );
         manager.execute(2, 0, data); // UniswapV3 adapter index = 2

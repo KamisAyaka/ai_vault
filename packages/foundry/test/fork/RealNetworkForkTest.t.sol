@@ -874,4 +874,348 @@ contract RealNetworkForkTest is Test {
         assertGt(user.balance, userETHBefore, "User should receive ETH");
         console.log("ETH withdrawal successful, received", assets, "ETH");
     }
+
+    /**
+     * @notice 测试用户提款流程
+     */
+    function testUserWithdrawalFlow() public {
+        vm.selectFork(mainnetFork);
+        console.log("=== Testing User Withdrawal Flow ===");
+
+        _deployManager();
+        _deployRealAdapters();
+        _createVault();
+        _configureAdapters();
+        _addAdaptersToManager();
+
+        // 设置初始资产分配
+        uint256[] memory adapterIndices = new uint256[](2);
+        adapterIndices[0] = 0; // Aave
+        adapterIndices[1] = 1; // UniswapV2
+
+        uint256[] memory allocationData = new uint256[](2);
+        allocationData[0] = 600; // 60% to Aave
+        allocationData[1] = 400; // 40% to UniswapV2
+
+        manager.updateHoldingAllocation(IERC20(USDC_MAINNET), adapterIndices, allocationData);
+
+        // 给用户一些 USDC 进行测试
+        _fundUserWithToken(USDC_MAINNET, 5000 * 1e6); // 5000 USDC
+
+        // 用户存款
+        vm.prank(user);
+        IERC20(USDC_MAINNET).approve(vaultAddress, 5000 * 1e6);
+        vm.prank(user);
+        uint256 shares = VaultImplementation(vaultAddress).deposit(5000 * 1e6, user);
+
+        console.log("User deposited 5000 USDC, received", shares, "shares");
+
+        // 验证初始投资状态
+        uint256 aaveValueBefore = aaveAdapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV2ValueBefore = uniswapV2Adapter.getTotalValue(IERC20(USDC_MAINNET));
+
+        console.log("Before withdrawal - Aave value:", aaveValueBefore);
+        console.log("Before withdrawal - UniswapV2 value:", uniswapV2ValueBefore);
+
+        // 用户提取一半的份额
+        uint256 sharesToRedeem = shares / 2;
+        vm.prank(user);
+        uint256 assetsRedeemed = VaultImplementation(vaultAddress).redeem(sharesToRedeem, user, user);
+
+        console.log("User redeemed shares:", sharesToRedeem);
+        console.log("Assets received:", assetsRedeemed);
+
+        // 验证提款后的投资状态
+        uint256 aaveValueAfter = aaveAdapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV2ValueAfter = uniswapV2Adapter.getTotalValue(IERC20(USDC_MAINNET));
+
+        console.log("After withdrawal - Aave value:", aaveValueAfter);
+        console.log("After withdrawal - UniswapV2 value:", uniswapV2ValueAfter);
+
+        // 验证提款后投资价值减少
+        assertLt(aaveValueAfter, aaveValueBefore, "Aave value should decrease after withdrawal");
+        assertLt(uniswapV2ValueAfter, uniswapV2ValueBefore, "UniswapV2 value should decrease after withdrawal");
+
+        // 验证用户收到正确的资产
+        assertGt(assetsRedeemed, 0, "User should receive assets");
+        assertApproxEqRel(assetsRedeemed, 2500 * 1e6, 0.1e18, "User should receive approximately half of deposit");
+
+        emit TestCompleted("User Withdrawal Flow", true);
+    }
+
+    /**
+     * @notice 测试动态重新平衡 - 用户存款后调整策略
+     */
+    function testDynamicRebalancing() public {
+        vm.selectFork(mainnetFork);
+        console.log("=== Testing Dynamic Rebalancing ===");
+
+        _deployManager();
+        _deployRealAdapters();
+        _createVault();
+        _configureAdapters();
+        _addAdaptersToManager();
+
+        // 初始分配：Aave 70%, UniswapV2 30%
+        uint256[] memory initialAdapterIndices = new uint256[](2);
+        initialAdapterIndices[0] = 0; // Aave
+        initialAdapterIndices[1] = 1; // UniswapV2
+
+        uint256[] memory initialAllocationData = new uint256[](2);
+        initialAllocationData[0] = 700; // 70% to Aave
+        initialAllocationData[1] = 300; // 30% to UniswapV2
+
+        manager.updateHoldingAllocation(IERC20(USDC_MAINNET), initialAdapterIndices, initialAllocationData);
+
+        // 给用户一些 USDC 进行测试
+        _fundUserWithToken(USDC_MAINNET, 8000 * 1e6); // 8000 USDC
+
+        // 用户存款
+        vm.prank(user);
+        IERC20(USDC_MAINNET).approve(vaultAddress, 8000 * 1e6);
+        vm.prank(user);
+        VaultImplementation(vaultAddress).deposit(8000 * 1e6, user);
+
+        // 验证初始投资分配
+        uint256 aaveValueInitial = aaveAdapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV2ValueInitial = uniswapV2Adapter.getTotalValue(IERC20(USDC_MAINNET));
+
+        console.log("Initial allocation - Aave value:", aaveValueInitial);
+        console.log("Initial allocation - UniswapV2 value:", uniswapV2ValueInitial);
+
+        // **关键：用户存款后重新调整策略** - 完整的重新平衡流程
+        console.log("Setting new allocation strategy - Aave 40%, UniswapV2 60%");
+        // 重新设置分配比例：Aave 40%, UniswapV2 60%
+        uint256[] memory rebalanceAdapterIndices = new uint256[](2);
+        rebalanceAdapterIndices[0] = 0; // Aave
+        rebalanceAdapterIndices[1] = 1; // UniswapV2
+
+        uint256[] memory rebalanceAllocationData = new uint256[](2);
+        rebalanceAllocationData[0] = 400; // 40% to Aave
+        rebalanceAllocationData[1] = 600; // 60% to UniswapV2
+
+        manager.updateHoldingAllocation(IERC20(USDC_MAINNET), rebalanceAdapterIndices, rebalanceAllocationData);
+
+        console.log("New allocation strategy applied, funds automatically withdrawn and reinvested");
+
+        // 验证重新平衡后的投资分配
+        uint256 aaveValueAfterRebalance = aaveAdapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV2ValueAfterRebalance = uniswapV2Adapter.getTotalValue(IERC20(USDC_MAINNET));
+
+        console.log("After rebalance - Aave value:", aaveValueAfterRebalance);
+        console.log("After rebalance - UniswapV2 value:", uniswapV2ValueAfterRebalance);
+
+        // 验证重新平衡效果（注意：由于滑点和手续费，实际比例可能不完全匹配）
+        uint256 totalValueAfterRebalance = aaveValueAfterRebalance + uniswapV2ValueAfterRebalance;
+
+        // 验证各协议仍有投资价值
+        assertGt(aaveValueAfterRebalance, 0, "Aave should still have invested value after rebalance");
+        assertGt(uniswapV2ValueAfterRebalance, 0, "UniswapV2 should still have invested value after rebalance");
+
+        // 验证重新平衡后的比例趋势（允许较大误差，因为实际重新平衡可能涉及复杂的撤资和再投资）
+        uint256 aaveRatio = (aaveValueAfterRebalance * 1000) / totalValueAfterRebalance;
+        uint256 uniswapV2Ratio = (uniswapV2ValueAfterRebalance * 1000) / totalValueAfterRebalance;
+
+        console.log("Aave ratio after rebalance:", aaveRatio, "/1000");
+        console.log("UniswapV2 ratio after rebalance:", uniswapV2Ratio, "/1000");
+
+        // 验证比例变化趋势（UniswapV2的比例应该增加）
+        assertGt(uniswapV2Ratio, 300, "UniswapV2 ratio should increase after rebalance");
+        assertLt(aaveRatio, 700, "Aave ratio should decrease after rebalance");
+
+        emit TestCompleted("Dynamic Rebalancing", true);
+    }
+
+    /**
+     * @notice 测试部分更新分配策略 - 用户存款后部分调整
+     */
+    function testPartialAllocationUpdate() public {
+        vm.selectFork(mainnetFork);
+        console.log("=== Testing Partial Allocation Update ===");
+
+        _deployManager();
+        _deployRealAdapters();
+        _createVault();
+        _configureAdapters();
+        _addAdaptersToManager();
+
+        // 初始分配：Aave 50%, UniswapV2 30%, UniswapV3 20%
+        uint256[] memory initialAdapterIndices = new uint256[](3);
+        initialAdapterIndices[0] = 0; // Aave
+        initialAdapterIndices[1] = 1; // UniswapV2
+        initialAdapterIndices[2] = 2; // UniswapV3
+
+        uint256[] memory initialAllocationData = new uint256[](3);
+        initialAllocationData[0] = 500; // 50% to Aave
+        initialAllocationData[1] = 300; // 30% to UniswapV2
+        initialAllocationData[2] = 200; // 20% to UniswapV3
+
+        manager.updateHoldingAllocation(IERC20(USDC_MAINNET), initialAdapterIndices, initialAllocationData);
+
+        // 给用户一些 USDC 进行测试
+        _fundUserWithToken(USDC_MAINNET, 6000 * 1e6); // 6000 USDC
+
+        // 用户存款
+        vm.prank(user);
+        IERC20(USDC_MAINNET).approve(vaultAddress, 6000 * 1e6);
+        vm.prank(user);
+        VaultImplementation(vaultAddress).deposit(6000 * 1e6, user);
+
+        // 记录初始投资状态
+        uint256 aaveValueInitial = aaveAdapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV2ValueInitial = uniswapV2Adapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV3ValueInitial = uniswapV3Adapter.getTotalValue(IERC20(USDC_MAINNET));
+
+        console.log("Initial - Aave:", aaveValueInitial);
+        console.log("Initial - UniswapV2:", uniswapV2ValueInitial);
+        console.log("Initial - UniswapV3:", uniswapV3ValueInitial);
+
+        // **关键：用户存款后部分更新策略** - 从Aave撤资1000 USDC，投资到UniswapV2
+        uint256[] memory divestAdapterIndices = new uint256[](1);
+        divestAdapterIndices[0] = 0; // Aave
+
+        uint256[] memory divestAmounts = new uint256[](1);
+        divestAmounts[0] = 1000 * 1e6; // 撤资1000 USDC
+
+        uint256[] memory investAdapterIndices = new uint256[](1);
+        investAdapterIndices[0] = 1; // UniswapV2
+
+        uint256[] memory investAmounts = new uint256[](1);
+        investAmounts[0] = 1000 * 1e6; // 投资1000 USDC
+
+        uint256[] memory investAllocations = new uint256[](1);
+        investAllocations[0] = 1000; // 100%投资到UniswapV2
+
+        console.log("Performing partial allocation update after user deposit...");
+        manager.partialUpdateHoldingAllocation(
+            IERC20(USDC_MAINNET),
+            divestAdapterIndices,
+            divestAmounts,
+            investAdapterIndices,
+            investAmounts,
+            investAllocations
+        );
+
+        // 验证部分更新后的投资状态
+        uint256 aaveValueAfter = aaveAdapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV2ValueAfter = uniswapV2Adapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV3ValueAfter = uniswapV3Adapter.getTotalValue(IERC20(USDC_MAINNET));
+
+        console.log("After partial update - Aave:", aaveValueAfter);
+        console.log("After partial update - UniswapV2:", uniswapV2ValueAfter);
+        console.log("After partial update - UniswapV3:", uniswapV3ValueAfter);
+
+        // 验证部分更新效果
+        assertLt(aaveValueAfter, aaveValueInitial, "Aave value should decrease after partial divestment");
+        assertGt(uniswapV2ValueAfter, uniswapV2ValueInitial, "UniswapV2 value should increase after partial investment");
+
+        // UniswapV3的值应该保持不变
+        assertEq(uniswapV3ValueAfter, uniswapV3ValueInitial, "UniswapV3 value should remain unchanged");
+
+        emit TestCompleted("Partial Allocation Update", true);
+    }
+
+    /**
+     * @notice 测试多轮策略调整 - 模拟AI代理持续优化策略
+     */
+    function testMultiRoundStrategyAdjustment() public {
+        vm.selectFork(mainnetFork);
+        console.log("=== Testing Multi-Round Strategy Adjustment ===");
+
+        _deployManager();
+        _deployRealAdapters();
+        _createVault();
+        _configureAdapters();
+        _addAdaptersToManager();
+
+        // 第一轮：初始策略 - Aave 60%, UniswapV2 40%
+        uint256[] memory round1AdapterIndices = new uint256[](2);
+        round1AdapterIndices[0] = 0; // Aave
+        round1AdapterIndices[1] = 1; // UniswapV2
+
+        uint256[] memory round1AllocationData = new uint256[](2);
+        round1AllocationData[0] = 600; // 60% to Aave
+        round1AllocationData[1] = 400; // 40% to UniswapV2
+
+        manager.updateHoldingAllocation(IERC20(USDC_MAINNET), round1AdapterIndices, round1AllocationData);
+
+        // 用户第一笔存款
+        _fundUserWithToken(USDC_MAINNET, 3000 * 1e6); // 3000 USDC
+        vm.prank(user);
+        IERC20(USDC_MAINNET).approve(vaultAddress, 3000 * 1e6);
+        vm.prank(user);
+        VaultImplementation(vaultAddress).deposit(3000 * 1e6, user);
+
+        console.log("Round 1: User deposited 3000 USDC with Aave 60%, UniswapV2 40%");
+
+        // 第二轮：完整的重新平衡流程
+        console.log("Round 2: Complete rebalancing process");
+        console.log("Setting new strategy - Aave 40%, UniswapV2 60%");
+        uint256[] memory round2AdapterIndices = new uint256[](2);
+        round2AdapterIndices[0] = 0; // Aave
+        round2AdapterIndices[1] = 1; // UniswapV2
+
+        uint256[] memory round2AllocationData = new uint256[](2);
+        round2AllocationData[0] = 400; // 40% to Aave
+        round2AllocationData[1] = 600; // 60% to UniswapV2
+
+        manager.updateHoldingAllocation(IERC20(USDC_MAINNET), round2AdapterIndices, round2AllocationData);
+
+        console.log("New strategy applied, funds automatically withdrawn and reinvested");
+
+        // 用户第二笔存款
+        _fundUserWithToken(USDC_MAINNET, 2000 * 1e6); // 2000 USDC
+        vm.prank(user);
+        IERC20(USDC_MAINNET).approve(vaultAddress, 2000 * 1e6);
+        vm.prank(user);
+        VaultImplementation(vaultAddress).deposit(2000 * 1e6, user);
+
+        console.log("Round 2: User deposited additional 2000 USDC");
+
+        // 第三轮：完整的重新平衡流程 - 添加UniswapV3
+        console.log("Round 3: Complete rebalancing process with UniswapV3");
+        console.log("Setting new strategy - Aave 30%, UniswapV2 50%, UniswapV3 20%");
+        uint256[] memory round3AdapterIndices = new uint256[](3);
+        round3AdapterIndices[0] = 0; // Aave
+        round3AdapterIndices[1] = 1; // UniswapV2
+        round3AdapterIndices[2] = 2; // UniswapV3
+
+        uint256[] memory round3AllocationData = new uint256[](3);
+        round3AllocationData[0] = 300; // 30% to Aave
+        round3AllocationData[1] = 500; // 50% to UniswapV2
+        round3AllocationData[2] = 200; // 20% to UniswapV3
+
+        manager.updateHoldingAllocation(IERC20(USDC_MAINNET), round3AdapterIndices, round3AllocationData);
+
+        console.log("New strategy with UniswapV3 applied, funds automatically withdrawn and reinvested");
+
+        // 用户第三笔存款
+        _fundUserWithToken(USDC_MAINNET, 1000 * 1e6); // 1000 USDC
+        vm.prank(user);
+        IERC20(USDC_MAINNET).approve(vaultAddress, 1000 * 1e6);
+        vm.prank(user);
+        VaultImplementation(vaultAddress).deposit(1000 * 1e6, user);
+
+        console.log("Round 3: User deposited additional 1000 USDC");
+
+        // 验证最终投资状态
+        uint256 aaveValueFinal = aaveAdapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV2ValueFinal = uniswapV2Adapter.getTotalValue(IERC20(USDC_MAINNET));
+        uint256 uniswapV3ValueFinal = uniswapV3Adapter.getTotalValue(IERC20(USDC_MAINNET));
+
+        console.log("Final values - Aave:", aaveValueFinal);
+        console.log("Final values - UniswapV2:", uniswapV2ValueFinal);
+        console.log("Final values - UniswapV3:", uniswapV3ValueFinal);
+
+        // 验证所有协议都有投资价值
+        assertGt(aaveValueFinal, 0, "Aave should have invested value");
+        assertGt(uniswapV2ValueFinal, 0, "UniswapV2 should have invested value");
+        assertGt(uniswapV3ValueFinal, 0, "UniswapV3 should have invested value");
+
+        // 验证策略调整的累积效果
+        uint256 totalValueFinal = aaveValueFinal + uniswapV2ValueFinal + uniswapV3ValueFinal;
+        console.log("Total invested value:", totalValueFinal);
+
+        emit TestCompleted("Multi-Round Strategy Adjustment", true);
+    }
 }
