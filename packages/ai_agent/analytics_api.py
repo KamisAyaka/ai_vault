@@ -25,13 +25,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)  # 允许前端跨域访问
+CORS(app)  
 
-# 初始化服务
 db = DatabaseManager()
 analytics = StrategyAnalytics(initial_capital=100000.0)
 
-# 全局缓存
 _cache = {
     'last_fetch': None,
     'data': {}

@@ -5,9 +5,8 @@ import os
 import logging
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
-from historical_data_processor import HistoricalDataProcessor
-from packages.ai_agent.predict import get_latest_strategy
-from packages.ai_agent.database import DatabaseManager
+from predict import get_latest_strategy
+from database import DatabaseManager
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 import logging
 
@@ -66,8 +65,6 @@ def main_loop():
     BACKEND_URL = os.getenv("BACKEND_API_URL")
     TOKEN_ADDRESS = os.getenv("TOKEN_ADDRESS")
     THE_GRAPH_API_KEY = os.getenv("THE_GRAPH_API_KEY")
-
-    data_processor = HistoricalDataProcessor()
 
     db = DatabaseManager()
     logger.info("✅ Database manager initialized")

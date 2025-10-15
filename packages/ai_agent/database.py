@@ -7,6 +7,7 @@ import json
 import logging
 import psycopg2
 import psycopg2.extras
+from decimal import Decimal
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -24,11 +25,33 @@ def get_connection():
     """获取数据库连接"""
     return psycopg2.connect(DATABASE_URL, sslmode="require")
 
-# ======================================================================
-# 📊 核心数据库操作类
-# ======================================================================
+
 class DatabaseManager:
     """数据库操作类"""
+    @staticmethod
+    def get_database_stats() -> Dict:
+        """简单的数据库统计（用于健康检查）"""
+        try:
+            conn = get_connection()
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM pool_snapshots;")
+                snapshots_count = cur.fetchone()[0]
+                cur.execute("SELECT COUNT(*) FROM strategy_executions;")
+                strategies_count = cur.fetchone()[0]
+            return {
+                "snapshots_count": int(snapshots_count),
+                "strategies_count": int(strategies_count),
+                "status": "ok"
+            }
+        except Exception as e:
+            logger.error(f"get_database_stats error: {e}", exc_info=True)
+            return {"status": "error", "error": str(e)}
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
 
     # ========== 池子快照 ==========
     @staticmethod
@@ -86,29 +109,58 @@ class DatabaseManager:
 
     @staticmethod
     def get_pool_snapshots(pool_symbol: str, hours: int = 720, limit: Optional[int] = None) -> List[Dict]:
-        """获取池子历史快照"""
-        cutoff = datetime.now() - timedelta(hours=hours)
-        sql = """
-        SELECT * FROM pool_snapshots
-        WHERE pool_symbol = %s AND timestamp >= %s
-        ORDER BY timestamp ASC
-        """
-        if limit:
-            sql += f" LIMIT {limit}"
-
+        """获取池子历史快照（并把 Decimal 转为 float，timestamp 转为 ISO）"""
         try:
+            cutoff = (datetime.now() - timedelta(hours=hours))
+            sql = """
+            SELECT * FROM pool_snapshots
+            WHERE pool_symbol = %s AND timestamp >= %s
+            ORDER BY timestamp ASC
+            """
+            if limit:
+                sql += f" LIMIT {limit}"
+
             conn = get_connection()
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(sql, (pool_symbol, cutoff))
-                rows = cur.fetchall()
-            logger.info(f"📊 Retrieved {len(rows)} snapshots for {pool_symbol}")
-            return rows
+                rows = cur.fetchall() or []
+
+            # 转换 Decimal -> float，转换 timestamp -> ISO str
+            cleaned = []
+            numeric_keys = {'wbtc_price', 'volume_usd', 'liquidity', 'tvl_usd',
+                            'aave_wbtc_apy', 'univ3_lp_apy', 'gas_cost_usd'}
+            for r in rows:
+                newr = dict(r)
+                # timestamp -> ISO string
+                ts = newr.get('timestamp')
+                if isinstance(ts, datetime):
+                    newr['timestamp'] = ts.isoformat()
+                # convert decimals
+                for k in numeric_keys:
+                    v = newr.get(k)
+                    if isinstance(v, Decimal):
+                        newr[k] = float(v)
+                    elif v is None:
+                        newr[k] = 0.0
+                    else:
+                        try:
+                            newr[k] = float(v)
+                        except Exception:
+                            # leave as is if cannot cast
+                            pass
+                cleaned.append(newr)
+
+            logger.info(f"📊 Retrieved {len(cleaned)} snapshots for {pool_symbol}")
+            return cleaned
         except Exception as e:
-            logger.error(f"❌ Error getting pool snapshots: {e}", exc_info=True)
+            logger.error(f"Error getting pool snapshots: {e}", exc_info=True)
             return []
         finally:
-            if conn:
+            try:
                 conn.close()
+            except Exception:
+                pass
+
 
     # ========== 策略执行 ==========
     @staticmethod
