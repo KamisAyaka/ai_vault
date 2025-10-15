@@ -9,7 +9,7 @@ from typing import List, Dict
 import logging
 from dotenv import load_dotenv
 
-from packages.ai_agent.persistence_layer.database import DatabaseManager
+from packages.ai_agent.database import DatabaseManager
 
 logging.basicConfig(
     level=logging.INFO,

@@ -1,3 +1,0 @@
-"""
-Vercel Serverless Functions API
-"""

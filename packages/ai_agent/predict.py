@@ -10,8 +10,8 @@ from datetime import datetime
 from typing import Dict, Any
 from dotenv import load_dotenv
 
-from packages.ai_agent.data_layer.data_fetcher import MultiPoolDeFiDataFetcher 
-from packages.ai_agent.ai_layer.ai_strategy_system import WeeklyStrategyLSTM, create_feature_sequences_from_snapshots
+from packages.ai_agent.data_fetcher import MultiPoolDeFiDataFetcher 
+from packages.ai_agent.ai_strategy_system import WeeklyStrategyLSTM, create_feature_sequences_from_snapshots
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
