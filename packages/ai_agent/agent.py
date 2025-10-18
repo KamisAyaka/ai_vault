@@ -21,23 +21,27 @@ ADAPTER_MAP = {
 }
 
 # AI模型输出与适配器索引的映射
-STRATEGY_TO_ADAPTER_INDEX = {
-    "aave_wbtc_pool": ADAPTER_MAP["aave"],
-    "uniswap_v3_lp": ADAPTER_MAP["uniswap_v3"]
+ADAPTER_NAME_TO_AI_KEY = {
+    "aave": "aave_wbtc_pool",
+    "uniswap_v3": "uniswap_v3_lp",
 }
+
 
 def transform_strategy_for_backend(strategy: dict, token_address: str) -> dict:
     """将AI生成的策略JSON转换为Go后端API需要的格式"""
     allocations_list = []
     ai_allocations = strategy['allocations']
     
-    for strategy_key, percentage_float in ai_allocations.items():
-        if strategy_key not in STRATEGY_TO_ADAPTER_INDEX:
-            logging.warning(f"Strategy key '{strategy_key}' not found in adapter map. Skipping.")
-            continue
-            
-        adapter_index = STRATEGY_TO_ADAPTER_INDEX[strategy_key]
-        # 将百分比从 0.0-1.0 转换为 0-1000 的整数
+    for adapter_name, adapter_index in ADAPTER_MAP.items():
+        # 从AI的输出中查找对应的策略键
+        ai_strategy_key = ADAPTER_NAME_TO_AI_KEY.get(adapter_name)
+
+        percentage_float = 0.0
+        # 如果找到了对应的AI策略键，并且AI的分配结果中确实有这个键
+        if ai_strategy_key and ai_strategy_key in ai_allocations:
+            percentage_float = ai_allocations[ai_strategy_key]
+        
+        # 将百分比从 0.0-1.0 转换为 0-1000 的整数（基点）
         percentage_basis_points = int(percentage_float * 1000)
         
         allocations_list.append({
@@ -51,7 +55,10 @@ def transform_strategy_for_backend(strategy: dict, token_address: str) -> dict:
         # 简单的归一化处理
         logging.warning(f"Percentages sum to {total_percentage}, normalizing to 10000.")
         if allocations_list:
-            allocations_list[-1]['percentage'] += (1000 - total_percentage)
+            item_to_adjust = next((item for item in allocations_list if item['percentage'] > 0), allocations_list[-1])
+            item_to_adjust['percentage'] += (1000 - total_percentage)
+
+    allocations_list.sort(key=lambda x: x['adapter_index'])
 
     return {
         "token_address": token_address,

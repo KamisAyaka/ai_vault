@@ -70,7 +70,6 @@ class StrategyPredictor:
 def get_latest_strategy(pool_symbol: str, pool_config: Dict[str, Any], api_key: str = None) -> Dict:
     """
     为单个池子执行完整的预测流程，并返回策略字典。
-    (这是从原 main 函数重构而来的)
     """
     logging.info(f"Generating new strategy for pool: {pool_symbol}")
 
@@ -87,7 +86,6 @@ def get_latest_strategy(pool_symbol: str, pool_config: Dict[str, Any], api_key: 
     # --- 步骤 2: 获取最新数据 ---
     logging.info(f"Fetching latest {predictor.lookback_hours} hours of data...")
     fetcher = MultiPoolDeFiDataFetcher(pools_config={pool_symbol: pool_config}, api_key=api_key)
-    # 稍微多获取一点数据以防万一
     weeks_to_fetch = (predictor.lookback_hours / 24 / 7) + 1 
     raw_data = fetcher.run_full_data_collection(weeks=weeks_to_fetch)
     pool_data = raw_data.get('pools', {}).get(pool_symbol)
